@@ -1,0 +1,433 @@
+Warehouse & Inventory Management System - Operation Guide
+
+Purpose
+This guide is for training a team to operate the application module by module. Each section explains the main purpose of the module and the common user operations.
+
+
+1. Login and User Access
+
+Purpose:
+Users must log in before using the system. Access to pages depends on assigned roles.
+
+Operations:
+- Open the application URL.
+- Enter registered email and password.
+- After login, confirm that the dashboard and side navigation are visible.
+- Use the profile menu to view or update personal information.
+- Use Log Out after finishing work.
+
+Training Notes:
+- Train users not to share passwords.
+- Make sure each user has only the roles needed for their job.
+
+
+2. Dashboard
+
+Purpose:
+The dashboard gives a quick overview of business and inventory activity.
+
+Operations:
+- Open Dashboard > Default.
+- Review summary cards, charts, and recent activity.
+- Use dashboard information only as a quick status view.
+- For detailed checking, open the related report module.
+
+
+3. Company Setup
+
+Purpose:
+Company setup stores business information used in documents, reports, and footer details.
+
+Operations:
+- Open Settings > My Company.
+- Review company name, address, website, currency, and other details.
+- Update company information when required.
+- Save changes and refresh the page if the footer or topbar data does not update immediately.
+
+
+4. Tax Setup
+
+Purpose:
+Tax setup defines tax records used in purchase and sales transactions.
+
+Operations:
+- Open Settings > Tax.
+- Create a new tax record with name/rate.
+- Edit existing tax details if needed.
+- Delete only unused or incorrect tax records.
+
+
+5. Number Sequence
+
+Purpose:
+Number sequences generate document numbers for products, orders, stock movement, and other records.
+
+Operations:
+- Open Settings > Number Sequence.
+- Review existing number formats.
+- Update prefixes or sequence settings if business numbering changes.
+- Avoid changing sequences during active operations unless approved.
+
+
+6. Sales Master Data
+
+Purpose:
+Sales master data stores customer-related setup.
+
+Modules:
+- Customer Group
+- Customer Category
+- Customer
+- Customer Contact
+
+Operations:
+- Create customer groups and categories first.
+- Add customer records with correct contact, address, and business details.
+- Add customer contacts under the relevant customer.
+- Update customer information when business details change.
+- Avoid duplicate customer records.
+
+
+7. Purchase Master Data
+
+Purpose:
+Purchase master data stores vendor-related setup.
+
+Modules:
+- Vendor Group
+- Vendor Category
+- Vendor
+- Vendor Contact
+
+Operations:
+- Create vendor groups and categories first.
+- Add vendor records with correct business information.
+- Add vendor contacts under the relevant vendor.
+- Keep vendor records updated before creating purchase orders.
+- Avoid duplicate vendor records.
+
+
+8. Inventory Master Data
+
+Purpose:
+Inventory master data controls products, units, product groups, and warehouses.
+
+Modules:
+- Unit Measure
+- Product Group
+- Product
+- Warehouse
+
+Operations:
+- Create unit measures such as pcs, kg, box, liter, etc.
+- Create product groups to classify items.
+- Create products with name, price, unit measure, product group, and physical/non-physical status.
+- Create warehouses before stock transactions are entered.
+- Keep product and warehouse records clean because they are used throughout the system.
+
+
+9. Sales Order
+
+Purpose:
+Sales orders record customer orders before delivery.
+
+Operations:
+- Open Sales > Sales Order.
+- Create a sales order for the selected customer.
+- Add order items with product, quantity, price, tax, and other required fields.
+- Save the order.
+- Review the order before further processing.
+- Generate or view PDF if needed.
+
+Training Notes:
+- Confirm customer and product details before saving.
+- Do not create duplicate orders for the same customer request.
+
+
+10. Delivery Order
+
+Purpose:
+Delivery orders record goods issued to customers and affect inventory movement.
+
+Operations:
+- Open Inventory > Delivery Order.
+- Create a delivery order based on the customer/sales transaction.
+- Select warehouse and products.
+- Confirm quantities before saving.
+- Save the delivery order.
+- Print or view delivery PDF if required.
+
+Training Notes:
+- Delivery should be entered only after physical goods are ready to dispatch.
+- Check stock availability before delivery.
+
+
+11. Sales Return
+
+Purpose:
+Sales returns record goods returned by customers.
+
+Operations:
+- Open Inventory > Sales Return.
+- Create a return record for the related customer/delivery.
+- Select returned products and quantities.
+- Confirm the warehouse receiving the returned stock.
+- Save the return.
+- Review stock impact after saving.
+
+
+12. Purchase Order
+
+Purpose:
+Purchase orders record items ordered from vendors.
+
+Operations:
+- Open Purchase > Purchase Order.
+- Select vendor.
+- Add products, quantities, price, tax, and other details.
+- Save the order.
+- Review the order before sending to vendor.
+- Generate or view PDF if needed.
+
+Training Notes:
+- Confirm vendor and item pricing before saving.
+- Keep purchase order records aligned with vendor documents.
+
+
+13. Goods Receive
+
+Purpose:
+Goods receive records stock received from vendors and increases warehouse stock.
+
+Operations:
+- Open Inventory > Goods Receive.
+- Create a goods receive record.
+- Select vendor/purchase reference where applicable.
+- Select warehouse, products, and received quantities.
+- Save the record.
+- Check inventory reports after receiving.
+
+Training Notes:
+- Enter goods receive only after physical stock is received.
+- Match received quantity with supplier invoice or challan.
+
+
+14. Purchase Return
+
+Purpose:
+Purchase returns record goods returned to vendors.
+
+Operations:
+- Open Inventory > Purchase Return.
+- Create a return record for the selected vendor.
+- Select products, warehouse, and return quantities.
+- Save the return.
+- Review stock movement after saving.
+
+
+15. Stock Transfer
+
+Purpose:
+Stock transfer moves inventory between warehouses.
+
+Modules:
+- Transfer Out
+- Transfer In
+
+Operations:
+- Open Inventory > Transfer Out.
+- Create transfer out from the source warehouse.
+- Select products and quantities.
+- Save the transfer out record.
+- Open Inventory > Transfer In.
+- Receive the transferred stock into the destination warehouse.
+- Confirm quantities and save.
+
+Training Notes:
+- Transfer Out and Transfer In should match.
+- Use this process only for warehouse-to-warehouse movement.
+
+
+16. Stock Count
+
+Purpose:
+Stock count adjusts system stock based on physical counting.
+
+Operations:
+- Open Inventory > Stock Count.
+- Create a stock count for a warehouse.
+- Enter counted product quantities.
+- Save the stock count.
+- Review differences between system stock and physical stock.
+
+Training Notes:
+- Stock count should be done by authorized users only.
+- Keep physical count records for audit.
+
+
+17. Positive Adjustment
+
+Purpose:
+Positive adjustment increases stock for approved reasons outside normal receiving.
+
+Operations:
+- Open Inventory > Positive Adjustment.
+- Select warehouse and product.
+- Enter adjustment quantity and reason.
+- Save the adjustment.
+- Review transaction report after saving.
+
+Training Notes:
+- Use only for approved stock increase corrections.
+
+
+18. Negative Adjustment
+
+Purpose:
+Negative adjustment decreases stock for approved reasons outside normal delivery or return.
+
+Operations:
+- Open Inventory > Negative Adjustment.
+- Select warehouse and product.
+- Enter adjustment quantity and reason.
+- Save the adjustment.
+- Review transaction report after saving.
+
+Training Notes:
+- Use only for approved stock decrease corrections.
+
+
+19. Scrapping
+
+Purpose:
+Scrapping records damaged, expired, or unusable stock removed from inventory.
+
+Operations:
+- Open Inventory > Scrapping.
+- Select warehouse and product.
+- Enter scrapped quantity and reason.
+- Save the scrapping record.
+- Keep supporting approval or damage record if required.
+
+
+20. Reports
+
+Purpose:
+Reports help users review transactions, stock position, sales, purchases, and inventory movement.
+
+Modules:
+- Sales Report
+- Purchase Report
+- Transaction Report
+- Stock Report
+- Movement Report
+
+Operations:
+- Open the required report page.
+- Select filters such as date, product, customer, vendor, or warehouse if available.
+- Review report results.
+- Export or print where supported.
+- Use reports for reconciliation and management review.
+
+
+21. User Management
+
+Purpose:
+User management controls who can access the system.
+
+Modules:
+- Users
+- Roles
+
+Operations:
+- Open Membership > Users.
+- Create or update user accounts.
+- Assign correct roles.
+- Open Membership > Roles to review available role permissions.
+- Disable or remove access for users who no longer need the system.
+
+Training Notes:
+- Do not give admin access to normal users.
+- Review user access regularly.
+
+
+22. Todo and Todo Item
+
+Purpose:
+Todo modules help track simple internal tasks.
+
+Operations:
+- Open Utilities > Todo.
+- Create a todo list or task group.
+- Open Utilities > Todo Item.
+- Add task items under the relevant todo.
+- Update task status as work progresses.
+
+
+23. File and Image Handling
+
+Purpose:
+The application supports document and image storage for records where available.
+
+Operations:
+- Upload only valid files within the allowed file size.
+- Use clear file names.
+- Avoid uploading unrelated files.
+- Check uploaded images/documents after saving.
+
+
+24. Daily Operation Flow
+
+Recommended daily flow:
+- Login.
+- Check dashboard.
+- Review pending sales and purchase work.
+- Enter goods receive, delivery, return, transfer, or adjustment records as needed.
+- Review stock and transaction reports.
+- Update todos or follow-up tasks.
+- Logout.
+
+
+25. Month-End Operation Flow
+
+Recommended month-end flow:
+- Complete all pending goods receive and delivery records.
+- Complete purchase and sales returns.
+- Review stock transfer status.
+- Perform stock count where required.
+- Review stock report and transaction report.
+- Reconcile sales and purchase reports.
+- Lock or archive records according to company policy if applicable.
+
+
+26. Common Rules for Users
+
+- Always select the correct customer, vendor, product, and warehouse.
+- Do not create duplicate records.
+- Do not delete records unless approved.
+- Use adjustments only for approved corrections.
+- Keep transaction dates accurate.
+- Review reports regularly.
+- Logout after completing work.
+
+
+27. Suggested Training Plan
+
+Day 1:
+- Login, dashboard, navigation, profile, company setup.
+- Master data: customers, vendors, products, warehouses.
+
+Day 2:
+- Sales order, delivery order, sales return.
+- Purchase order, goods receive, purchase return.
+
+Day 3:
+- Transfer out, transfer in, stock count, adjustments, scrapping.
+
+Day 4:
+- Reports, user management, roles, daily and month-end operation practice.
+
+Day 5:
+- Practical test with sample transactions.
+- Review common mistakes and approval rules.
+
