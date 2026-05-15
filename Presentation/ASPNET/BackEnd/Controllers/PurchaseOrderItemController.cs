@@ -61,10 +61,12 @@ public class PurchaseOrderItemController : BaseApiController
     [HttpGet("GetPurchaseOrderItemList")]
     public async Task<ActionResult<ApiSuccessResult<GetPurchaseOrderItemListResult>>> GetPurchaseOrderItemListAsync(
         CancellationToken cancellationToken,
-        [FromQuery] bool isDeleted = false
+        [FromQuery] bool isDeleted = false,
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null
         )
     {
-        var request = new GetPurchaseOrderItemListRequest { IsDeleted = isDeleted };
+        var request = new GetPurchaseOrderItemListRequest { IsDeleted = isDeleted, DateFrom = dateFrom, DateTo = dateTo };
         var response = await _sender.Send(request, cancellationToken);
 
         return Ok(new ApiSuccessResult<GetPurchaseOrderItemListResult>

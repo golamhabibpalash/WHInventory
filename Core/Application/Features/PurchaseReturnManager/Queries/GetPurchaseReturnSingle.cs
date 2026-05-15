@@ -52,8 +52,8 @@ public class GetPurchaseReturnSingleHandler : IRequestHandler<GetPurchaseReturnS
             .PurchaseReturn
             .AsNoTracking()
             .Include(x => x.GoodsReceive)
-                .ThenInclude(x => x.PurchaseOrder)
-                    .ThenInclude(x => x.Vendor)
+                .ThenInclude(x => x!.PurchaseOrder)
+                    .ThenInclude(x => x!.Vendor)
             .Where(x => x.Id == request.Id)
             .AsQueryable();
 

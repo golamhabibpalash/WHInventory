@@ -52,7 +52,7 @@ public class GetGoodsReceiveSingleHandler : IRequestHandler<GetGoodsReceiveSingl
             .GoodsReceive
             .AsNoTracking()
             .Include(x => x.PurchaseOrder)
-                .ThenInclude(x => x.Vendor)
+                .ThenInclude(x => x!.Vendor)
             .Where(x => x.Id == request.Id)
             .AsQueryable();
 

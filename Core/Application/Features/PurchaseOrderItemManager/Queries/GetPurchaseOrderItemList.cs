@@ -20,6 +20,7 @@ public record GetPurchaseOrderItemListDto
     public double? UnitPrice { get; init; }
     public double? Quantity { get; init; }
     public double? Total { get; init; }
+    public DateTime? OrderDate { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
 
@@ -43,6 +44,10 @@ public class GetPurchaseOrderItemListProfile : Profile
             .ForMember(
                 dest => dest.ProductNumber,
                 opt => opt.MapFrom(src => src.Product != null ? src.Product.Number : string.Empty)
+            )
+            .ForMember(
+                dest => dest.OrderDate,
+                opt => opt.MapFrom(src => src.PurchaseOrder != null ? src.PurchaseOrder.OrderDate : null)
             );
 
     }
@@ -56,6 +61,8 @@ public class GetPurchaseOrderItemListResult
 public class GetPurchaseOrderItemListRequest : IRequest<GetPurchaseOrderItemListResult>
 {
     public bool IsDeleted { get; init; } = false;
+    public DateTime? DateFrom { get; init; }
+    public DateTime? DateTo { get; init; }
 }
 
 
@@ -80,6 +87,12 @@ public class GetPurchaseOrderItemListHandler : IRequestHandler<GetPurchaseOrderI
                 .ThenInclude(x => x!.Vendor)
             .Include(x => x.Product)
             .AsQueryable();
+
+        if (request.DateFrom.HasValue)
+            query = query.Where(x => x.PurchaseOrder!.OrderDate >= request.DateFrom.Value.Date);
+
+        if (request.DateTo.HasValue)
+            query = query.Where(x => x.PurchaseOrder!.OrderDate < request.DateTo.Value.Date.AddDays(1));
 
         var entities = await query.ToListAsync(cancellationToken);
 

@@ -92,6 +92,11 @@ public class SecurityService : ISecurityService
         var refreshToken = _tokenService.GenerateRefreshToken();
         var roles = await _userManager.GetRolesAsync(user);
 
+        var navSortOrderEntry = await _context.NavigationMenuSortOrder
+            .Where(x => x.UserId == user.Id && !x.IsDeleted)
+            .FirstOrDefaultAsync(cancellationToken);
+        var navSortOrderJson = navSortOrderEntry?.SortOrderJson;
+
         var tokens = await _context.Token.Where(x => x.UserId == user.Id).ToListAsync(cancellationToken);
         foreach (var item in tokens)
         {
@@ -120,7 +125,8 @@ public class SecurityService : ISecurityService
             RefreshToken = refreshToken,
             MenuNavigation = NavigationTreeStructure.GetCompleteMenuNavigationTreeNode(),
             Roles = roles.ToList(),
-            Avatar = user.ProfilePictureName
+            Avatar = user.ProfilePictureName,
+            NavSortOrderJson = navSortOrderJson
         };
     }
 

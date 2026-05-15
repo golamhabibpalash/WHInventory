@@ -95,11 +95,55 @@ public static class DI
         using var scope = host.Services.CreateScope();
         var serviceProvider = scope.ServiceProvider;
 
-        // Create database using DataContext
         var dataContext = serviceProvider.GetRequiredService<DataContext>();
-        dataContext.Database.EnsureCreated(); // Ensure database is created (development only)
+        dataContext.Database.EnsureCreated();
+
+        EnsureMissingTables(dataContext);
 
         return host;
+    }
+
+    private static void EnsureMissingTables(DataContext dataContext)
+    {
+        var isPostgres = dataContext.Database.IsNpgsql();
+
+        if (isPostgres)
+        {
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ""NavigationMenuSortOrder"" (
+                    ""Id""            varchar(50)  NOT NULL PRIMARY KEY,
+                    ""IsDeleted""     boolean      NOT NULL DEFAULT false,
+                    ""CreatedAtUtc""  timestamp    NULL,
+                    ""CreatedById""   varchar(450) NULL,
+                    ""UpdatedAtUtc""  timestamp    NULL,
+                    ""UpdatedById""   varchar(450) NULL,
+                    ""UserId""        varchar(450) NULL,
+                    ""SortOrderJson"" text         NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_NavigationMenuSortOrder_UserId""
+                    ON ""NavigationMenuSortOrder"" (""UserId"");
+            ");
+        }
+        else
+        {
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NavigationMenuSortOrder')
+                BEGIN
+                    CREATE TABLE [NavigationMenuSortOrder] (
+                        [Id]            nvarchar(50)  NOT NULL PRIMARY KEY,
+                        [IsDeleted]     bit           NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]  datetime2     NULL,
+                        [CreatedById]   nvarchar(450) NULL,
+                        [UpdatedAtUtc]  datetime2     NULL,
+                        [UpdatedById]   nvarchar(450) NULL,
+                        [UserId]        nvarchar(450) NULL,
+                        [SortOrderJson] nvarchar(max) NULL
+                    );
+                    CREATE INDEX [IX_NavigationMenuSortOrder_UserId]
+                        ON [NavigationMenuSortOrder] ([UserId]);
+                END
+            ");
+        }
     }
 }
 

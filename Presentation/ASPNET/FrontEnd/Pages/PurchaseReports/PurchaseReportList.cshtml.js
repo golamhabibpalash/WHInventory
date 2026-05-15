@@ -1,15 +1,58 @@
-﻿const App = {
+const App = {
     setup() {
         const state = Vue.reactive({
-            mainData: []
+            mainData: [],
+            dateFrom: null,
+            dateTo: null,
         });
 
         const mainGridRef = Vue.ref(null);
+        const dateFromRef = Vue.ref(null);
+        const dateToRef = Vue.ref(null);
+
+        const dateFromPicker = {
+            obj: null,
+            create: () => {
+                dateFromPicker.obj = new ej.calendars.DatePicker({
+                    placeholder: 'Select From Date',
+                    format: 'yyyy-MM-dd',
+                    change: (args) => {
+                        state.dateFrom = args.value ? args.value : null;
+                    }
+                });
+                dateFromPicker.obj.appendTo(dateFromRef.value);
+            },
+            clear: () => {
+                dateFromPicker.obj.value = null;
+                state.dateFrom = null;
+            }
+        };
+
+        const dateToPicker = {
+            obj: null,
+            create: () => {
+                dateToPicker.obj = new ej.calendars.DatePicker({
+                    placeholder: 'Select To Date',
+                    format: 'yyyy-MM-dd',
+                    change: (args) => {
+                        state.dateTo = args.value ? args.value : null;
+                    }
+                });
+                dateToPicker.obj.appendTo(dateToRef.value);
+            },
+            clear: () => {
+                dateToPicker.obj.value = null;
+                state.dateTo = null;
+            }
+        };
 
         const services = {
-            getMainData: async () => {
+            getMainData: async (dateFrom, dateTo) => {
                 try {
-                    const response = await AxiosManager.get('/PurchaseOrderItem/GetPurchaseOrderItemList', {});
+                    const params = {};
+                    if (dateFrom) params.dateFrom = dateFrom.toISOString();
+                    if (dateTo) params.dateTo = dateTo.toISOString();
+                    const response = await AxiosManager.get('/PurchaseOrderItem/GetPurchaseOrderItemList', params);
                     return response;
                 } catch (error) {
                     throw error;
@@ -18,12 +61,26 @@
         };
 
         const methods = {
-            populateMainData: async () => {
-                const response = await services.getMainData();
+            populateMainData: async (dateFrom, dateTo) => {
+                const response = await services.getMainData(dateFrom, dateTo);
                 state.mainData = response?.data?.content?.data.map(item => ({
                     ...item,
-                    createdAtUtc: new Date(item.createdAtUtc)
+                    orderDate: item.orderDate ? new Date(item.orderDate) : null,
+                    createdAtUtc: item.createdAtUtc ? new Date(item.createdAtUtc) : null,
                 }));
+            },
+        };
+
+        const handler = {
+            applyFilter: async () => {
+                await methods.populateMainData(state.dateFrom, state.dateTo);
+                mainGrid.refresh();
+            },
+            clearFilter: async () => {
+                dateFromPicker.clear();
+                dateToPicker.clear();
+                await methods.populateMainData(null, null);
+                mainGrid.refresh();
             },
         };
 
@@ -57,13 +114,13 @@
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
                         { field: 'vendorName', headerText: 'Vendor', width: 200, minWidth: 200 },
-                        { field: 'purchaseOrderNumber', headerText: 'PurchaseOrder', width: 200, minWidth: 200 },
+                        { field: 'purchaseOrderNumber', headerText: 'Purchase Order', width: 200, minWidth: 200 },
+                        { field: 'orderDate', headerText: 'Order Date', width: 130, minWidth: 130, format: 'yyyy-MM-dd', type: 'date' },
                         { field: 'productNumber', headerText: 'Product Number', width: 200, minWidth: 200 },
                         { field: 'productName', headerText: 'Product Name', width: 200, minWidth: 200 },
                         { field: 'unitPrice', headerText: 'Unit Price', width: 150, minWidth: 150, format: 'N2' },
                         { field: 'quantity', headerText: 'Quantity', width: 150, minWidth: 150 },
                         { field: 'total', headerText: 'Total', width: 150, minWidth: 150, format: 'N2' },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
                     ],
                     aggregates: [
                         {
@@ -83,7 +140,7 @@
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
-                        mainGrid.obj.autoFitColumns(['vendorName', 'purchaseOrderNumber', 'productNumber', 'productName', 'unitPrice', 'quantity', 'total', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['vendorName', 'purchaseOrderNumber', 'orderDate', 'productNumber', 'productName', 'unitPrice', 'quantity', 'total']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => { },
@@ -111,18 +168,23 @@
             try {
                 await SecurityManager.authorizePage(['PurchaseReports']);
                 await SecurityManager.validateToken();
-                await methods.populateMainData();
+                await methods.populateMainData(null, null);
                 await mainGrid.create(state.mainData);
+                dateFromPicker.create();
+                dateToPicker.create();
             } catch (e) {
                 console.error('page init error:', e);
             } finally {
-                
+
             }
         });
 
         return {
             mainGridRef,
+            dateFromRef,
+            dateToRef,
             state,
+            handler,
         };
     }
 };

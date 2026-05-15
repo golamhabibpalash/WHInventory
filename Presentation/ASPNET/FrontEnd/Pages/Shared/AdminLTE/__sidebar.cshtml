@@ -41,32 +41,58 @@
     document.addEventListener('DOMContentLoaded', function () {
         try {
             const email = StorageManager.getEmail();
-            const userEmail = `${email}`;
-            document.getElementById('userEmail').textContent = userEmail;
+            document.getElementById('userEmail').textContent = email;
 
             const currentUrl = window.location.pathname;
             const firstSegment = currentUrl.split('/')[1];
 
+            function applySortOrder(menuData, sortOrderJson) {
+                if (!sortOrderJson) return menuData;
+                let sortOrder;
+                try { sortOrder = JSON.parse(sortOrderJson); } catch { return menuData; }
+
+                const posMap = {};
+                sortOrder.forEach(item => { posMap[item.navUrl] = item.position; });
+
+                const rootNodes = menuData.filter(n => !n.pid);
+                const childGroups = {};
+                menuData.filter(n => n.pid).forEach(n => {
+                    if (!childGroups[n.pid]) childGroups[n.pid] = [];
+                    childGroups[n.pid].push(n);
+                });
+
+                Object.keys(childGroups).forEach(pid => {
+                    childGroups[pid].sort((a, b) => {
+                        const posA = a.navURL ? (posMap[a.navURL] ?? 99999) : 0;
+                        const posB = b.navURL ? (posMap[b.navURL] ?? 99999) : 0;
+                        return posA - posB;
+                    });
+                });
+
+                const result = [];
+                rootNodes.forEach(root => {
+                    result.push(root);
+                    (childGroups[root.id] || []).forEach(child => result.push(child));
+                });
+                return result;
+            }
+
             function filterMenu(menuData, userRoles) {
                 const childMenus = menuData.filter(menu => {
                     if (menu.navURL) {
-                        const firstSegment = menu.navURL.split('/')[1];
-                        return userRoles.some(role => role.toLowerCase() === firstSegment.toLowerCase());
+                        const seg = menu.navURL.split('/')[1];
+                        return userRoles.some(role => role.toLowerCase() === seg.toLowerCase());
                     }
                     return false;
                 });
-
-                const validChildIds = new Set(childMenus.map(menu => menu.id));
-                const parentIds = new Set(childMenus.map(menu => menu.pid));
-                return menuData.filter(menu => validChildIds.has(menu.id) || parentIds.has(menu.id));
+                const validChildIds = new Set(childMenus.map(m => m.id));
+                const parentIds = new Set(childMenus.map(m => m.pid));
+                return menuData.filter(m => validChildIds.has(m.id) || parentIds.has(m.id));
             }
 
             function updateMenuSelection(menuData, segment) {
                 const parentMap = {};
-                menuData.forEach(item => {
-                    parentMap[item.id] = item;
-                });
-
+                menuData.forEach(item => { parentMap[item.id] = item; });
                 menuData.forEach(item => {
                     item.isSelected = false;
                     item.expanded = false;
@@ -75,21 +101,40 @@
                         let parentId = item.pid;
                         while (parentId) {
                             const parent = parentMap[parentId];
-                            if (parent) {
-                                parent.expanded = true;
-                                parentId = parent.pid;
-                            } else {
-                                break;
-                            }
+                            if (parent) { parent.expanded = true; parentId = parent.pid; }
+                            else break;
                         }
                     }
                 });
-
                 return menuData;
             }
 
+            function saveCurrentOrder(treeObj) {
+                try {
+                    const allNodes = treeObj.getTreeData();
+                    const sortOrder = [];
+                    allNodes.forEach((node, idx) => {
+                        if (node.navURL) {
+                            sortOrder.push({ navUrl: node.navURL, position: idx });
+                        }
+                    });
+                    const sortJson = JSON.stringify(sortOrder);
+                    StorageManager.saveNavSortOrder(sortJson);
+                    const userId = StorageManager.getUserId();
+                    AxiosManager.post('/Security/SaveNavigationSortOrder', {
+                        userId: userId,
+                        sortOrderJson: sortJson
+                    }).catch(e => console.error('Failed to save nav sort order', e));
+                } catch (e) {
+                    console.error('Error saving nav sort order', e);
+                }
+            }
+
             const userRoles = StorageManager.getUserRoles();
+            const rawNavSortOrder = StorageManager.getNavSortOrder();
             let menuData = StorageManager.getMenuNavigation();
+
+            menuData = applySortOrder(menuData, rawNavSortOrder);
             const filteredMenu = filterMenu(menuData, userRoles);
             menuData = updateMenuSelection(filteredMenu, firstSegment);
 
@@ -107,6 +152,29 @@
                 },
                 enablePersistence: false,
                 expandOn: 'Click',
+                allowDragAndDrop: true,
+                nodeDragStop: function (args) {
+                    const dragged = args.draggedNodeData;
+                    const dropped = args.droppedNodeData;
+
+                    // Prevent dragging module headers
+                    if (dragged.hasChildren) {
+                        args.cancel = true;
+                        return;
+                    }
+                    // Prevent dropping if no target or cross-module drop
+                    if (!dropped || dragged.parentID !== dropped.parentID) {
+                        args.cancel = true;
+                        return;
+                    }
+                    // Prevent dropping as a child of a leaf
+                    if (args.dropLevel !== (args.draggedNode.closest('li').getAttribute('aria-level') | 0)) {
+                        args.cancel = true;
+                        return;
+                    }
+
+                    setTimeout(() => saveCurrentOrder(mainMenu), 50);
+                },
             });
             mainMenu.appendTo('#mainMenu');
 

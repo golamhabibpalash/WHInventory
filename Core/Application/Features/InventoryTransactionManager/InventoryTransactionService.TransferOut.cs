@@ -40,6 +40,11 @@ public partial class InventoryTransactionService
         child.ProductId = productId;
         child.Movement = movement;
 
+        if (parent.Status == TransferStatus.Confirmed)
+        {
+            ValidateOutMovementStock(parent.WarehouseFromId, productId, movement);
+        }
+
         CalculateInvenTrans(child);
 
         await _inventoryTransactionRepository.CreateAsync(child, cancellationToken);
@@ -67,6 +72,11 @@ public partial class InventoryTransactionService
 
         child.ProductId = productId;
         child.Movement = movement;
+
+        if (child.Status == InventoryTransactionStatus.Confirmed)
+        {
+            ValidateOutMovementStock(child.WarehouseId, productId, movement, child.Id);
+        }
 
         CalculateInvenTrans(child);
 

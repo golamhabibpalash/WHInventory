@@ -1,4 +1,4 @@
-﻿const App = {
+const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
@@ -374,16 +374,17 @@
                             state.mainTitle = 'Edit Delivery Order';
                             state.id = response?.data?.content?.data.id ?? '';
                             state.number = response?.data?.content?.data.number ?? '';
-                            await methods.populateSecondaryData(state.id);
-                            secondaryGrid.refresh();
-                            state.showComplexDiv = true;
-
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Save Successful',
+                                text: 'Form will be closed...',
                                 timer: 2000,
                                 showConfirmButton: false
                             });
+                            setTimeout(() => {
+                                mainModal.obj.hide();
+                                resetFormState();
+                            }, 2000);
 
                         } else {
                             Swal.fire({

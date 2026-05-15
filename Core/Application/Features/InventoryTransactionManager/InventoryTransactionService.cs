@@ -65,6 +65,27 @@ public partial class InventoryTransactionService
         return result;
     }
 
+    public void ValidateOutMovementStock(string? warehouseId, string? productId, double? movement, string? excludeId = null)
+    {
+        if ((movement ?? 0.0) <= 0) return;
+
+        var available = GetStock(warehouseId, productId, excludeId);
+        if (available < movement)
+        {
+            var productName = _queryContext.Product
+                .Where(x => x.Id == productId)
+                .Select(x => x.Name)
+                .FirstOrDefault() ?? productId;
+            var warehouseName = _queryContext.Warehouse
+                .Where(x => x.Id == warehouseId)
+                .Select(x => x.Name)
+                .FirstOrDefault() ?? warehouseId;
+            throw new Exception(
+                $"Insufficient stock for '{productName}' in warehouse '{warehouseName}'. " +
+                $"Available: {available}, Requested: {movement}.");
+        }
+    }
+
     public async Task PropagateParentUpdate(
         string? moduleId,
         string? moduleName,
@@ -80,6 +101,34 @@ public partial class InventoryTransactionService
             .GetQuery()
             .Where(x => x.ModuleId == moduleId && x.ModuleName == moduleName)
             .ToListAsync(cancellationToken);
+
+        // When confirming, validate that Out-type transactions have sufficient stock.
+        // Only validate children that are transitioning to Confirmed (currently non-Confirmed)
+        // or whose warehouse is being changed while already Confirmed.
+        if (status == InventoryTransactionStatus.Confirmed)
+        {
+            var outChildsToValidate = childs
+                .Where(c => !c.IsDeleted
+                    && c.TransType == InventoryTransType.Out
+                    && (c.Status != InventoryTransactionStatus.Confirmed
+                        || (warehouseId != null && warehouseId != c.WarehouseId)))
+                .ToList();
+
+            if (outChildsToValidate.Any())
+            {
+                var groups = outChildsToValidate.GroupBy(c => new
+                {
+                    EffectiveWarehouseId = warehouseId ?? c.WarehouseId,
+                    c.ProductId
+                });
+
+                foreach (var group in groups)
+                {
+                    var totalMovement = group.Sum(c => Math.Abs(c.Movement ?? 0.0));
+                    ValidateOutMovementStock(group.Key.EffectiveWarehouseId, group.Key.ProductId, totalMovement);
+                }
+            }
+        }
 
         foreach (var item in childs)
         {

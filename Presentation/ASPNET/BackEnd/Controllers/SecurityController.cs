@@ -1,4 +1,5 @@
-﻿using Application.Features.SecurityManager.Commands;
+﻿using Application.Features.NavigationSortOrderManager;
+using Application.Features.SecurityManager.Commands;
 using Application.Features.SecurityManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;
@@ -347,6 +348,35 @@ public class SecurityController : BaseApiController
         {
             Code = StatusCodes.Status200OK,
             Message = $"Success executing {nameof(UpdateMyProfileAvatarAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
+    [HttpPost("SaveNavigationSortOrder")]
+    public async Task<ActionResult<ApiSuccessResult<SaveNavigationSortOrderResult>>> SaveNavigationSortOrderAsync(
+        SaveNavigationSortOrderRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _sender.Send(request, cancellationToken);
+        return Ok(new ApiSuccessResult<SaveNavigationSortOrderResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(SaveNavigationSortOrderAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
+    [HttpGet("GetNavigationSortOrder")]
+    public async Task<ActionResult<ApiSuccessResult<GetNavigationSortOrderResult>>> GetNavigationSortOrderAsync(
+        [FromQuery] string userId, CancellationToken cancellationToken)
+    {
+        var request = new GetNavigationSortOrderRequest { UserId = userId };
+        var response = await _sender.Send(request, cancellationToken);
+        return Ok(new ApiSuccessResult<GetNavigationSortOrderResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetNavigationSortOrderAsync)}",
             Content = response
         });
     }

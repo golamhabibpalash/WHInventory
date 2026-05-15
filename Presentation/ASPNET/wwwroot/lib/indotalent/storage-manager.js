@@ -9,7 +9,8 @@
     USER_ROLES: 'userRoles',
     MENU_NAVIGATION: 'menuNavigation',
     AVATAR: 'avatar',
-    COMPANY: 'company'
+    COMPANY: 'company',
+    NAV_SORT_ORDER: 'navSortOrder',
 };
 
 const StorageManager = {
@@ -91,6 +92,10 @@ const StorageManager = {
     getCompany: () => StorageManager.get(STORAGE_KEYS.COMPANY),
     removeCompany: () => StorageManager.remove(STORAGE_KEYS.COMPANY),
 
+    saveNavSortOrder: (data) => StorageManager.save(STORAGE_KEYS.NAV_SORT_ORDER, data),
+    getNavSortOrder: () => StorageManager.get(STORAGE_KEYS.NAV_SORT_ORDER),
+    removeNavSortOrder: () => StorageManager.remove(STORAGE_KEYS.NAV_SORT_ORDER),
+
     saveLoginResult: (data) => {
         StorageManager.saveAccessToken(data?.content?.data?.accessToken);
         StorageManager.saveRefreshToken(data?.content?.data?.refreshToken);
@@ -102,5 +107,6 @@ const StorageManager = {
         StorageManager.saveMenuNavigation(data?.content?.data?.menuNavigation);
         StorageManager.saveIsAuthenticated(StorageManager.getUserId() != null);
         StorageManager.saveAvatar(data?.content?.data?.avatar);
+        StorageManager.saveNavSortOrder(data?.content?.data?.navSortOrderJson);
     }
 };

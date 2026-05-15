@@ -1,9 +1,33 @@
-﻿@page
+@page
 @{
     ViewData["Title"] = "Purchase Report List";
 }
 
 <div id="app" v-cloak>
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Order Date From</label>
+                            <input ref="dateFromRef" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Order Date To</label>
+                            <input ref="dateToRef" />
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" v-on:click="handler.applyFilter">Apply Filter</button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-secondary w-100" v-on:click="handler.clearFilter">Clear Filter</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="grid-container">

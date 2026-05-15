@@ -1,4 +1,4 @@
-﻿const App = {
+const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
@@ -23,7 +23,8 @@
                 orderStatus: '',
                 description: ''
             },
-            showComplexDiv: false,
+            showComplexDiv: true,
+            isNewlyCreated: false,
             isSubmitting: false,
             subTotalAmount: '0.00',
             taxAmount: '0.00',
@@ -86,7 +87,8 @@
             state.subTotalAmount = '0.00';
             state.taxAmount = '0.00';
             state.totalAmount = '0.00';
-            state.showComplexDiv = false;
+            state.showComplexDiv = true;
+            state.isNewlyCreated = false;
         };
 
         const services = {
@@ -254,8 +256,10 @@
                     return;
                 }
 
+                const wasCreating = state.id === '';
+
                 try {
-                    const response = state.id === ''
+                    const response = wasCreating
                         ? await services.createMainData(state.orderDate, state.description, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
@@ -275,16 +279,32 @@
                             state.taxId = response?.data?.content?.data.taxId ?? '';
                             taxListLookup.trackingChange = true;
                             state.orderStatus = String(response?.data?.content?.data.orderStatus ?? '');
-                            state.showComplexDiv = true;
 
-                            await methods.refreshPaymentSummary(state.id);
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Save Successful',
-                                timer: 1000,
-                                showConfirmButton: false
-                            });
+                            if (wasCreating) {
+                                state.showComplexDiv = true;
+                                state.isNewlyCreated = true;
+                                await methods.populateSecondaryData(state.id);
+                                secondaryGrid.refresh();
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Save Successful',
+                                    text: 'You can now add items to this purchase order.',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Save Successful',
+                                    text: 'Form will be closed...',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                setTimeout(() => {
+                                    mainModal.obj.hide();
+                                    resetFormState();
+                                }, 2000);
+                            }
                         } else {
                             Swal.fire({
                                 icon: 'success',
@@ -317,6 +337,10 @@
                 } finally {
                     state.isSubmitting = false;
                 }
+            },
+            handleSubmitClose: () => {
+                mainModal.obj.hide();
+                resetFormState();
             },
             onMainModalHidden: () => {
                 state.errors.orderDate = '';
@@ -979,7 +1003,8 @@
             state,
             methods,
             handler: {
-                handleSubmit: methods.handleFormSubmit
+                handleSubmit: methods.handleFormSubmit,
+                handleSubmitClose: methods.handleSubmitClose
             }
         };
     }

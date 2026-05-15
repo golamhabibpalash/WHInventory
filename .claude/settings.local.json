@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(node -e \"require\\('puppeteer'\\)\")",
+      "Bash(python3 -c \"import weasyprint\")",
+      "Bash(python3 -c \"import reportlab\")",
+      "Bash(pip3 show *)",
+      "Bash(npm list *)",
+      "Bash(pip3 install *)",
+      "Bash(python3 *)",
+      "Bash(xargs ls -la)",
+      "Bash(curl -s -X POST http://localhost:5000/api/Security/Login -H 'Content-Type: application/json' -d '{\"email\":\"admin@root.com\",\"password\":\"123456\"}')",
+      "Bash(PGPASSWORD=MyInventory_2026 psql -h localhost -U ghp -d MyInventory -c \"\\\\d \\\\\"Token\\\\\"\")",
+      "Bash(PGPASSWORD=MyInventory_2026 psql -h localhost -U ghp -d MyInventory -c \"\\\\d \\\\\"Warehouse\\\\\"\")",
+      "Bash(xargs cat)",
+      "Bash(dotnet package *)",
+      "Bash(dotnet list *)",
+      "Bash(dotnet add *)",
+      "Bash(git stash *)",
+      "Bash(curl -si http://localhost:5000/)",
+      "Bash(curl -si http://localhost:5000/accounts/login)",
+      "Bash(curl -si http://localhost:5000/Accounts/Login)",
+      "Bash(curl -si -X POST http://localhost:5000/api/Security/Login -H 'Content-Type: application/json' -d '{\"email\":\"admin@root.com\",\"password\":\"123456\"}')",
+      "Bash(curl -si http://localhost:5000/accounts/login -H \"Accept: text/html\")",
+      "Bash(curl -si http://localhost:5249/accounts/login)",
+      "Bash(ps -p 55092 -o pid,lstart,command)",
+      "Bash(curl -si http://localhost:5249/)",
+      "Bash(curl -si http://localhost:5000/ -L)",
+      "Bash(ps -p 55092 -o pid,command,env)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(ps -p 55092 -eww -o command)",
+      "Bash(curl -o /dev/null -sw \"%{http_code}\" http://localhost:5000/accounts/login)",
+      "Bash(curl -o /dev/null -sw \"%{http_code}\" http://localhost:5249/accounts/login)",
+      "Bash(ps -p 10620 -o pid,comm)",
+      "Bash(kill 55092)",
+      "Bash(dotnet run *)",
+      "Bash(echo \"Started PID: $!\")",
+      "Bash(curl -o /dev/null -sw \"%{http_code}\" http://localhost:5001/accounts/login)",
+      "Bash(kill 75258 75432)"
+    ]
+  }
+}

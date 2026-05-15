@@ -22,7 +22,7 @@ public class EmailService : IEmailService
         try
         {
             var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("noreply", _smtpSettings.UserName));
+            message.From.Add(new MailboxAddress("noreply", _smtpSettings.UserName ?? string.Empty));
             message.To.Add(new MailboxAddress(email, email));
             message.Subject = subject;
 
@@ -35,8 +35,8 @@ public class EmailService : IEmailService
 
             using (var client = new MailKit.Net.Smtp.SmtpClient())
             {
-                await client.ConnectAsync(_smtpSettings.Host, _smtpSettings.Port, true);
-                await client.AuthenticateAsync(_smtpSettings.UserName, _smtpSettings.Password);
+                await client.ConnectAsync(_smtpSettings.Host ?? string.Empty, _smtpSettings.Port, true);
+                await client.AuthenticateAsync(_smtpSettings.UserName ?? string.Empty, _smtpSettings.Password ?? string.Empty);
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
             }

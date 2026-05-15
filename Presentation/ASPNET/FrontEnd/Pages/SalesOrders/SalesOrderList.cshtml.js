@@ -1,4 +1,4 @@
-﻿const App = {
+const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
@@ -275,16 +275,17 @@
                             state.taxId = response?.data?.content?.data.taxId ?? '';
                             taxListLookup.trackingChange = true;
                             state.orderStatus = String(response?.data?.content?.data.orderStatus ?? '');
-                            state.showComplexDiv = true;
-
-                            await methods.refreshPaymentSummary(state.id);
-
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Save Successful',
-                                timer: 1000,
+                                text: 'Form will be closed...',
+                                timer: 2000,
                                 showConfirmButton: false
                             });
+                            setTimeout(() => {
+                                mainModal.obj.hide();
+                                resetFormState();
+                            }, 2000);
                         } else {
                             Swal.fire({
                                 icon: 'success',

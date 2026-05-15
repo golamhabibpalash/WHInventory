@@ -52,8 +52,8 @@ public class GetSalesReturnSingleHandler : IRequestHandler<GetSalesReturnSingleR
             .SalesReturn
             .AsNoTracking()
             .Include(x => x.DeliveryOrder)
-                .ThenInclude(x => x.SalesOrder)
-                    .ThenInclude(x => x.Customer)
+                .ThenInclude(x => x!.SalesOrder)
+                    .ThenInclude(x => x!.Customer)
             .Where(x => x.Id == request.Id)
             .AsQueryable();
 

@@ -124,12 +124,19 @@
                     <button type="button"
                             id="MainSaveButton"
                             class="btn"
+                            v-if="!state.isNewlyCreated"
                             v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
                             v-on:click="handler.handleSubmit"
                             v-bind:disabled="state.isSubmitting">
                         <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
                         <span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
                         <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                    <button type="button"
+                            class="btn btn-success"
+                            v-if="state.isNewlyCreated"
+                            v-on:click="handler.handleSubmitClose">
+                        Submit
                     </button>
                 </div>
             </div>

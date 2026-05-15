@@ -52,7 +52,7 @@ public class GetDeliveryOrderSingleHandler : IRequestHandler<GetDeliveryOrderSin
             .DeliveryOrder
             .AsNoTracking()
             .Include(x => x.SalesOrder)
-                .ThenInclude(x => x.Customer)
+                .ThenInclude(x => x!.Customer)
             .Where(x => x.Id == request.Id)
             .AsQueryable();
 
