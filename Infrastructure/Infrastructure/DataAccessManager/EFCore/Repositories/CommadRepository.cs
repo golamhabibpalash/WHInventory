@@ -66,7 +66,9 @@ public class CommandRepository<T> : ICommandRepository<T> where T : BaseEntity
 
     public virtual IQueryable<T> GetQuery()
     {
-        var query = _context.Set<T>().AsQueryable();
+        var query = _context.Set<T>()
+            .ApplyIsDeletedFilter()
+            .AsQueryable();
 
         return query;
     }

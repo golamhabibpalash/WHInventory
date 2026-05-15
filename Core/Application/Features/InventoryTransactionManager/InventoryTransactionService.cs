@@ -254,7 +254,7 @@ public partial class InventoryTransactionService
 
         transaction.TransType = InventoryTransType.In;
         CalculateStock(transaction);
-        transaction.WarehouseFromId = _warehouseService.GetVendorWarehouse()!.Id;
+        transaction.WarehouseFromId = _warehouseService.GetCustomerWarehouse()!.Id;
         transaction.WarehouseToId = transaction.WarehouseId;
 
         return transaction;
@@ -270,7 +270,7 @@ public partial class InventoryTransactionService
         transaction.TransType = InventoryTransType.Out;
         CalculateStock(transaction);
         transaction.WarehouseFromId = transaction.WarehouseId;
-        transaction.WarehouseToId = _warehouseService.GetCustomerWarehouse()!.Id;
+        transaction.WarehouseToId = _warehouseService.GetVendorWarehouse()!.Id;
 
         return transaction;
     }

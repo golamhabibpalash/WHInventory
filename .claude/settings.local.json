@@ -39,7 +39,9 @@
       "Bash(curl -o /dev/null -sw \"%{http_code}\" http://localhost:5001/accounts/login)",
       "Bash(kill 75258 75432)",
       "Bash(grep -v \"^$\")",
-      "Bash(docker build *)"
+      "Bash(docker build *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Projects\\\\WHInventory\\\\WHInventory\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }
