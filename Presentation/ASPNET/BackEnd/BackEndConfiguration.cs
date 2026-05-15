@@ -39,7 +39,7 @@ public static class BackEndConfiguration
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "WHInventory API", Version = "v1" });
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "uStock API", Version = "v1" });
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -107,7 +107,7 @@ public static class BackEndConfiguration
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "WHInventory V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "uStock V1");
             });
         }
 

@@ -1,4 +1,4 @@
-﻿@page
+@page
 @{
     ViewData["Title"] = "Transfer In PDF";
 }
@@ -8,7 +8,7 @@
         <div class="print-indicator" v-cloak>
             <div class="content-wrapper">
                 <div>
-                    <button id="download-pdf" class="btn btn-danger d-flex align-items-center" v-on:click="handler.downloadPDF" v-bind:disabled="state.isDownloading">
+                    <button id="download-pdf" class="btn btn-danger d-flex align-items-center" v-on:click="handler.downloadPDF" v-bind:disabled="state.isDownloading"><i class="fas fa-file-pdf me-2"></i>
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" v-if="state.isDownloading"></span>
                         <span class="button-text" v-if="!state.isDownloading">
                             <i class="bi bi-file-earmark-pdf-fill me-2"></i> Download PDF

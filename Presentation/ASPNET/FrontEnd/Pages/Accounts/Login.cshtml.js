@@ -3,6 +3,7 @@
         const state = Vue.reactive({
             email: '',
             password: '',
+            rememberMe: false,
             isSubmitting: false,
             errors: {
                 email: '',
@@ -50,6 +51,11 @@
                 });
 
                 if (response.data.code === 200) {
+                    if (state.rememberMe) {
+                        localStorage.setItem('rememberedEmail', state.email);
+                    } else {
+                        localStorage.removeItem('rememberedEmail');
+                    }
                     StorageManager.saveLoginResult(response.data);
                     Swal.fire({
                         icon: 'success',
@@ -81,6 +87,14 @@
                 state.isSubmitting = false;
             }
         };
+
+        Vue.onMounted(() => {
+            const rememberedEmail = localStorage.getItem('rememberedEmail');
+            if (rememberedEmail) {
+                state.email = rememberedEmail;
+                state.rememberMe = true;
+            }
+        });
 
         return {
             state,

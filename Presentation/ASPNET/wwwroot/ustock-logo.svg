@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40">
+  <!-- Box/Package icon -->
+  <g transform="translate(4, 4)">
+    <!-- Box body -->
+    <rect x="0" y="10" width="28" height="22" rx="2" fill="#4e73df" opacity="0.9"/>
+    <!-- Box top flap left -->
+    <polygon points="0,10 8,4 8,10" fill="#2e59d9"/>
+    <!-- Box top flap right -->
+    <polygon points="28,10 20,4 20,10" fill="#2e59d9"/>
+    <!-- Box top center -->
+    <rect x="8" y="4" width="12" height="6" fill="#3a66e0"/>
+    <!-- Tape stripe -->
+    <rect x="11" y="4" width="6" height="28" rx="1" fill="#fff" opacity="0.25"/>
+    <!-- Stock up arrow -->
+    <polyline points="6,22 14,14 22,22" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="14" y1="14" x2="14" y2="26" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- uStock text -->
+  <text x="42" y="28" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="700" fill="#ffffff" letter-spacing="0.5">uStock</text>
+</svg>

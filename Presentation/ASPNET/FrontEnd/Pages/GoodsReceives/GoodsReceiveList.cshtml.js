@@ -7,6 +7,8 @@ const App = {
             goodsReceiveStatusListLookupData: [],
             secondaryData: [],
             productListLookupData: [],
+            poProductListLookupData: [],
+            poRemainingQtyData: [],
             warehouseListLookupData: [],
             mainTitle: null,
             id: '',
@@ -22,6 +24,7 @@ const App = {
                 description: ''
             },
             showComplexDiv: false,
+            isNewlyCreated: false,
             isSubmitting: false,
             totalMovementFormatted: '0.00'
         });
@@ -71,6 +74,7 @@ const App = {
                 description: ''
             };
             state.secondaryData = [];
+            state.isNewlyCreated = false;
         };
 
         const receiveDatePicker = {
@@ -117,7 +121,7 @@ const App = {
                 if (state.purchaseOrderListLookupData && Array.isArray(state.purchaseOrderListLookupData)) {
                     purchaseOrderListLookup.obj = new ej.dropdowns.DropDownList({
                         dataSource: state.purchaseOrderListLookupData,
-                        fields: { value: 'id', text: 'number' },
+                        fields: { value: 'id', text: 'numberVendorName' },
                         placeholder: 'Select Purchase Order',
                         filterBarPlaceholder: 'Search',
                         sortOrder: 'Ascending',
@@ -126,7 +130,7 @@ const App = {
                             e.preventDefaultAction = true;
                             let query = new ej.data.Query();
                             if (e.text !== '') {
-                                query = query.where('number', 'startsWith', e.text, true);
+                                query = query.where('numberVendorName', 'contains', e.text, true);
                             }
                             e.updateData(state.purchaseOrderListLookupData, query);
                         },
@@ -146,9 +150,11 @@ const App = {
 
         Vue.watch(
             () => state.purchaseOrderId,
-            (newVal, oldVal) => {
+            async (newVal) => {
                 purchaseOrderListLookup.refresh();
                 state.errors.purchaseOrderId = '';
+                await methods.populatePOProductListLookupData(newVal);
+                await methods.populatePORemainingQtyData(newVal);
             }
         );
 
@@ -224,7 +230,7 @@ const App = {
             },
             getPurchaseOrderListLookupData: async () => {
                 try {
-                    const response = await AxiosManager.get('/PurchaseOrder/GetPurchaseOrderList', {});
+                    const response = await AxiosManager.get('/PurchaseOrder/GetPurchaseOrderListForReceive', {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -276,6 +282,22 @@ const App = {
                     throw error;
                 }
             },
+            getPurchaseOrderItemListByPurchaseOrderId: async (purchaseOrderId) => {
+                try {
+                    const response = await AxiosManager.get('/PurchaseOrderItem/GetPurchaseOrderItemByPurchaseOrderIdList?purchaseOrderId=' + purchaseOrderId, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPurchaseOrderRemainingReceiveQty: async (purchaseOrderId) => {
+                try {
+                    const response = await AxiosManager.get('/PurchaseOrder/GetPurchaseOrderRemainingReceiveQty?purchaseOrderId=' + purchaseOrderId, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             getProductListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/Product/GetProductList', {});
@@ -305,7 +327,10 @@ const App = {
             },
             populatePurchaseOrderListLookupData: async () => {
                 const response = await services.getPurchaseOrderListLookupData();
-                state.purchaseOrderListLookupData = response?.data?.content?.data;
+                state.purchaseOrderListLookupData = (response?.data?.content?.data ?? []).map(item => ({
+                    ...item,
+                    numberVendorName: `${item.number} - ${item.vendorName}`
+                }));
             },
             populateGoodsReceiveStatusListLookupData: async () => {
                 const response = await services.getGoodsReceiveStatusListLookupData();
@@ -319,6 +344,27 @@ const App = {
                         ...product,
                         numberName: `${product.number} - ${product.name}`
                     })) || [];
+            },
+            populatePOProductListLookupData: async (purchaseOrderId) => {
+                if (!purchaseOrderId) {
+                    state.poProductListLookupData = [];
+                    return;
+                }
+                const response = await services.getPurchaseOrderItemListByPurchaseOrderId(purchaseOrderId);
+                state.poProductListLookupData = (response?.data?.content?.data ?? []).map(item => ({
+                    id: item.productId,
+                    name: item.productName,
+                    number: item.productNumber,
+                    numberName: `${item.productNumber} - ${item.productName}`
+                }));
+            },
+            populatePORemainingQtyData: async (purchaseOrderId) => {
+                if (!purchaseOrderId) {
+                    state.poRemainingQtyData = [];
+                    return;
+                }
+                const response = await services.getPurchaseOrderRemainingReceiveQty(purchaseOrderId);
+                state.poRemainingQtyData = response?.data?.content?.data ?? [];
             },
             populateWarehouseListLookupData: async () => {
                 const response = await services.getWarehouseListLookupData();
@@ -348,6 +394,10 @@ const App = {
         };
 
         const handler = {
+            handleSubmitClose: () => {
+                mainModal.obj.hide();
+                resetFormState();
+            },
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -357,7 +407,9 @@ const App = {
                         return;
                     }
 
-                    const response = state.id === ''
+                    const wasCreating = state.id === '';
+
+                    const response = wasCreating
                         ? await services.createMainData(state.receiveDate, state.description, state.status, state.purchaseOrderId, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
@@ -371,17 +423,32 @@ const App = {
                             state.mainTitle = 'Edit Goods Receive';
                             state.id = response?.data?.content?.data.id ?? '';
                             state.number = response?.data?.content?.data.number ?? '';
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Save Successful',
-                                text: 'Form will be closed...',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
-                            setTimeout(() => {
-                                mainModal.obj.hide();
-                                resetFormState();
-                            }, 2000);
+
+                            if (wasCreating) {
+                                state.showComplexDiv = true;
+                                state.isNewlyCreated = true;
+                                await methods.populateSecondaryData(state.id);
+                                secondaryGrid.refresh();
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Save Successful',
+                                    text: 'You can now add items to this goods receive.',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Save Successful',
+                                    text: 'Form will be closed...',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                setTimeout(() => {
+                                    mainModal.obj.hide();
+                                    resetFormState();
+                                }, 2000);
+                            }
 
                         } else {
                             Swal.fire({
@@ -541,6 +608,8 @@ const App = {
                                 state.description = selectedRecord.description ?? '';
                                 state.purchaseOrderId = selectedRecord.purchaseOrderId ?? '';
                                 state.status = String(selectedRecord.status ?? '');
+                                await methods.populatePOProductListLookupData(state.purchaseOrderId);
+                                await methods.populatePORemainingQtyData(state.purchaseOrderId);
                                 await methods.populateSecondaryData(selectedRecord.id);
                                 secondaryGrid.refresh();
                                 state.showComplexDiv = true;
@@ -667,11 +736,13 @@ const App = {
                                 },
                                 write: function (args) {
                                     productObj = new ej.dropdowns.DropDownList({
-                                        dataSource: state.productListLookupData,
+                                        dataSource: state.poProductListLookupData,
                                         fields: { value: 'id', text: 'numberName' },
                                         value: args.rowData.productId,
                                         change: function (e) {
                                             if (movementObj) {
+                                                const remaining = state.poRemainingQtyData.find(x => x.productId === e.value);
+                                                movementObj.max = remaining ? remaining.remainingQty : null;
                                                 movementObj.value = 1;
                                             }
                                         },
@@ -706,8 +777,14 @@ const App = {
                                     movementObj.destroy();
                                 },
                                 write: function (args) {
+                                    const isEditing = !!args.rowData.id;
+                                    const existingMovement = isEditing ? (args.rowData.movement ?? 0) : 0;
+                                    const remaining = state.poRemainingQtyData.find(x => x.productId === args.rowData.productId);
+                                    const maxMovement = remaining ? remaining.remainingQty + existingMovement : null;
                                     movementObj = new ej.inputs.NumericTextBox({
                                         value: args.rowData.movement ?? 0,
+                                        min: 0.01,
+                                        max: maxMovement,
                                     });
                                     movementObj.appendTo(args.element);
                                 }
@@ -835,6 +912,7 @@ const App = {
                             }
                         }
                         methods.refreshSummary();
+                        await methods.populatePORemainingQtyData(state.purchaseOrderId);
                     }
                 });
                 secondaryGrid.obj.appendTo(secondaryGridRef.value);

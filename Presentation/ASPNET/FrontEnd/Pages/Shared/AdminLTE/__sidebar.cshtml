@@ -1,13 +1,13 @@
 ﻿@{
     var userEmail = "Loading...";
     var avatarUrl = "/noimage.png";
-    var appName = "WMS";
+    var appName = "uStock";
 }
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
     <a asp-area="" asp-page="/Dashboards/DefaultDashboard" class="brand-link d-flex justify-content-center align-items-center">
-        <span class="brand-text font-weight-light">@appName</span>
+        <img src="/ustock-logo.svg" alt="@appName" style="height:32px; max-width:110px; object-fit:contain;">
     </a>
 
     <!-- Sidebar -->
@@ -149,6 +149,7 @@
                     hasChildren: 'hasChild',
                     expanded: 'expanded',
                     navigateUrl: 'navURL',
+                    iconCss: 'icon',
                 },
                 enablePersistence: false,
                 expandOn: 'Click',

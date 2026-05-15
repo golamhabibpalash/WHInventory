@@ -37,7 +37,8 @@
       "Bash(dotnet run *)",
       "Bash(echo \"Started PID: $!\")",
       "Bash(curl -o /dev/null -sw \"%{http_code}\" http://localhost:5001/accounts/login)",
-      "Bash(kill 75258 75432)"
+      "Bash(kill 75258 75432)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

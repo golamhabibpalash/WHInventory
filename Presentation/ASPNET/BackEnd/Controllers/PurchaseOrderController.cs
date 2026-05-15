@@ -111,6 +111,39 @@ public class PurchaseOrderController : BaseApiController
         });
     }
 
+    [Authorize]
+    [HttpGet("GetPurchaseOrderListForReceive")]
+    public async Task<ActionResult<ApiSuccessResult<GetPurchaseOrderListForReceiveResult>>> GetPurchaseOrderListForReceiveAsync(
+        CancellationToken cancellationToken)
+    {
+        var request = new GetPurchaseOrderListForReceiveRequest();
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetPurchaseOrderListForReceiveResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetPurchaseOrderListForReceiveAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
+    [HttpGet("GetPurchaseOrderRemainingReceiveQty")]
+    public async Task<ActionResult<ApiSuccessResult<GetPurchaseOrderRemainingReceiveQtyResult>>> GetPurchaseOrderRemainingReceiveQtyAsync(
+        CancellationToken cancellationToken,
+        [FromQuery] string purchaseOrderId)
+    {
+        var request = new GetPurchaseOrderRemainingReceiveQtyRequest { PurchaseOrderId = purchaseOrderId };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetPurchaseOrderRemainingReceiveQtyResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetPurchaseOrderRemainingReceiveQtyAsync)}",
+            Content = response
+        });
+    }
+
 
 }
 

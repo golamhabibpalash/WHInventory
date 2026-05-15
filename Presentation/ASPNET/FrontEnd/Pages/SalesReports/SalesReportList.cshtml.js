@@ -49,10 +49,12 @@ const App = {
         const services = {
             getMainData: async (dateFrom, dateTo) => {
                 try {
-                    const params = {};
-                    if (dateFrom) params.dateFrom = dateFrom.toISOString();
-                    if (dateTo) params.dateTo = dateTo.toISOString();
-                    const response = await AxiosManager.get('/SalesOrderItem/GetSalesOrderItemList', params);
+                    let url = '/SalesOrderItem/GetSalesOrderItemList';
+                    const queryParts = [];
+                    if (dateFrom) queryParts.push('dateFrom=' + encodeURIComponent(dateFrom.toISOString()));
+                    if (dateTo) queryParts.push('dateTo=' + encodeURIComponent(dateTo.toISOString()));
+                    if (queryParts.length > 0) url += '?' + queryParts.join('&');
+                    const response = await AxiosManager.get(url, {});
                     return response;
                 } catch (error) {
                     throw error;
