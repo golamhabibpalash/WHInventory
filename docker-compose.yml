@@ -1,0 +1,56 @@
+services:
+
+  # ── PostgreSQL database ──────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: ustock-db
+    environment:
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - ustock-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── uStock application ───────────────────────────────────────────────────────
+  app:
+    image: ustock-app:latest
+    container_name: ustock-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Host=db;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+    volumes:
+      - app_data:/app/wwwroot/app_data
+    networks:
+      - ustock-net
+    restart: unless-stopped
+
+  # ── Cloudflare Tunnel ────────────────────────────────────────────────────────
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: ustock-tunnel
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - ustock-net
+    restart: unless-stopped
+    depends_on:
+      - app
+
+networks:
+  ustock-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  app_data:
