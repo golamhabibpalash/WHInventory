@@ -10,6 +10,20 @@
 <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="~/lib/axios/axios.min.js"></script>
 <script src="~/lib/sweetalert/sweetalert2v11.js"></script>
+<script>
+    // Auto-close success alerts after 1.5 s; leave error/confirm dialogs untouched
+    (function () {
+        var _fire = Swal.fire.bind(Swal);
+        Swal.fire = function (options) {
+            if (options && options.icon === 'success' && !options.timer) {
+                options.timer = 1000;
+                options.timerProgressBar = true;
+                options.showConfirmButton = false;
+            }
+            return _fire(options);
+        };
+    })();
+</script>
 <script src="~/lib/dropzone/dropzone.min.js"></script>
 <script src="~/lib/indotalent/storage-manager.js"></script>
 <script src="~/lib/indotalent/security-manager.js"></script>

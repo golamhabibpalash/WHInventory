@@ -42,7 +42,8 @@
       "Bash(docker build *)",
       "Bash(Get-ChildItem -Path \"D:\\\\Projects\\\\WHInventory\\\\WHInventory\" -Directory)",
       "Bash(Select-Object Name)",
-      "Bash(chmod +x *)"
+      "Bash(chmod +x *)",
+      "Bash(grep -E \"\\\\.js$\")"
     ]
   }
 }
