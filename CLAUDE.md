@@ -21,7 +21,7 @@ dotnet build WHInventory.sln -c Release
 dotnet restore WHInventory.sln
 ```
 
-The app starts on `http://localhost:5001` (configured in `appsettings.json` under `Kestrel`). Port 5000 is permanently held by macOS AirPlay Receiver and must not be used. Swagger UI is available at `/swagger` in Development mode.
+The app starts on `http://localhost:8080` (configured in `appsettings.json` under `Kestrel`). Port 5000 is permanently held by macOS AirPlay Receiver and must not be used. Swagger UI is available at `/swagger` in Development mode.
 
 There are no migration commands — the database is created via `EnsureCreated()` at startup. To reset the database, drop it and restart.
 

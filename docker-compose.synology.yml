@@ -46,6 +46,7 @@ services:
       AspNetIdentity__DefaultAdmin__Email: ${ADMIN_EMAIL}
       AspNetIdentity__DefaultAdmin__Password: ${ADMIN_PASSWORD}
       AspNetIdentity__SignIn__RequireConfirmedEmail: "false"
+      Kestrel__Endpoints__Http__Url: "http://+:8080"
     ports:
       - "${APP_PORT:-8080}:8080"
     volumes:
