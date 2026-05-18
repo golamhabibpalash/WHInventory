@@ -6,7 +6,7 @@ APP_DIR="/opt/ustock"
 COMPOSE_FILE="docker-compose.synology.yml"
 
 echo "▶ Pulling latest code…"
-git -C "$APP_DIR" pull
+git -C "$APP_DIR" pull --autostash
 
 echo "▶ Rebuilding and restarting…"
 cd "$APP_DIR"
