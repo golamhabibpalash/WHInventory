@@ -82,6 +82,7 @@ public class UpdateCompanyHandler : IRequestHandler<UpdateCompanyRequest, Update
         entity.FaxNumber = request.FaxNumber;
         entity.EmailAddress = request.EmailAddress;
         entity.Website = request.Website;
+        // LogoName is managed separately via UpdateCompanyLogo — preserve existing value
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

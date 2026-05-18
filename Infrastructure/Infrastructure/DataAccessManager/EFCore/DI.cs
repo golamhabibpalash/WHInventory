@@ -110,6 +110,10 @@ public static class DI
         if (isPostgres)
         {
             dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE ""Company"" ADD COLUMN IF NOT EXISTS ""LogoName"" varchar(500) NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 CREATE TABLE IF NOT EXISTS ""NavigationMenuSortOrder"" (
                     ""Id""            varchar(50)  NOT NULL PRIMARY KEY,
                     ""IsDeleted""     boolean      NOT NULL DEFAULT false,
@@ -126,6 +130,13 @@ public static class DI
         }
         else
         {
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'LogoName')
+                BEGIN
+                    ALTER TABLE [Company] ADD [LogoName] nvarchar(500) NULL;
+                END
+            ");
+
             dataContext.Database.ExecuteSqlRaw(@"
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'NavigationMenuSortOrder')
                 BEGIN

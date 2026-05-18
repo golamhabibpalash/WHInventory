@@ -16,4 +16,5 @@ public class Company : BaseEntity
     public string? FaxNumber { get; set; }
     public string? EmailAddress { get; set; }
     public string? Website { get; set; }
+    public string? LogoName { get; set; }
 }

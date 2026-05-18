@@ -16,6 +16,20 @@ public class CompanyController : BaseApiController
     }
 
     [Authorize]
+    [HttpPost("UpdateCompanyLogo")]
+    public async Task<ActionResult<ApiSuccessResult<UpdateCompanyLogoResult>>> UpdateCompanyLogoAsync(UpdateCompanyLogoRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<UpdateCompanyLogoResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(UpdateCompanyLogoAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
     [HttpPost("UpdateCompany")]
     public async Task<ActionResult<ApiSuccessResult<UpdateCompanyResult>>> UpdateCompanyAsync(UpdateCompanyRequest request, CancellationToken cancellationToken)
     {

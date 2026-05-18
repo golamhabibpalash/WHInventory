@@ -17,6 +17,7 @@
             faxNumber: '',
             emailAddress: '',
             website: '',
+            logoName: '',
             errors: {
                 name: '',
                 currency: '',
@@ -32,6 +33,8 @@
 
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
+        const changeLogoModalRef = Vue.ref(null);
+        const logoUploadRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const currencyRef = Vue.ref(null);
         const streetRef = Vue.ref(null);
@@ -45,6 +48,18 @@
         const websiteRef = Vue.ref(null);
 
         const services = {
+            uploadImage: async (file) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                const response = await AxiosManager.post('/FileImage/UploadImage', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                return response;
+            },
+            updateLogoData: async (id, logoName, updatedById) => {
+                const response = await AxiosManager.post('/Company/UpdateCompanyLogo', { id, logoName, updatedById });
+                return response;
+            },
             getMainData: async () => {
                 try {
                     const response = await AxiosManager.get('/Company/GetCompanyList', {});
@@ -118,26 +133,27 @@
                         'ExcelExport', 'Search',
                         { type: 'Separator' },
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
+                        { text: 'Change Logo', tooltipText: 'Change Company Logo', prefixIcon: 'e-image', id: 'ChangeLogoCustom' },
                         { type: 'Separator' },
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
-                        mainGrid.obj.toolbarModule.enableItems(['EditCustom'], false);
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'ChangeLogoCustom'], false);
                         mainGrid.obj.autoFitColumns(['name', 'currency', 'street', 'phoneNumber', 'emailAddress', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
                         if (mainGrid.obj.getSelectedRecords().length === 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom'], true);
+                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'ChangeLogoCustom'], true);
                         } else {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom'], false);
+                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'ChangeLogoCustom'], false);
                         }
                     },
                     rowDeselected: () => {
                         if (mainGrid.obj.getSelectedRecords().length === 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom'], true);
+                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'ChangeLogoCustom'], true);
                         } else {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom'], false);
+                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'ChangeLogoCustom'], false);
                         }
                     },
                     rowSelecting: () => {
@@ -167,7 +183,18 @@
                                 state.faxNumber = selectedRecord.faxNumber ?? '';
                                 state.emailAddress = selectedRecord.emailAddress ?? '';
                                 state.website = selectedRecord.website ?? '';
+                                state.logoName = selectedRecord.logoName ?? '';
                                 mainModal.obj.show();
+                            }
+                        }
+
+                        if (args.item.id === 'ChangeLogoCustom') {
+                            if (mainGrid.obj.getSelectedRecords().length) {
+                                const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
+                                state.id = selectedRecord.id ?? '';
+                                state.logoName = selectedRecord.logoName ?? '';
+                                changeLogoModal.obj.show();
+                                Vue.nextTick(() => { initLogoDropzone(); });
                             }
                         }
                     }
@@ -524,6 +551,53 @@
             },
         };
 
+        const changeLogoModal = {
+            obj: null,
+            create: () => {
+                changeLogoModal.obj = new bootstrap.Modal(changeLogoModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
+        let logoDropzoneInitialized = false;
+        const initLogoDropzone = () => {
+            if (logoDropzoneInitialized || !logoUploadRef.value) return;
+            logoDropzoneInitialized = true;
+            Dropzone.autoDiscover = false;
+            new Dropzone(logoUploadRef.value, {
+                url: 'api/FileImage/UploadImage',
+                paramName: 'file',
+                maxFilesize: 5,
+                acceptedFiles: 'image/*',
+                maxFiles: 1,
+                headers: { Authorization: 'Bearer ' + StorageManager.getToken() },
+                init: function () {
+                    this.on('addedfile', async function (file) {
+                        try {
+                            const response = await services.uploadImage(file);
+                            if (response?.data?.content?.data?.imageName) {
+                                const logoName = response.data.content.data.imageName;
+                                const saveResponse = await services.updateLogoData(state.id, logoName, StorageManager.getUserId());
+                                if (saveResponse.data.code === 200) {
+                                    state.logoName = logoName;
+                                    await methods.populateMainData();
+                                    mainGrid.refresh();
+                                    Swal.fire({ icon: 'success', title: 'Logo Updated' });
+                                } else {
+                                    Swal.fire({ icon: 'error', title: 'Save Failed', text: saveResponse.data.message, confirmButtonText: 'OK' });
+                                }
+                            }
+                        } catch (error) {
+                            Swal.fire({ icon: 'error', title: 'Upload Failed', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                        }
+                        this.removeAllFiles();
+                    });
+                }
+            });
+        };
+
         Vue.onMounted(async () => {
             try {
                 await SecurityManager.authorizePage(['Companies']);
@@ -544,6 +618,7 @@
                 websiteText.create();
 
                 mainModal.create();
+                changeLogoModal.create();
 
                 mainModalRef.value.addEventListener('hidden.bs.modal', () => {
                     Object.keys(state).forEach(key => {
@@ -577,6 +652,8 @@
             state,
             mainGridRef,
             mainModalRef,
+            changeLogoModalRef,
+            logoUploadRef,
             nameRef,
             currencyRef,
             streetRef,

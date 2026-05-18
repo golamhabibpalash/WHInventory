@@ -12,6 +12,46 @@
         </div>
     </div>
 
+    <!-- Change Logo Modal -->
+    <div class="modal fade" ref="changeLogoModalRef" id="ChangeLogoModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-image me-2"></i>Change Company Logo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" v-model="state.id" />
+                    <div class="row">
+                        <div class="col-md-5 text-center mb-3">
+                            <p class="text-muted mb-2">Current Logo</p>
+                            <img v-if="state.logoName"
+                                 :src="'api/FileImage/GetImage?imageName=' + state.logoName"
+                                 alt="Company Logo"
+                                 style="max-height:160px; max-width:100%; object-fit:contain; border:1px solid #dee2e6; border-radius:6px; padding:8px;" />
+                            <div v-else class="text-muted border rounded p-4" style="height:160px;display:flex;align-items:center;justify-content:center;">
+                                <span>No logo uploaded</span>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-cloud-upload-alt me-2 text-info"></i>Upload New Logo</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form ref="logoUploadRef" id="LogoUpload" class="dropzone"></form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" ref="mainModalRef" id="MainModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">

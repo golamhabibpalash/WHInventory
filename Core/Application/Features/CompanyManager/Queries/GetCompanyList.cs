@@ -22,6 +22,7 @@ public record GetCompanyListDto
     public string? FaxNumber { get; init; }
     public string? EmailAddress { get; init; }
     public string? Website { get; init; }
+    public string? LogoName { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
 

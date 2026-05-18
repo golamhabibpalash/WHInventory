@@ -22,6 +22,7 @@ public record GetCompanySingleDto
     public string? FaxNumber { get; init; }
     public string? EmailAddress { get; init; }
     public string? Website { get; init; }
+    public string? LogoName { get; init; }
 }
 
 public class GetCompanySingleProfile : Profile
