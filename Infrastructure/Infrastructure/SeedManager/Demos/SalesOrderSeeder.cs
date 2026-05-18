@@ -84,7 +84,7 @@ public class SalesOrderSeeder
 
                 await _unitOfWork.SaveAsync();
 
-                _salesOrderService.Recalculate(salesOrder.Id);
+                await _salesOrderService.Recalculate(salesOrder.Id);
             }
         }
 

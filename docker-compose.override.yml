@@ -1,0 +1,14 @@
+services:
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: ustock-tunnel
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - ustock-net
+    restart: unless-stopped
+    depends_on:
+      - app
+
+networks:
+  ustock-net:
+    driver: bridge

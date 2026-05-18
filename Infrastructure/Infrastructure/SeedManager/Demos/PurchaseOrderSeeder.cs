@@ -84,7 +84,7 @@ public class PurchaseOrderSeeder
 
                 await _unitOfWork.SaveAsync();
 
-                _purchaseOrderService.Recalculate(purchaseOrder.Id);
+                await _purchaseOrderService.Recalculate(purchaseOrder.Id);
             }
         }
     }

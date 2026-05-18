@@ -22,23 +22,23 @@ public class SalesOrderService
         _unitOfWork = unitOfWork;
     }
 
-    public void Recalculate(string salesOrderId)
+    public async Task Recalculate(string salesOrderId)
     {
-        var salesOrder = _salesOrderRepository
+        var salesOrder = await _salesOrderRepository
             .GetQuery()
             .ApplyIsDeletedFilter()
             .Where(x => x.Id == salesOrderId)
             .Include(x => x.Tax)
-            .SingleOrDefault();
+            .SingleOrDefaultAsync();
 
         if (salesOrder == null)
             return;
 
-        var salesOrderItems = _salesOrderItemRepository
+        var salesOrderItems = await _salesOrderItemRepository
             .GetQuery()
             .ApplyIsDeletedFilter()
             .Where(x => x.SalesOrderId == salesOrderId)
-            .ToList();
+            .ToListAsync();
 
         salesOrder.BeforeTaxAmount = salesOrderItems.Sum(x => x.Total ?? 0);
 
@@ -48,6 +48,6 @@ public class SalesOrderService
         salesOrder.AfterTaxAmount = (salesOrder.BeforeTaxAmount ?? 0) + (salesOrder.TaxAmount ?? 0);
 
         _salesOrderRepository.Update(salesOrder);
-        _unitOfWork.Save();
+        await _unitOfWork.SaveAsync();
     }
 }

@@ -11,4 +11,7 @@
 .vs/
 wwwroot/app_data/
 appsettings.*.json
-!.appsettings.jsonustock-app.tar.gz
+ustock-app.tar.gz
+.env
+.env.*
+!.env.example

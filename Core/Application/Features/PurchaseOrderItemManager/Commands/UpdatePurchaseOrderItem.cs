@@ -74,7 +74,7 @@ public class UpdatePurchaseOrderItemHandler : IRequestHandler<UpdatePurchaseOrde
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);
 
-        _purchaseOrderService.Recalculate(entity.PurchaseOrderId ?? "");
+        await _purchaseOrderService.Recalculate(entity.PurchaseOrderId ?? "");
 
         return new UpdatePurchaseOrderItemResult
         {

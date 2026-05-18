@@ -57,7 +57,7 @@ public class DeletePurchaseOrderItemHandler : IRequestHandler<DeletePurchaseOrde
         _repository.Delete(entity);
         await _unitOfWork.SaveAsync(cancellationToken);
 
-        _purchaseOrderService.Recalculate(entity.PurchaseOrderId ?? "");
+        await _purchaseOrderService.Recalculate(entity.PurchaseOrderId ?? "");
 
         return new DeletePurchaseOrderItemResult
         {

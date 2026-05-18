@@ -74,7 +74,7 @@ public class UpdateSalesOrderItemHandler : IRequestHandler<UpdateSalesOrderItemR
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);
 
-        _salesOrderService.Recalculate(entity.SalesOrderId ?? "");
+        await _salesOrderService.Recalculate(entity.SalesOrderId ?? "");
 
         return new UpdateSalesOrderItemResult
         {

@@ -65,7 +65,7 @@ public class CreateSalesOrderItemHandler : IRequestHandler<CreateSalesOrderItemR
         await _repository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);
 
-        _salesOrderService.Recalculate(entity.SalesOrderId ?? "");
+        await _salesOrderService.Recalculate(entity.SalesOrderId ?? "");
 
         return new CreateSalesOrderItemResult
         {

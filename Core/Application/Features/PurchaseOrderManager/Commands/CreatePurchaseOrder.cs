@@ -68,7 +68,7 @@ public class CreatePurchaseOrderHandler : IRequestHandler<CreatePurchaseOrderReq
         await _repository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);
 
-        _purchaseOrderService.Recalculate(entity.Id);
+        await _purchaseOrderService.Recalculate(entity.Id);
 
         return new CreatePurchaseOrderResult
         {

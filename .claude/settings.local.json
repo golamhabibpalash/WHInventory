@@ -41,7 +41,8 @@
       "Bash(grep -v \"^$\")",
       "Bash(docker build *)",
       "Bash(Get-ChildItem -Path \"D:\\\\Projects\\\\WHInventory\\\\WHInventory\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(chmod +x *)"
     ]
   }
 }
