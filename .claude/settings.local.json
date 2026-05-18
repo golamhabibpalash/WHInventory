@@ -43,7 +43,12 @@
       "Bash(Get-ChildItem -Path \"D:\\\\Projects\\\\WHInventory\\\\WHInventory\" -Directory)",
       "Bash(Select-Object Name)",
       "Bash(chmod +x *)",
-      "Bash(grep -E \"\\\\.js$\")"
+      "Bash(grep -E \"\\\\.js$\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(docker run *)",
+      "Bash(docker exec *)"
     ]
   }
 }
