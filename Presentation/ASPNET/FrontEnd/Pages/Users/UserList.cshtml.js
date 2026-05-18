@@ -268,6 +268,14 @@
                     throw error;
                 }
             },
+            updateAllUserRolesData: async (userId, accessGranted) => {
+                try {
+                    const response = await AxiosManager.post('/Security/UpdateAllUserRoles', { userId, accessGranted });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
         };
 
         const methods = {
@@ -636,6 +644,9 @@
                         'ExcelExport',
                         { type: 'Separator' },
                         'Edit', 'Update', 'Cancel',
+                        { type: 'Separator' },
+                        { text: 'Grant All', tooltipText: 'Grant all roles to this user', prefixIcon: 'e-check', id: 'GrantAllRoles' },
+                        { text: 'Revoke All', tooltipText: 'Revoke all roles from this user', prefixIcon: 'e-close', id: 'RevokeAllRoles' },
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
@@ -661,9 +672,53 @@
                             secondaryGrid.obj.clearSelection();
                         }
                     },
-                    toolbarClick: (args) => {
+                    toolbarClick: async (args) => {
                         if (args.item.id === 'SecondaryGrid_excelexport') {
                             secondaryGrid.obj.excelExport();
+                        }
+
+                        if (args.item.id === 'GrantAllRoles' || args.item.id === 'RevokeAllRoles') {
+                            const accessGranted = args.item.id === 'GrantAllRoles';
+                            const confirmText = accessGranted
+                                ? 'This will grant ALL roles to this user.'
+                                : 'This will remove ALL roles from this user.';
+
+                            const confirm = await Swal.fire({
+                                icon: 'warning',
+                                title: 'Are you sure?',
+                                text: confirmText,
+                                showCancelButton: true,
+                                confirmButtonText: 'Yes, proceed',
+                                cancelButtonText: 'Cancel'
+                            });
+
+                            if (!confirm.isConfirmed) return;
+
+                            try {
+                                const response = await services.updateAllUserRolesData(state.userId, accessGranted);
+                                if (response.data.code === 200) {
+                                    await methods.populateSecondaryData(state.userId);
+                                    secondaryGrid.refresh();
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: accessGranted ? 'All Roles Granted' : 'All Roles Revoked',
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Failed',
+                                        text: response.data.message ?? 'Please try again.',
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            } catch (error) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'An Error Occurred',
+                                    text: error.response?.data?.message ?? 'Please try again.',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
                         }
                     },
                     actionComplete: async (args) => {

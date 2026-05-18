@@ -11,6 +11,7 @@
 .vs/
 wwwroot/app_data/
 appsettings.*.json
+Presentation/ASPNET/appsettings.json
 ustock-app.tar.gz
 .env
 .env.*

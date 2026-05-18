@@ -690,7 +690,45 @@ public class SecurityService : ISecurityService
         return updatedRoles.ToList();
     }
 
+    public async Task<List<string>> UpdateAllUserRolesAsync(
+        string userId,
+        bool accessGranted,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            throw new Exception($"Unable to load user with id: {userId}");
 
+        if (user.Email == _identitySettings.DefaultAdmin.Email)
+            throw new Exception($"Update default admin is not allowed.");
+
+        var allRoles = _roleManager.Roles.Select(r => r.Name!).ToList();
+        var currentRoles = await _userManager.GetRolesAsync(user);
+
+        if (accessGranted)
+        {
+            var toAdd = allRoles.Except(currentRoles).ToList();
+            if (toAdd.Any())
+            {
+                var result = await _userManager.AddToRolesAsync(user, toAdd);
+                if (!result.Succeeded)
+                    throw new Exception($"Failed to add roles: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+        }
+        else
+        {
+            if (currentRoles.Any())
+            {
+                var result = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                if (!result.Succeeded)
+                    throw new Exception($"Failed to remove roles: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+        }
+
+        var updatedRoles = await _userManager.GetRolesAsync(user);
+        return updatedRoles.ToList();
+    }
 
     public async Task ChangeAvatarAsync(
         string userId,

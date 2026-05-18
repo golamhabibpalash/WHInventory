@@ -123,6 +123,12 @@ public interface ISecurityService
         CancellationToken cancellationToken = default
         );
 
+    public Task<List<string>> UpdateAllUserRolesAsync(
+        string userId,
+        bool accessGranted,
+        CancellationToken cancellationToken = default
+        );
+
     public Task ChangeAvatarAsync(
         string userId,
         string avatar,
