@@ -194,7 +194,6 @@
                                 state.id = selectedRecord.id ?? '';
                                 state.logoName = selectedRecord.logoName ?? '';
                                 changeLogoModal.obj.show();
-                                Vue.nextTick(() => { initLogoDropzone(); });
                             }
                         }
                     }
@@ -571,8 +570,9 @@
                 paramName: 'file',
                 maxFilesize: 5,
                 acceptedFiles: 'image/*',
-                maxFiles: 1,
-                headers: { Authorization: 'Bearer ' + StorageManager.getToken() },
+                addRemoveLinks: true,
+                dictDefaultMessage: 'Drop company logo here or click to upload',
+                autoProcessQueue: false,
                 init: function () {
                     this.on('addedfile', async function (file) {
                         try {
@@ -619,6 +619,7 @@
 
                 mainModal.create();
                 changeLogoModal.create();
+                initLogoDropzone();
 
                 mainModalRef.value.addEventListener('hidden.bs.modal', () => {
                     Object.keys(state).forEach(key => {
