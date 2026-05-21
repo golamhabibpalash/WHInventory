@@ -1,7 +1,9 @@
-﻿using Application.Common.Repositories;
+﻿using Application.Common.CQS.Queries;
+using Application.Common.Repositories;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.UnitMeasureManager.Commands;
 
@@ -19,9 +21,13 @@ public class CreateUnitMeasureRequest : IRequest<CreateUnitMeasureResult>
 
 public class CreateUnitMeasureValidator : AbstractValidator<CreateUnitMeasureRequest>
 {
-    public CreateUnitMeasureValidator()
+    public CreateUnitMeasureValidator(IQueryContext context)
     {
         RuleFor(x => x.Name).NotEmpty();
+        RuleFor(x => x.Name).MustAsync(async (name, cancellationToken) =>
+        {
+            return !await context.UnitMeasure.AnyAsync(x => x.Name == name && !x.IsDeleted, cancellationToken);
+        }).WithMessage("Unit measure name already exists.");
     }
 }
 
