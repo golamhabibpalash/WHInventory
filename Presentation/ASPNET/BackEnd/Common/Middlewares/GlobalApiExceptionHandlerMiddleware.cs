@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace ASPNET.BackEnd.Common.Middlewares;
 

@@ -1,4 +1,5 @@
-﻿namespace Application.Common.Services.SecurityManager;
+namespace Application.Common.Services.SecurityManager;
+
 public record GetUserListResultDto
 {
     public string? Id { get; init; }

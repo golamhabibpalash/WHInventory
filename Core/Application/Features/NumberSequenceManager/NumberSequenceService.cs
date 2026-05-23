@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Domain.Entities;
 
 namespace Application.Features.NumberSequenceManager;
@@ -33,7 +33,7 @@ public class NumberSequenceService
 
     private NumberSequence InsertNumberSequence(string entityName, string prefix, string suffix)
     {
-        NumberSequence newSequence = new NumberSequence
+        var newSequence = new NumberSequence
         {
             EntityName = entityName,
             Prefix = prefix,
@@ -58,7 +58,7 @@ public class NumberSequenceService
 
         lock (lockObject)
         {
-            NumberSequence? sequence = GetNumberSequence(entityName, prefix, suffix);
+            var sequence = GetNumberSequence(entityName, prefix, suffix);
 
             if (sequence != null)
             {
@@ -69,7 +69,7 @@ public class NumberSequenceService
                 sequence = InsertNumberSequence(entityName, prefix, suffix);
             }
 
-            string formattedNumber = $"{prefix}{sequence?.LastUsedCount?.ToString().PadLeft(padding, '0')}{(useDate ? DateTime.Now.ToString("yyyyMMdd") : "")}{suffix}";
+            var formattedNumber = $"{prefix}{sequence?.LastUsedCount?.ToString().PadLeft(padding, '0')}{(useDate ? DateTime.Now.ToString("yyyyMMdd") : "")}{suffix}";
             result = formattedNumber;
         }
 

@@ -1,19 +1,19 @@
-﻿namespace Application.Common.Services.SecurityManager;
+namespace Application.Common.Services.SecurityManager;
 
 public interface ISecurityService
 {
-    public Task<LoginResultDto> LoginAsync(
+    Task<LoginResultDto> LoginAsync(
         string email,
         string password,
         CancellationToken cancellationToken = default
         );
 
-    public Task<LogoutResultDto> LogoutAsync(
+    Task<LogoutResultDto> LogoutAsync(
         string userId,
         CancellationToken cancellationToken = default
         );
 
-    public Task<RegisterResultDto> RegisterAsync(
+    Task<RegisterResultDto> RegisterAsync(
         string email,
         string password,
         string confirmPassword,
@@ -23,35 +23,35 @@ public interface ISecurityService
         CancellationToken cancellationToken = default
         );
 
-    public Task<string> ConfirmEmailAsync(
+    Task<string> ConfirmEmailAsync(
         string email,
         string code,
         CancellationToken cancellationToken = default
         );
 
-    public Task<string> ForgotPasswordAsync(
+    Task<string> ForgotPasswordAsync(
         string email,
         CancellationToken cancellationToken = default
         );
 
-    public Task<string> ForgotPasswordConfirmationAsync(
+    Task<string> ForgotPasswordConfirmationAsync(
         string email,
         string tempPassword,
         string code,
         CancellationToken cancellationToken = default
         );
 
-    public Task<RefreshTokenResultDto> RefreshTokenAsync(
+    Task<RefreshTokenResultDto> RefreshTokenAsync(
         string refreshToken,
         CancellationToken cancellationToken
         );
 
-    public Task<List<GetMyProfileListResultDto>> GetMyProfileListAsync(
+    Task<List<GetMyProfileListResultDto>> GetMyProfileListAsync(
         string userId,
         CancellationToken cancellationToken
         );
 
-    public Task UpdateMyProfileAsync(
+    Task UpdateMyProfileAsync(
         string userId,
         string firstName,
         string lastName,
@@ -59,7 +59,7 @@ public interface ISecurityService
         CancellationToken cancellationToken
         );
 
-    public Task ChangePasswordAsync(
+    Task ChangePasswordAsync(
         string userId,
         string oldPassword,
         string newPassword,
@@ -67,15 +67,15 @@ public interface ISecurityService
         CancellationToken cancellationToken
         );
 
-    public Task<List<GetRoleListResultDto>> GetRoleListAsync(
+    Task<List<GetRoleListResultDto>> GetRoleListAsync(
         CancellationToken cancellationToken
         );
 
-    public Task<List<GetUserListResultDto>> GetUserListAsync(
+    Task<List<GetUserListResultDto>> GetUserListAsync(
         CancellationToken cancellationToken
         );
 
-    public Task<CreateUserResultDto> CreateUserAsync(
+    Task<CreateUserResultDto> CreateUserAsync(
         string email,
         string password,
         string confirmPassword,
@@ -88,7 +88,7 @@ public interface ISecurityService
         CancellationToken cancellationToken = default
         );
 
-    public Task<UpdateUserResultDto> UpdateUserAsync(
+    Task<UpdateUserResultDto> UpdateUserAsync(
         string userId,
         string firstName,
         string lastName,
@@ -99,37 +99,37 @@ public interface ISecurityService
         CancellationToken cancellationToken = default
         );
 
-    public Task<DeleteUserResultDto> DeleteUserAsync(
+    Task<DeleteUserResultDto> DeleteUserAsync(
         string userId,
         string deletedById = "",
         CancellationToken cancellationToken = default
         );
 
-    public Task UpdatePasswordUserAsync(
+    Task UpdatePasswordUserAsync(
         string userId,
         string newPassword,
         CancellationToken cancellationToken
         );
 
-    public Task<List<string>> GetUserRolesAsync(
+    Task<List<string>> GetUserRolesAsync(
         string userId,
         CancellationToken cancellationToken = default
         );
 
-    public Task<List<string>> UpdateUserRoleAsync(
+    Task<List<string>> UpdateUserRoleAsync(
         string userId,
         string roleName,
         bool accessGranted,
         CancellationToken cancellationToken = default
         );
 
-    public Task<List<string>> UpdateAllUserRolesAsync(
+    Task<List<string>> UpdateAllUserRolesAsync(
         string userId,
         bool accessGranted,
         CancellationToken cancellationToken = default
         );
 
-    public Task ChangeAvatarAsync(
+    Task ChangeAvatarAsync(
         string userId,
         string avatar,
         CancellationToken cancellationToken

@@ -1,4 +1,4 @@
-﻿using Application.Features.CustomerGroupManager.Commands;
+using Application.Features.CustomerGroupManager.Commands;
 using Application.Features.CustomerGroupManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

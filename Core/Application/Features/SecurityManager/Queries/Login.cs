@@ -1,4 +1,4 @@
-﻿using Application.Common.Services.SecurityManager;
+using Application.Common.Services.SecurityManager;
 using FluentValidation;
 using MediatR;
 

@@ -1,6 +1,7 @@
-﻿using Domain.Common;
+using Domain.Common;
 
 namespace Domain.Entities;
+
 public class FileDocument : BaseEntity
 {
     public string? Name { get; set; }

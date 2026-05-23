@@ -1,4 +1,4 @@
-﻿using Infrastructure.SecurityManager.AspNetIdentity;
+using Infrastructure.SecurityManager.AspNetIdentity;
 using Infrastructure.SecurityManager.Roles;
 using Microsoft.AspNetCore.Identity;
 

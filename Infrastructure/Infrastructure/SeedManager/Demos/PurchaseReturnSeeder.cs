@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Application.Features.InventoryTransactionManager;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
@@ -54,7 +54,7 @@ public class PurchaseReturnSeeder
 
         foreach (var goodsReceive in goodsReceives)
         {
-            bool process = random.Next(2) == 0;
+            var process = random.Next(2) == 0;
 
             if (process)
             {

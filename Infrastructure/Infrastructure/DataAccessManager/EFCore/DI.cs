@@ -1,4 +1,4 @@
-﻿using Application.Common.CQS.Commands;
+using Application.Common.CQS.Commands;
 using Application.Common.CQS.Queries;
 using Application.Common.Repositories;
 using Infrastructure.DataAccessManager.EFCore.Contexts;

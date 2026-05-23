@@ -1,4 +1,4 @@
-﻿using Application.Features.ProductGroupManager.Commands;
+using Application.Features.ProductGroupManager.Commands;
 using Application.Features.ProductGroupManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

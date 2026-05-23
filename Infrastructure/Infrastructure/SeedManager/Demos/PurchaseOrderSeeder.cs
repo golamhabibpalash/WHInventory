@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
 using Application.Features.PurchaseOrderManager;
 using Domain.Entities;
@@ -49,11 +49,11 @@ public class PurchaseOrderSeeder
         var dateFinish = DateTime.Now;
         var dateStart = new DateTime(dateFinish.AddMonths(-12).Year, dateFinish.AddMonths(-12).Month, 1);
 
-        for (DateTime date = dateStart; date < dateFinish; date = date.AddMonths(1))
+        for (var date = dateStart; date < dateFinish; date = date.AddMonths(1))
         {
-            DateTime[] transactionDates = GetRandomDays(date.Year, date.Month, 6);
+            var transactionDates = GetRandomDays(date.Year, date.Month, 6);
 
-            foreach (DateTime transDate in transactionDates)
+            foreach (var transDate in transactionDates)
             {
                 var purchaseOrder = new PurchaseOrder
                 {
@@ -65,8 +65,8 @@ public class PurchaseOrderSeeder
                 };
                 await _purchaseOrderRepository.CreateAsync(purchaseOrder);
 
-                int numberOfProducts = random.Next(3, 6);
-                for (int i = 0; i < numberOfProducts; i++)
+                var numberOfProducts = random.Next(3, 6);
+                for (var i = 0; i < numberOfProducts; i++)
                 {
                     var product = products[random.Next(products.Count)];
                     var quantity = random.Next(20, 50);
@@ -100,9 +100,9 @@ public class PurchaseOrderSeeder
         var daysInMonth = Enumerable.Range(1, DateTime.DaysInMonth(year, month)).ToList();
         var selectedDays = new List<int>();
 
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
-            int day = daysInMonth[random.Next(daysInMonth.Count)];
+            var day = daysInMonth[random.Next(daysInMonth.Count)];
             selectedDays.Add(day);
             daysInMonth.Remove(day);
         }

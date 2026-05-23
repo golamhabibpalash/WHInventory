@@ -1,9 +1,9 @@
-﻿namespace Domain.Common;
+namespace Domain.Common;
 
 public interface IHasAudit
 {
-    public DateTime? CreatedAtUtc { get; set; }
-    public string? CreatedById { get; set; }
-    public DateTime? UpdatedAtUtc { get; set; }
-    public string? UpdatedById { get; set; }
+    DateTime? CreatedAtUtc { get; set; }
+    string? CreatedById { get; set; }
+    DateTime? UpdatedAtUtc { get; set; }
+    string? UpdatedById { get; set; }
 }

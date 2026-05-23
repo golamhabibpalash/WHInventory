@@ -1,4 +1,4 @@
-﻿using Application.Features.NegativeAdjustmentManager.Commands;
+using Application.Features.NegativeAdjustmentManager.Commands;
 using Application.Features.NegativeAdjustmentManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

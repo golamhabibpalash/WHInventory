@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 
 namespace Application.Common.CQS.Queries;
 

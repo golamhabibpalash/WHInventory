@@ -1,4 +1,4 @@
-﻿using Infrastructure.DataAccessManager.EFCore.Contexts;
+using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Infrastructure.SeedManager.Demos;
 using Infrastructure.SeedManager.Systems;
 using Microsoft.Extensions.Configuration;

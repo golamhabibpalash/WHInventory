@@ -1,4 +1,5 @@
-﻿namespace Application.Common.Services.FileDocumentManager;
+namespace Application.Common.Services.FileDocumentManager;
+
 public interface IFileDocumentService
 {
     Task<string> UploadAsync(

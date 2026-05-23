@@ -1,4 +1,4 @@
-﻿namespace ASPNET.BackEnd.Common.Models;
+namespace ASPNET.BackEnd.Common.Models;
 
 public class ApiSuccessResult<T>
 {

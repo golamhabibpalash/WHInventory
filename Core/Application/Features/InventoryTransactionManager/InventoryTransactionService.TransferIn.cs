@@ -1,4 +1,4 @@
-﻿using Application.Common.Extensions;
+using Application.Common.Extensions;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;

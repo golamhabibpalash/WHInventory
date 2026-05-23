@@ -1,4 +1,7 @@
-﻿using Application.Common.Services.EmailManager;
+using System.Data;
+using System.Text;
+using System.Text.Encodings.Web;
+using Application.Common.Services.EmailManager;
 using Application.Common.Services.SecurityManager;
 using Domain.Entities;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
@@ -11,9 +14,6 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using System.Data;
-using System.Text;
-using System.Text.Encodings.Web;
 using static Domain.Common.Constants;
 
 namespace Infrastructure.SecurityManager.AspNetIdentity;

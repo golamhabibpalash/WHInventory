@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.EmailManager;
+namespace Infrastructure.EmailManager;
 
 public class SmtpSettings
 {

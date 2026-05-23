@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Application.Common.Services.FileDocumentManager;
 using Domain.Entities;
 using Microsoft.Extensions.Options;

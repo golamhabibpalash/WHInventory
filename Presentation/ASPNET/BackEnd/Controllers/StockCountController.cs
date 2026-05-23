@@ -1,4 +1,4 @@
-﻿using Application.Features.StockCountManager.Commands;
+using Application.Features.StockCountManager.Commands;
 using Application.Features.StockCountManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

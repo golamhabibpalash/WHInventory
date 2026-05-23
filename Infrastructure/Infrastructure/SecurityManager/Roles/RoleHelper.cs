@@ -1,4 +1,4 @@
-﻿using Infrastructure.SecurityManager.NavigationMenu;
+using Infrastructure.SecurityManager.NavigationMenu;
 
 namespace Infrastructure.SecurityManager.Roles;
 

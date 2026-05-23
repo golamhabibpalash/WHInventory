@@ -1,4 +1,4 @@
-﻿using Application.Features.DashboardManager.Queries;
+using Application.Features.DashboardManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;
 using MediatR;

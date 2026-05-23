@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Services.EmailManager;
+namespace Application.Common.Services.EmailManager;
 
 public interface IEmailService
 {

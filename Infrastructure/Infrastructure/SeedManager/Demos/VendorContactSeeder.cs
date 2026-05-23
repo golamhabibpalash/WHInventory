@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -59,7 +59,7 @@ public class VendorContactSeeder
 
         foreach (var vendorId in vendorIds)
         {
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 var firstName = GetRandomString(firstNames, random);
                 var lastName = GetRandomString(lastNames, random);

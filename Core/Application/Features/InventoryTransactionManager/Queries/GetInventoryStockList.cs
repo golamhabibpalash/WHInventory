@@ -1,4 +1,4 @@
-﻿using Application.Common.CQS.Queries;
+using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using AutoMapper;
 using MediatR;

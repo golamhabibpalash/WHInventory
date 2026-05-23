@@ -1,4 +1,4 @@
-﻿using Application.Features.InventoryTransactionManager.Commands;
+using Application.Features.InventoryTransactionManager.Commands;
 using Application.Features.InventoryTransactionManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

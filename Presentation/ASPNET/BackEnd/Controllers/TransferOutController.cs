@@ -1,4 +1,4 @@
-﻿using Application.Features.TransferOutManager.Commands;
+using Application.Features.TransferOutManager.Commands;
 using Application.Features.TransferOutManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

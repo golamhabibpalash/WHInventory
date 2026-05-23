@@ -1,4 +1,4 @@
-﻿using Application.Common.Services.FileDocumentManager;
+using Application.Common.Services.FileDocumentManager;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

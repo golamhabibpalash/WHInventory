@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.SecurityManager.Tokens;
+namespace Infrastructure.SecurityManager.Tokens;
 
 public class TokenSettings
 {

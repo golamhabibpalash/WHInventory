@@ -1,4 +1,4 @@
-﻿using Application.Features.ScrappingManager.Commands;
+using Application.Features.ScrappingManager.Commands;
 using Application.Features.ScrappingManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

@@ -1,4 +1,4 @@
-﻿using Application.Common.Services.EmailManager;
+using Application.Common.Services.EmailManager;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;

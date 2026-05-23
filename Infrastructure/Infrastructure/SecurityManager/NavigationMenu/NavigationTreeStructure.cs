@@ -1,5 +1,5 @@
-﻿using Application.Common.Services.SecurityManager;
 using System.Text.Json;
+using Application.Common.Services.SecurityManager;
 
 namespace Infrastructure.SecurityManager.NavigationMenu;
 
@@ -323,7 +323,7 @@ public static class NavigationTreeStructure
 
         var menus = JsonSerializer.Deserialize<List<JsonStructureItem>>(json);
 
-        List<MenuNavigationTreeNodeDto> nodes = new List<MenuNavigationTreeNodeDto>();
+        var nodes = new List<MenuNavigationTreeNodeDto>();
 
         var index = 1;
         void AddNodes(List<JsonStructureItem> menuItems, string? parentId = null)
@@ -359,7 +359,7 @@ public static class NavigationTreeStructure
         var result = string.Empty;
         if (path != null && path.Contains("/"))
         {
-            string[] parts = path.Split("/");
+            var parts = path.Split("/");
             if (parts.Length > 2)
             {
                 result = parts[1];

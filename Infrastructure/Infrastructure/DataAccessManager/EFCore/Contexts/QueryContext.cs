@@ -1,4 +1,4 @@
-﻿using Application.Common.CQS.Queries;
+using Application.Common.CQS.Queries;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.DataAccessManager.EFCore.Contexts;

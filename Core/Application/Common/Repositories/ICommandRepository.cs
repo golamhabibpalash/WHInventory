@@ -1,4 +1,4 @@
-﻿using Domain.Common;
+using Domain.Common;
 
 namespace Application.Common.Repositories;
 

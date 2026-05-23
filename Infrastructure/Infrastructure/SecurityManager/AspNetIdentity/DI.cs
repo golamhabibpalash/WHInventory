@@ -1,4 +1,4 @@
-﻿using Application.Common.Services.SecurityManager;
+using Application.Common.Services.SecurityManager;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;

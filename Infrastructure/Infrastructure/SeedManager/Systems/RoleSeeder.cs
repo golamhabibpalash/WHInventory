@@ -1,4 +1,4 @@
-﻿using Infrastructure.SecurityManager.Roles;
+using Infrastructure.SecurityManager.Roles;
 using Microsoft.AspNetCore.Identity;
 
 namespace Infrastructure.SeedManager.Systems;

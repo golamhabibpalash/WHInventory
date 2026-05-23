@@ -1,4 +1,4 @@
-﻿using Application.Features.CustomerContactManager.Commands;
+using Application.Features.CustomerContactManager.Commands;
 using Application.Features.CustomerContactManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

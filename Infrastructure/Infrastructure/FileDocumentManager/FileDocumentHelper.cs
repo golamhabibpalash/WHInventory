@@ -1,4 +1,5 @@
-﻿namespace Infrastructure.FileDocumentManager;
+namespace Infrastructure.FileDocumentManager;
+
 public static class FileDocumentHelper
 {
     private static readonly Dictionary<string, string> MimeTypes = new()

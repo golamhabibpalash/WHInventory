@@ -1,4 +1,4 @@
-﻿using Application.Common.Services.EmailManager;
+using Application.Common.Services.EmailManager;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

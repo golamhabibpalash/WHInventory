@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Application.Features.SalesOrderManager;
 using Domain.Entities;
 using FluentValidation;

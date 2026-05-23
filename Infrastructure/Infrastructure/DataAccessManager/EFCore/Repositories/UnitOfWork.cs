@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 
 namespace Infrastructure.DataAccessManager.EFCore.Repositories;

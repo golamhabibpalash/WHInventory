@@ -1,4 +1,4 @@
-﻿using Application;
+using Application;
 using ASPNET.BackEnd.Common.Handlers;
 using Infrastructure;
 using Infrastructure.DataAccessManager.EFCore;

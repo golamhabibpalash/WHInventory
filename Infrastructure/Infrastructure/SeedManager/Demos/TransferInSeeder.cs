@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Application.Features.InventoryTransactionManager;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
@@ -45,7 +45,7 @@ public class TransferInSeeder
 
         foreach (var transferOut in transferOuts)
         {
-            bool process = random.Next(2) == 0;
+            var process = random.Next(2) == 0;
             if (process)
             {
                 continue;

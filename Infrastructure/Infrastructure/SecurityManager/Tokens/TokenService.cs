@@ -1,10 +1,10 @@
-﻿using Infrastructure.SecurityManager.AspNetIdentity;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Infrastructure.SecurityManager.AspNetIdentity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Infrastructure.SecurityManager.Tokens;
 

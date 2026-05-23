@@ -1,4 +1,4 @@
-﻿using Application.Features.TodoItemManager.Commands;
+using Application.Features.TodoItemManager.Commands;
 using Application.Features.TodoItemManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

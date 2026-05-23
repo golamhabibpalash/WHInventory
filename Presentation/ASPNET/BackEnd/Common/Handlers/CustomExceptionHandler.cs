@@ -1,4 +1,4 @@
-﻿using ASPNET.BackEnd.Common.Models;
+using ASPNET.BackEnd.Common.Models;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace ASPNET.BackEnd.Common.Handlers;

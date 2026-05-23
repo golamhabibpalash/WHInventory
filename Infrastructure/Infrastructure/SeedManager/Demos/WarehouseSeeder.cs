@@ -1,38 +1,37 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Domain.Entities;
 
-namespace Infrastructure.SeedManager.Demos
+namespace Infrastructure.SeedManager.Demos;
+
+public class WarehouseSeeder
 {
-    public class WarehouseSeeder
+    private readonly ICommandRepository<Warehouse> _repository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public WarehouseSeeder(
+        ICommandRepository<Warehouse> repository,
+        IUnitOfWork unitOfWork
+    )
     {
-        private readonly ICommandRepository<Warehouse> _repository;
-        private readonly IUnitOfWork _unitOfWork;
+        _repository = repository;
+        _unitOfWork = unitOfWork;
+    }
 
-        public WarehouseSeeder(
-            ICommandRepository<Warehouse> repository,
-            IUnitOfWork unitOfWork
-        )
+    public async Task GenerateDataAsync()
+    {
+        var warehouses = new List<Warehouse>
         {
-            _repository = repository;
-            _unitOfWork = unitOfWork;
+            new Warehouse { Name = "New York" },
+            new Warehouse { Name = "San Francisco" },
+            new Warehouse { Name = "Chicago" },
+            new Warehouse { Name = "Los Angeles" }
+        };
+
+        foreach (var warehouse in warehouses)
+        {
+            await _repository.CreateAsync(warehouse);
         }
 
-        public async Task GenerateDataAsync()
-        {
-            var warehouses = new List<Warehouse>
-            {
-                new Warehouse { Name = "New York" },
-                new Warehouse { Name = "San Francisco" },
-                new Warehouse { Name = "Chicago" },
-                new Warehouse { Name = "Los Angeles" }
-            };
-
-            foreach (var warehouse in warehouses)
-            {
-                await _repository.CreateAsync(warehouse);
-            }
-
-            await _unitOfWork.SaveAsync();
-        }
+        await _unitOfWork.SaveAsync();
     }
 }

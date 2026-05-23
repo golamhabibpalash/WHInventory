@@ -1,4 +1,4 @@
-﻿using Application.Common.Extensions;
+using Application.Common.Extensions;
 using AutoMapper;
 using Domain.Enums;
 using MediatR;

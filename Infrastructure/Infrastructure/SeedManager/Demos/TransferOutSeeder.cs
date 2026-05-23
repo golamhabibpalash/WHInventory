@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Application.Features.InventoryTransactionManager;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
@@ -55,11 +55,11 @@ public class TransferOutSeeder
         var dateFinish = DateTime.Now;
         var dateStart = new DateTime(dateFinish.AddMonths(-12).Year, dateFinish.AddMonths(-12).Month, 1);
 
-        for (DateTime date = dateStart; date < dateFinish; date = date.AddMonths(1))
+        for (var date = dateStart; date < dateFinish; date = date.AddMonths(1))
         {
             var transactionDates = GetRandomDays(date.Year, date.Month, 6);
 
-            foreach (DateTime transDate in transactionDates)
+            foreach (var transDate in transactionDates)
             {
                 var fromId = GetRandomValue(warehouses, random);
                 var toId = GetRandomValue(warehouses.Where(x => x != fromId).ToList(), random);
@@ -74,8 +74,8 @@ public class TransferOutSeeder
                 };
                 await _transferOutRepository.CreateAsync(transferOut);
 
-                int numberOfProducts = random.Next(3, 6);
-                for (int i = 0; i < numberOfProducts; i++)
+                var numberOfProducts = random.Next(3, 6);
+                for (var i = 0; i < numberOfProducts; i++)
                 {
                     var product = GetRandomValue(products, random);
 

@@ -1,4 +1,4 @@
-﻿namespace Application.Features.DashboardManager.Queries;
+namespace Application.Features.DashboardManager.Queries;
 
 public class CardsItem
 {

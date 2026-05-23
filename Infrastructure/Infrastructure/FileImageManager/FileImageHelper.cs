@@ -1,4 +1,5 @@
-﻿namespace Infrastructure.FileImageManager;
+namespace Infrastructure.FileImageManager;
+
 public static class FileImageHelper
 {
     private static readonly Dictionary<string, string> MimeTypes = new()

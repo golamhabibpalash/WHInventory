@@ -1,4 +1,4 @@
-﻿using Application.Features.UnitMeasureManager.Commands;
+using Application.Features.UnitMeasureManager.Commands;
 using Application.Features.UnitMeasureManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;

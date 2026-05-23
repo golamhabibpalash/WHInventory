@@ -1,4 +1,4 @@
-﻿using Application.Common.Extensions;
+using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Domain.Common;
 using Infrastructure.DataAccessManager.EFCore.Contexts;

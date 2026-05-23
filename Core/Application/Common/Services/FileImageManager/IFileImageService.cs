@@ -1,4 +1,5 @@
-﻿namespace Application.Common.Services.FileImageManager;
+namespace Application.Common.Services.FileImageManager;
+
 public interface IFileImageService
 {
     Task<string> UploadAsync(

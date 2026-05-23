@@ -1,4 +1,4 @@
-﻿using Application.Features.NavigationSortOrderManager;
+using Application.Features.NavigationSortOrderManager;
 using Application.Features.SecurityManager.Commands;
 using Application.Features.SecurityManager.Queries;
 using ASPNET.BackEnd.Common.Base;

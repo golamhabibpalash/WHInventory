@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Common.Repositories;
@@ -6,42 +6,42 @@ namespace Application.Common.Repositories;
 
 public interface IEntityDbSet
 {
-    public DbSet<Token> Token { get; set; }
-    public DbSet<Todo> Todo { get; set; }
-    public DbSet<TodoItem> TodoItem { get; set; }
-    public DbSet<Company> Company { get; set; }
-    public DbSet<FileImage> FileImage { get; set; }
-    public DbSet<FileDocument> FileDocument { get; set; }
+    DbSet<Token> Token { get; set; }
+    DbSet<Todo> Todo { get; set; }
+    DbSet<TodoItem> TodoItem { get; set; }
+    DbSet<Company> Company { get; set; }
+    DbSet<FileImage> FileImage { get; set; }
+    DbSet<FileDocument> FileDocument { get; set; }
 
-    public DbSet<NumberSequence> NumberSequence { get; set; }
-    public DbSet<CustomerGroup> CustomerGroup { get; set; }
-    public DbSet<CustomerCategory> CustomerCategory { get; set; }
-    public DbSet<VendorGroup> VendorGroup { get; set; }
-    public DbSet<VendorCategory> VendorCategory { get; set; }
-    public DbSet<Warehouse> Warehouse { get; set; }
-    public DbSet<Customer> Customer { get; set; }
-    public DbSet<Vendor> Vendor { get; set; }
-    public DbSet<UnitMeasure> UnitMeasure { get; set; }
-    public DbSet<ProductGroup> ProductGroup { get; set; }
-    public DbSet<Product> Product { get; set; }
-    public DbSet<CustomerContact> CustomerContact { get; set; }
-    public DbSet<VendorContact> VendorContact { get; set; }
-    public DbSet<Tax> Tax { get; set; }
-    public DbSet<SalesOrder> SalesOrder { get; set; }
-    public DbSet<SalesOrderItem> SalesOrderItem { get; set; }
-    public DbSet<PurchaseOrder> PurchaseOrder { get; set; }
-    public DbSet<PurchaseOrderItem> PurchaseOrderItem { get; set; }
-    public DbSet<InventoryTransaction> InventoryTransaction { get; set; }
-    public DbSet<DeliveryOrder> DeliveryOrder { get; set; }
-    public DbSet<GoodsReceive> GoodsReceive { get; set; }
-    public DbSet<SalesReturn> SalesReturn { get; set; }
-    public DbSet<PurchaseReturn> PurchaseReturn { get; set; }
-    public DbSet<TransferIn> TransferIn { get; set; }
-    public DbSet<TransferOut> TransferOut { get; set; }
-    public DbSet<StockCount> StockCount { get; set; }
-    public DbSet<NegativeAdjustment> NegativeAdjustment { get; set; }
-    public DbSet<PositiveAdjustment> PositiveAdjustment { get; set; }
-    public DbSet<Scrapping> Scrapping { get; set; }
-    public DbSet<NavigationMenuSortOrder> NavigationMenuSortOrder { get; set; }
+    DbSet<NumberSequence> NumberSequence { get; set; }
+    DbSet<CustomerGroup> CustomerGroup { get; set; }
+    DbSet<CustomerCategory> CustomerCategory { get; set; }
+    DbSet<VendorGroup> VendorGroup { get; set; }
+    DbSet<VendorCategory> VendorCategory { get; set; }
+    DbSet<Warehouse> Warehouse { get; set; }
+    DbSet<Customer> Customer { get; set; }
+    DbSet<Vendor> Vendor { get; set; }
+    DbSet<UnitMeasure> UnitMeasure { get; set; }
+    DbSet<ProductGroup> ProductGroup { get; set; }
+    DbSet<Product> Product { get; set; }
+    DbSet<CustomerContact> CustomerContact { get; set; }
+    DbSet<VendorContact> VendorContact { get; set; }
+    DbSet<Tax> Tax { get; set; }
+    DbSet<SalesOrder> SalesOrder { get; set; }
+    DbSet<SalesOrderItem> SalesOrderItem { get; set; }
+    DbSet<PurchaseOrder> PurchaseOrder { get; set; }
+    DbSet<PurchaseOrderItem> PurchaseOrderItem { get; set; }
+    DbSet<InventoryTransaction> InventoryTransaction { get; set; }
+    DbSet<DeliveryOrder> DeliveryOrder { get; set; }
+    DbSet<GoodsReceive> GoodsReceive { get; set; }
+    DbSet<SalesReturn> SalesReturn { get; set; }
+    DbSet<PurchaseReturn> PurchaseReturn { get; set; }
+    DbSet<TransferIn> TransferIn { get; set; }
+    DbSet<TransferOut> TransferOut { get; set; }
+    DbSet<StockCount> StockCount { get; set; }
+    DbSet<NegativeAdjustment> NegativeAdjustment { get; set; }
+    DbSet<PositiveAdjustment> PositiveAdjustment { get; set; }
+    DbSet<Scrapping> Scrapping { get; set; }
+    DbSet<NavigationMenuSortOrder> NavigationMenuSortOrder { get; set; }
 }
 

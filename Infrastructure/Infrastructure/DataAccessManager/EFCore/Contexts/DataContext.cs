@@ -1,4 +1,4 @@
-﻿using Application.Common.Repositories;
+using Application.Common.Repositories;
 using Domain.Entities;
 using Infrastructure.DataAccessManager.EFCore.Configurations;
 using Infrastructure.SecurityManager.AspNetIdentity;

@@ -1,4 +1,4 @@
-﻿using Infrastructure.DataAccessManager.EFCore;
+using Infrastructure.DataAccessManager.EFCore;
 using Infrastructure.EmailManager;
 using Infrastructure.FileDocumentManager;
 using Infrastructure.FileImageManager;

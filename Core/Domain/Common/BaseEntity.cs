@@ -1,4 +1,4 @@
-﻿namespace Domain.Common;
+namespace Domain.Common;
 
 public class BaseEntity : IHasSequentialId, IHasIsDeleted, IHasAudit
 {
@@ -19,16 +19,16 @@ public class BaseEntity : IHasSequentialId, IHasIsDeleted, IHasAudit
 
     private static readonly object _lock = new object();
 
-    private string GenerateSequentialGuid()
+    private static string GenerateSequentialGuid()
     {
-        byte[] guidArray = Guid.NewGuid().ToByteArray();
+        var guidArray = Guid.NewGuid().ToByteArray();
 
-        DateTime baseDate = new DateTime(1900, 1, 1);
-        DateTime now = DateTime.UtcNow;
+        var baseDate = new DateTime(1900, 1, 1);
+        var now = DateTime.UtcNow;
 
-        TimeSpan timeSpan = now - baseDate;
-        byte[] daysArray = BitConverter.GetBytes(timeSpan.Days);
-        byte[] msecsArray = BitConverter.GetBytes((long)(timeSpan.TotalMilliseconds % 86400000));
+        var timeSpan = now - baseDate;
+        var daysArray = BitConverter.GetBytes(timeSpan.Days);
+        var msecsArray = BitConverter.GetBytes((long)(timeSpan.TotalMilliseconds % 86400000));
 
         if (BitConverter.IsLittleEndian)
         {

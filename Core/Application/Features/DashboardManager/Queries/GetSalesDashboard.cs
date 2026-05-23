@@ -1,4 +1,4 @@
-﻿using Application.Common.CQS.Queries;
+using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using Domain.Entities;
 using Domain.Enums;

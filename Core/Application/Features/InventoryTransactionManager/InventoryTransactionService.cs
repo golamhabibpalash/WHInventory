@@ -1,4 +1,4 @@
-﻿using Application.Common.CQS.Queries;
+using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;

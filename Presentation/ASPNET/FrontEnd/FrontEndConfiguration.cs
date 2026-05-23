@@ -1,4 +1,4 @@
-﻿namespace ASPNET.FrontEnd;
+namespace ASPNET.FrontEnd;
 
 public static class FrontEndConfiguration
 {
