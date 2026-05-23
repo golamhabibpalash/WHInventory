@@ -520,6 +520,18 @@ const App = {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
                         mainGrid.obj.autoFitColumns(['number', 'orderDate', 'customerName', 'orderStatusName', 'taxName', 'afterTaxAmount', 'createdAtUtc']);
                     },
+                    beforeExcelExport: (args) => {
+                        args.data = args.data.map(function (row) {
+                            return Object.assign({}, row, {
+                                orderDate: row.orderDate instanceof Date
+                                    ? row.orderDate.toLocaleDateString('en-CA')
+                                    : row.orderDate,
+                                createdAtUtc: row.createdAtUtc instanceof Date
+                                    ? row.createdAtUtc.toLocaleDateString('en-CA') + ' ' + row.createdAtUtc.toTimeString().slice(0, 5)
+                                    : row.createdAtUtc
+                            });
+                        });
+                    },
                     excelExportComplete: () => { },
                     rowSelected: () => {
                         if (mainGrid.obj.getSelectedRecords().length == 1) {
@@ -840,6 +852,15 @@ const App = {
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () { },
+                    beforeExcelExport: (args) => {
+                        args.data = args.data.map(function (row) {
+                            var cloned = Object.assign({}, row);
+                            if (cloned.createdAtUtc instanceof Date) {
+                                cloned.createdAtUtc = cloned.createdAtUtc.toLocaleDateString('en-CA') + ' ' + cloned.createdAtUtc.toTimeString().slice(0, 5);
+                            }
+                            return cloned;
+                        });
+                    },
                     excelExportComplete: () => { },
                     rowSelected: () => {
                         if (secondaryGrid.obj.getSelectedRecords().length == 1) {
