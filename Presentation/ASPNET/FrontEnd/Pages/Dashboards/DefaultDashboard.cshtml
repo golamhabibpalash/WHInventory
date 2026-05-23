@@ -5,18 +5,15 @@
 
 @section styles {
 <style>
-    /* ── Strip the form-card border on dashboard ──────────── */
-    #formcard {
-        border: none;
-        background: transparent;
-    }
+    /* ── Strip form-card border on this page ─────────────── */
+    #formcard { border: none; background: transparent; }
 
     /* ── Page header ─────────────────────────────────────── */
     .db-header {
         background: #fff;
         border-radius: 14px;
         box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
-        padding: 1.4rem 1.75rem;
+        padding: 1.35rem 1.75rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -27,7 +24,6 @@
         font-weight: 700;
         color: #0f172a;
         margin: 0 0 .18rem;
-        line-height: 1.25;
     }
     .db-header-sub {
         font-size: .8rem;
@@ -82,7 +78,16 @@
         background: #e2e8f0;
     }
 
-    /* ── KPI stat cards ──────────────────────────────────── */
+    /* ── KPI card link wrapper ───────────────────────────── */
+    .kpi-link {
+        display: block;
+        height: 100%;
+        text-decoration: none;
+        color: inherit;
+    }
+    .kpi-link:hover, .kpi-link:focus { text-decoration: none; color: inherit; }
+
+    /* ── KPI card ────────────────────────────────────────── */
     .kpi-card {
         background: #fff;
         border-radius: 14px;
@@ -91,28 +96,34 @@
         height: 100%;
         position: relative;
         transition: box-shadow .22s ease, transform .22s ease;
-        cursor: default;
+        cursor: pointer;
     }
     .kpi-card::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0;
-        height: 3px;
-        background: var(--kc, #1b84ff);
+        height: 4px;
+        background: linear-gradient(90deg, var(--kc, #1b84ff) 0%, var(--kc-lite, rgba(27,132,255,.3)) 100%);
         border-radius: 14px 14px 0 0;
     }
     .kpi-card:hover {
-        box-shadow: 0 8px 28px rgba(0,0,0,.1);
-        transform: translateY(-2px);
+        box-shadow: 0 10px 32px rgba(0,0,0,.12);
+        transform: translateY(-3px);
     }
+    .kpi-card:active { transform: translateY(-1px); }
+
+    /* ── KPI card body ───────────────────────────────────── */
     .kpi-body {
         padding: 1.35rem 1.4rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
     }
     .kpi-top {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
-        margin-bottom: .9rem;
+        gap: .5rem;
     }
     .kpi-label {
         font-size: .67rem;
@@ -120,56 +131,65 @@
         text-transform: uppercase;
         letter-spacing: .09em;
         color: #64748b;
-        padding-top: .15rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .kpi-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-        flex-shrink: 0;
-        margin-left: .75rem;
-    }
-    .kpi-value {
-        font-size: 2.15rem;
-        font-weight: 800;
-        color: #0f172a;
-        line-height: 1;
-        letter-spacing: -.03em;
-        margin-bottom: 0;
-    }
-    .kpi-sep {
-        height: 1px;
-        background: #f1f5f9;
-        margin: .9rem 0 .75rem;
-    }
-    .kpi-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: .5rem;
-    }
-    .kpi-desc {
-        font-size: .71rem;
-        color: #94a3b8;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
     .kpi-tag {
-        font-size: .65rem;
+        font-size: .62rem;
         font-weight: 600;
         letter-spacing: .04em;
         padding: .18rem .55rem;
         border-radius: 20px;
         white-space: nowrap;
         flex-shrink: 0;
+    }
+    .kpi-mid {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+    }
+    .kpi-value {
+        font-size: 2.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -.04em;
+    }
+    .kpi-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        flex-shrink: 0;
+        transition: transform .22s ease, box-shadow .22s ease;
+    }
+    .kpi-card:hover .kpi-icon {
+        transform: scale(1.1) rotate(-4deg);
+        box-shadow: 0 6px 18px rgba(0,0,0,.13);
+    }
+    .kpi-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: .7rem;
+        border-top: 1px solid #f1f5f9;
+    }
+    .kpi-desc {
+        font-size: .71rem;
+        color: #94a3b8;
+    }
+    .kpi-arrow {
+        font-size: .72rem;
+        color: var(--kc, #1b84ff);
+        opacity: 0;
+        transform: translateX(-6px);
+        transition: opacity .2s ease, transform .2s ease;
+    }
+    .kpi-card:hover .kpi-arrow {
+        opacity: 1;
+        transform: translateX(0);
     }
 
     /* ── Dashboard panels (charts / grids) ──────────────── */
@@ -219,7 +239,7 @@
         border: 1px solid rgba(27,132,255,.2);
         border-radius: 6px;
         padding: .25rem .65rem;
-        transition: background .15s, color .15s;
+        transition: background .15s;
     }
     .dash-ph-link:hover {
         background: rgba(27,132,255,.06);
@@ -258,79 +278,95 @@
         <div class="row g-3">
 
             <div class="col-sm-6 col-xl-3">
-                <div class="kpi-card" style="--kc:#1b84ff;">
-                    <div class="kpi-body">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Sales</span>
-                            <div class="kpi-icon" style="background:rgba(27,132,255,.1);color:#1b84ff;">
-                                <i class="fas fa-chart-line"></i>
+                <a href="/SalesOrders/SalesOrderList" class="kpi-link">
+                    <div class="kpi-card" style="--kc:#1b84ff; --kc-lite:rgba(27,132,255,.3);">
+                        <div class="kpi-body">
+                            <div class="kpi-top">
+                                <span class="kpi-label">Sales</span>
+                                <span class="kpi-tag" style="background:rgba(27,132,255,.1);color:#1b84ff;">Orders</span>
+                            </div>
+                            <div class="kpi-mid">
+                                <div class="kpi-value"><span ref="cardSalesQtyRef">—</span></div>
+                                <div class="kpi-icon" style="background:rgba(27,132,255,.1);color:#1b84ff;">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-foot">
+                                <span class="kpi-desc">total sales orders</span>
+                                <i class="fas fa-arrow-right kpi-arrow"></i>
                             </div>
                         </div>
-                        <div class="kpi-value"><span ref="cardSalesQtyRef">—</span></div>
-                        <div class="kpi-sep"></div>
-                        <div class="kpi-footer">
-                            <span class="kpi-desc">total sales orders</span>
-                            <span class="kpi-tag" style="background:rgba(27,132,255,.1);color:#1b84ff;">Sales</span>
-                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-sm-6 col-xl-3">
-                <div class="kpi-card" style="--kc:#f59e0b;">
-                    <div class="kpi-body">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Sales Return</span>
-                            <div class="kpi-icon" style="background:rgba(245,158,11,.1);color:#f59e0b;">
-                                <i class="fas fa-undo-alt"></i>
+                <a href="/SalesReturns/SalesReturnList" class="kpi-link">
+                    <div class="kpi-card" style="--kc:#f59e0b; --kc-lite:rgba(245,158,11,.3);">
+                        <div class="kpi-body">
+                            <div class="kpi-top">
+                                <span class="kpi-label">Sales Return</span>
+                                <span class="kpi-tag" style="background:rgba(245,158,11,.1);color:#f59e0b;">Returns</span>
+                            </div>
+                            <div class="kpi-mid">
+                                <div class="kpi-value"><span ref="cardSalesReturnQtyRef">—</span></div>
+                                <div class="kpi-icon" style="background:rgba(245,158,11,.1);color:#f59e0b;">
+                                    <i class="fas fa-undo-alt"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-foot">
+                                <span class="kpi-desc">total return orders</span>
+                                <i class="fas fa-arrow-right kpi-arrow"></i>
                             </div>
                         </div>
-                        <div class="kpi-value"><span ref="cardSalesReturnQtyRef">—</span></div>
-                        <div class="kpi-sep"></div>
-                        <div class="kpi-footer">
-                            <span class="kpi-desc">total return orders</span>
-                            <span class="kpi-tag" style="background:rgba(245,158,11,.1);color:#f59e0b;">Return</span>
-                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-sm-6 col-xl-3">
-                <div class="kpi-card" style="--kc:#10b981;">
-                    <div class="kpi-body">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Purchase</span>
-                            <div class="kpi-icon" style="background:rgba(16,185,129,.1);color:#10b981;">
-                                <i class="fas fa-shopping-cart"></i>
+                <a href="/PurchaseOrders/PurchaseOrderList" class="kpi-link">
+                    <div class="kpi-card" style="--kc:#10b981; --kc-lite:rgba(16,185,129,.3);">
+                        <div class="kpi-body">
+                            <div class="kpi-top">
+                                <span class="kpi-label">Purchase</span>
+                                <span class="kpi-tag" style="background:rgba(16,185,129,.1);color:#10b981;">Orders</span>
+                            </div>
+                            <div class="kpi-mid">
+                                <div class="kpi-value"><span ref="cardPurchaseQtyRef">—</span></div>
+                                <div class="kpi-icon" style="background:rgba(16,185,129,.1);color:#10b981;">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-foot">
+                                <span class="kpi-desc">total purchase orders</span>
+                                <i class="fas fa-arrow-right kpi-arrow"></i>
                             </div>
                         </div>
-                        <div class="kpi-value"><span ref="cardPurchaseQtyRef">—</span></div>
-                        <div class="kpi-sep"></div>
-                        <div class="kpi-footer">
-                            <span class="kpi-desc">total purchase orders</span>
-                            <span class="kpi-tag" style="background:rgba(16,185,129,.1);color:#10b981;">Purchase</span>
-                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-sm-6 col-xl-3">
-                <div class="kpi-card" style="--kc:#8b5cf6;">
-                    <div class="kpi-body">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Purchase Return</span>
-                            <div class="kpi-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6;">
-                                <i class="fas fa-undo"></i>
+                <a href="/PurchaseReturns/PurchaseReturnList" class="kpi-link">
+                    <div class="kpi-card" style="--kc:#8b5cf6; --kc-lite:rgba(139,92,246,.3);">
+                        <div class="kpi-body">
+                            <div class="kpi-top">
+                                <span class="kpi-label">Purchase Return</span>
+                                <span class="kpi-tag" style="background:rgba(139,92,246,.1);color:#8b5cf6;">Returns</span>
+                            </div>
+                            <div class="kpi-mid">
+                                <div class="kpi-value"><span ref="cardPurchaseReturnQtyRef">—</span></div>
+                                <div class="kpi-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6;">
+                                    <i class="fas fa-undo"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-foot">
+                                <span class="kpi-desc">total return orders</span>
+                                <i class="fas fa-arrow-right kpi-arrow"></i>
                             </div>
                         </div>
-                        <div class="kpi-value"><span ref="cardPurchaseReturnQtyRef">—</span></div>
-                        <div class="kpi-sep"></div>
-                        <div class="kpi-footer">
-                            <span class="kpi-desc">total return orders</span>
-                            <span class="kpi-tag" style="background:rgba(139,92,246,.1);color:#8b5cf6;">Return</span>
-                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
         </div>
@@ -348,79 +384,95 @@
         <div class="row g-3">
 
             <div class="col-sm-6 col-xl-3">
-                <div class="kpi-card" style="--kc:#06b6d4;">
-                    <div class="kpi-body">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Delivery Order</span>
-                            <div class="kpi-icon" style="background:rgba(6,182,212,.1);color:#06b6d4;">
-                                <i class="fas fa-truck"></i>
+                <a href="/DeliveryOrders/DeliveryOrderList" class="kpi-link">
+                    <div class="kpi-card" style="--kc:#06b6d4; --kc-lite:rgba(6,182,212,.3);">
+                        <div class="kpi-body">
+                            <div class="kpi-top">
+                                <span class="kpi-label">Delivery Order</span>
+                                <span class="kpi-tag" style="background:rgba(6,182,212,.1);color:#06b6d4;">Outbound</span>
+                            </div>
+                            <div class="kpi-mid">
+                                <div class="kpi-value"><span ref="cardDeliveryOrderQtyRef">—</span></div>
+                                <div class="kpi-icon" style="background:rgba(6,182,212,.1);color:#06b6d4;">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-foot">
+                                <span class="kpi-desc">deliveries dispatched</span>
+                                <i class="fas fa-arrow-right kpi-arrow"></i>
                             </div>
                         </div>
-                        <div class="kpi-value"><span ref="cardDeliveryOrderQtyRef">—</span></div>
-                        <div class="kpi-sep"></div>
-                        <div class="kpi-footer">
-                            <span class="kpi-desc">deliveries dispatched</span>
-                            <span class="kpi-tag" style="background:rgba(6,182,212,.1);color:#06b6d4;">Outbound</span>
-                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-sm-6 col-xl-3">
-                <div class="kpi-card" style="--kc:#3b82f6;">
-                    <div class="kpi-body">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Goods Receive</span>
-                            <div class="kpi-icon" style="background:rgba(59,130,246,.1);color:#3b82f6;">
-                                <i class="fas fa-boxes"></i>
+                <a href="/GoodsReceives/GoodsReceiveList" class="kpi-link">
+                    <div class="kpi-card" style="--kc:#3b82f6; --kc-lite:rgba(59,130,246,.3);">
+                        <div class="kpi-body">
+                            <div class="kpi-top">
+                                <span class="kpi-label">Goods Receive</span>
+                                <span class="kpi-tag" style="background:rgba(59,130,246,.1);color:#3b82f6;">Inbound</span>
+                            </div>
+                            <div class="kpi-mid">
+                                <div class="kpi-value"><span ref="cardGoodsReceiveQtyRef">—</span></div>
+                                <div class="kpi-icon" style="background:rgba(59,130,246,.1);color:#3b82f6;">
+                                    <i class="fas fa-boxes"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-foot">
+                                <span class="kpi-desc">receipts processed</span>
+                                <i class="fas fa-arrow-right kpi-arrow"></i>
                             </div>
                         </div>
-                        <div class="kpi-value"><span ref="cardGoodsReceiveQtyRef">—</span></div>
-                        <div class="kpi-sep"></div>
-                        <div class="kpi-footer">
-                            <span class="kpi-desc">receipts processed</span>
-                            <span class="kpi-tag" style="background:rgba(59,130,246,.1);color:#3b82f6;">Inbound</span>
-                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-sm-6 col-xl-3">
-                <div class="kpi-card" style="--kc:#f97316;">
-                    <div class="kpi-body">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Transfer Out</span>
-                            <div class="kpi-icon" style="background:rgba(249,115,22,.1);color:#f97316;">
-                                <i class="fas fa-sign-out-alt"></i>
+                <a href="/TransferOuts/TransferOutList" class="kpi-link">
+                    <div class="kpi-card" style="--kc:#f97316; --kc-lite:rgba(249,115,22,.3);">
+                        <div class="kpi-body">
+                            <div class="kpi-top">
+                                <span class="kpi-label">Transfer Out</span>
+                                <span class="kpi-tag" style="background:rgba(249,115,22,.1);color:#f97316;">Transfer</span>
+                            </div>
+                            <div class="kpi-mid">
+                                <div class="kpi-value"><span ref="cardTransferOutQtyRef">—</span></div>
+                                <div class="kpi-icon" style="background:rgba(249,115,22,.1);color:#f97316;">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-foot">
+                                <span class="kpi-desc">outbound transfers</span>
+                                <i class="fas fa-arrow-right kpi-arrow"></i>
                             </div>
                         </div>
-                        <div class="kpi-value"><span ref="cardTransferOutQtyRef">—</span></div>
-                        <div class="kpi-sep"></div>
-                        <div class="kpi-footer">
-                            <span class="kpi-desc">outbound transfers</span>
-                            <span class="kpi-tag" style="background:rgba(249,115,22,.1);color:#f97316;">Transfer</span>
-                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-sm-6 col-xl-3">
-                <div class="kpi-card" style="--kc:#22c55e;">
-                    <div class="kpi-body">
-                        <div class="kpi-top">
-                            <span class="kpi-label">Transfer In</span>
-                            <div class="kpi-icon" style="background:rgba(34,197,94,.1);color:#22c55e;">
-                                <i class="fas fa-sign-in-alt"></i>
+                <a href="/TransferIns/TransferInList" class="kpi-link">
+                    <div class="kpi-card" style="--kc:#22c55e; --kc-lite:rgba(34,197,94,.3);">
+                        <div class="kpi-body">
+                            <div class="kpi-top">
+                                <span class="kpi-label">Transfer In</span>
+                                <span class="kpi-tag" style="background:rgba(34,197,94,.1);color:#22c55e;">Transfer</span>
+                            </div>
+                            <div class="kpi-mid">
+                                <div class="kpi-value"><span ref="cardTransferInQtyRef">—</span></div>
+                                <div class="kpi-icon" style="background:rgba(34,197,94,.1);color:#22c55e;">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-foot">
+                                <span class="kpi-desc">inbound transfers</span>
+                                <i class="fas fa-arrow-right kpi-arrow"></i>
                             </div>
                         </div>
-                        <div class="kpi-value"><span ref="cardTransferInQtyRef">—</span></div>
-                        <div class="kpi-sep"></div>
-                        <div class="kpi-footer">
-                            <span class="kpi-desc">inbound transfers</span>
-                            <span class="kpi-tag" style="background:rgba(34,197,94,.1);color:#22c55e;">Transfer</span>
-                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
         </div>

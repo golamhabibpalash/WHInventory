@@ -89,18 +89,32 @@
             populateCards: () => {
                 const cardsDashboard = state.cardsData?.cardsDashboard;
 
-                if (cardsDashboard) {
-                    cardSalesQtyRef.value.textContent = cardsDashboard.salesTotal || 0;
-                    cardSalesReturnQtyRef.value.textContent = cardsDashboard.salesReturnTotal || 0;
-                    cardPurchaseQtyRef.value.textContent = cardsDashboard.purchaseTotal || 0;
-                    cardPurchaseReturnQtyRef.value.textContent = cardsDashboard.purchaseReturnTotal || 0;
-                    cardDeliveryOrderQtyRef.value.textContent = cardsDashboard.deliveryOrderTotal || 0;
-                    cardGoodsReceiveQtyRef.value.textContent = cardsDashboard.goodsReceiveTotal || 0;
-                    cardTransferOutQtyRef.value.textContent = cardsDashboard.transferOutTotal || 0;
-                    cardTransferInQtyRef.value.textContent = cardsDashboard.transferInTotal || 0;
-                } else {
+                if (!cardsDashboard) {
                     console.error('CardsDashboard data is not available.');
+                    return;
                 }
+
+                const countUp = (el, end) => {
+                    const target = parseInt(end) || 0;
+                    const duration = 1000;
+                    const t0 = performance.now();
+                    const tick = (now) => {
+                        const p = Math.min((now - t0) / duration, 1);
+                        const eased = 1 - Math.pow(1 - p, 3);
+                        el.textContent = Math.round(eased * target).toLocaleString();
+                        if (p < 1) requestAnimationFrame(tick);
+                    };
+                    requestAnimationFrame(tick);
+                };
+
+                countUp(cardSalesQtyRef.value, cardsDashboard.salesTotal);
+                countUp(cardSalesReturnQtyRef.value, cardsDashboard.salesReturnTotal);
+                countUp(cardPurchaseQtyRef.value, cardsDashboard.purchaseTotal);
+                countUp(cardPurchaseReturnQtyRef.value, cardsDashboard.purchaseReturnTotal);
+                countUp(cardDeliveryOrderQtyRef.value, cardsDashboard.deliveryOrderTotal);
+                countUp(cardGoodsReceiveQtyRef.value, cardsDashboard.goodsReceiveTotal);
+                countUp(cardTransferOutQtyRef.value, cardsDashboard.transferOutTotal);
+                countUp(cardTransferInQtyRef.value, cardsDashboard.transferInTotal);
             },
             populateSalesOrderGrid: () => {
                 const salesOrderDashboard = state.salesData?.salesOrderDashboard ?? [];
