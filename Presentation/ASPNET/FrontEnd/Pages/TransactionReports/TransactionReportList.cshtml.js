@@ -127,7 +127,8 @@
                     },
                     toolbarClick: (args) => {
                         if (args.item.id === 'MainGrid_excelexport') {
-                            mainGrid.obj.excelExport();
+                            const date = new Date().toISOString().slice(0, 10);
+                            mainGrid.obj.excelExport({ fileName: `InventoryTransactions_${date}.xlsx` });
                         }
                     }
                 });

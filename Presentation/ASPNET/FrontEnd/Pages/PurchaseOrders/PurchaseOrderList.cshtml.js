@@ -565,7 +565,8 @@ const App = {
                     },
                     toolbarClick: async (args) => {
                         if (args.item.id === 'MainGrid_excelexport') {
-                            mainGrid.obj.excelExport();
+                            const date = new Date().toISOString().slice(0, 10);
+                            mainGrid.obj.excelExport({ fileName: `PurchaseOrders_${date}.xlsx` });
                         }
 
                         if (args.item.id === 'AddCustom') {
@@ -885,7 +886,8 @@ const App = {
                     },
                     toolbarClick: (args) => {
                         if (args.item.id === 'SecondaryGrid_excelexport') {
-                            secondaryGrid.obj.excelExport();
+                            const date = new Date().toISOString().slice(0, 10);
+                            secondaryGrid.obj.excelExport({ fileName: `PurchaseOrderItems_${date}.xlsx` });
                         }
                     },
                     actionComplete: async (args) => {
