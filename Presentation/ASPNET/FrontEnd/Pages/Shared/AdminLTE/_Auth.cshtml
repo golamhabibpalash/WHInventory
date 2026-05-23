@@ -1,60 +1,384 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@ViewData["Title"]</title>
+    <title>@ViewData["Title"] — uStock</title>
 
-    <!-- Google Font: Source Sans Pro -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,600,700&display=fallback">
     <link rel="stylesheet" href="~/adminlte/plugins/fontawesome-free/css/all.min.css">
-    <!-- icheck bootstrap -->
-    <link rel="stylesheet" href="~/adminlte/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
-    <!-- Theme style -->
     <link rel="stylesheet" href="~/adminlte/css/adminlte.min.css">
 
     @await RenderSectionAsync("styles", required: false)
 
-    
     <style>
-        [v-cloak] {
-            display: none !important;
+        [v-cloak] { display: none !important; }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; }
+
+        body.auth-body {
+            font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f4f8;
+        }
+
+        /* ── Wrapper ─────────────────────────────────── */
+        .auth-wrapper {
+            display: flex;
+            height: 100vh;
+            min-height: 600px;
+        }
+
+        /* ── Left Panel ──────────────────────────────── */
+        .auth-left {
+            width: 42%;
+            background: linear-gradient(155deg, #0d1b2a 0%, #1a3358 55%, #0e2848 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3rem 3.5rem;
+            position: relative;
+            overflow: hidden;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .auth-left-logo img {
+            height: 36px;
+            object-fit: contain;
+        }
+
+        .auth-left-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2.5rem;
+        }
+
+        .auth-headline h1 {
+            font-size: 1.95rem;
+            font-weight: 700;
+            line-height: 1.3;
+            color: #fff;
+            margin: 0 0 0.8rem;
+        }
+
+        .auth-headline p {
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.62);
+            line-height: 1.7;
+            margin: 0;
+            max-width: 340px;
+        }
+
+        .auth-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .auth-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            font-size: 0.88rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .feat-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: rgba(27, 132, 255, 0.18);
+            border: 1px solid rgba(27, 132, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6eb5ff;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+        }
+
+        .auth-left-footer {
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.28);
+            letter-spacing: 0.02em;
+        }
+
+        /* decorative rings */
+        .auth-deco {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .auth-deco-1 {
+            width: 440px; height: 440px;
+            bottom: -170px; right: -110px;
+            border: 1px solid rgba(255, 255, 255, 0.045);
+        }
+        .auth-deco-2 {
+            width: 270px; height: 270px;
+            top: -90px; right: -45px;
+            border: 1px solid rgba(27, 132, 255, 0.1);
+        }
+        .auth-deco-3 {
+            width: 160px; height: 160px;
+            bottom: 90px; right: 90px;
+            background: rgba(27, 132, 255, 0.04);
+        }
+
+        /* ── Right Panel ─────────────────────────────── */
+        .auth-right {
+            flex: 1;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 2.5rem;
+            overflow-y: auto;
+        }
+
+        .auth-form-wrap {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* ── Shared form elements (Login, ForgotPw, Register) ── */
+        .auth-form-title {
+            margin-bottom: 2rem;
+        }
+        .auth-form-title h2 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #0d1b2a;
+            margin: 0 0 0.35rem;
+        }
+        .auth-form-title p {
+            font-size: 0.88rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .auth-field {
+            margin-bottom: 1.2rem;
+        }
+        .auth-field > label {
+            display: block;
+            font-size: 0.81rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.45rem;
+            letter-spacing: 0.01em;
+        }
+        .auth-input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .auth-input-group .a-icon {
+            position: absolute;
+            left: 0.9rem;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .auth-input-group input {
+            width: 100%;
+            height: 46px;
+            padding: 0 3rem 0 2.55rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #1e293b;
+            background: #f8fafc;
+            outline: none;
+            transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .auth-input-group input:focus {
+            border-color: #1b84ff;
+            background: #fff;
+            box-shadow: 0 0 0 3.5px rgba(27, 132, 255, 0.1);
+        }
+        .auth-input-group input::placeholder {
+            color: #b0bec5;
+        }
+
+        .auth-pw-toggle {
+            position: absolute;
+            right: 0.8rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 0.3rem;
+            font-size: 0.82rem;
+            line-height: 1;
+            z-index: 2;
+            transition: color 0.15s;
+        }
+        .auth-pw-toggle:hover { color: #1b84ff; }
+
+        .auth-field-error {
+            display: block;
+            font-size: 0.76rem;
+            color: #ef4444;
+            margin-top: 0.32rem;
+            padding-left: 0.2rem;
+        }
+
+        .auth-options-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+        .auth-remember {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.83rem;
+            color: #475569;
+            cursor: pointer;
+            user-select: none;
+        }
+        .auth-remember input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: #1b84ff;
+            cursor: pointer;
+        }
+
+        .auth-link {
+            font-size: 0.83rem;
+            color: #1b84ff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .auth-link:hover { color: #1b84ff; text-decoration: underline; }
+
+        .auth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            height: 48px;
+            background: linear-gradient(135deg, #1b84ff 0%, #0062e6 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(27, 132, 255, 0.3);
+            transition: box-shadow 0.2s, transform 0.15s, opacity 0.2s;
+            margin-bottom: 1.5rem;
+        }
+        .auth-btn:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(27, 132, 255, 0.42);
+            transform: translateY(-1px);
+        }
+        .auth-btn:active:not(:disabled) { transform: translateY(0); }
+        .auth-btn:disabled { opacity: 0.68; cursor: not-allowed; transform: none; }
+
+        .auth-bottom-link {
+            text-align: center;
+            font-size: 0.84rem;
+            color: #64748b;
+            margin: 0;
+        }
+        .auth-bottom-link a {
+            color: #1b84ff;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .auth-bottom-link a:hover { text-decoration: underline; }
+
+        /* ── Responsive ──────────────────────────────── */
+        @@media (max-width: 900px) {
+            .auth-left { display: none; }
+            .auth-right { padding: 1.5rem; }
         }
     </style>
 
     @* vue *@
     <script src="~/lib/vue/vue.global.prod.js"></script>
 
-    <!-- JavaScript Libraries -->
-    <script src="~/lib/bootstrap/dist/js/bootstrap.min.js" defer></script>
     <script src="~/lib/axios/axios.min.js" defer></script>
     <script src="~/lib/sweetalert/sweetalert2v11.js" defer></script>
     <script src="~/lib/indotalent/storage-manager.js" defer></script>
     <script src="~/lib/indotalent/security-manager.js" defer></script>
     <script src="~/lib/indotalent/axios-manager.js" defer></script>
-
-
 </head>
-<body class="hold-transition login-page">
-    <div class="login-box">
-        <div class="login-logo">
-            <a asp-area="" asp-page="/Index"><b>uStock</b></a>
-        </div>
-        <!-- /.login-logo -->
-        <div class="card">
-            @RenderBody()
-            <!-- /.login-card-body -->
-        </div>
+
+<body class="auth-body">
+    <div class="auth-wrapper">
+
+        <!-- Left Panel: Branding -->
+        <aside class="auth-left">
+            <div class="auth-left-logo">
+                <img src="/ustock-logo.svg" alt="uStock">
+            </div>
+
+            <div class="auth-left-body">
+                <div class="auth-headline">
+                    <h1>Warehouse &amp; Inventory<br>Management System</h1>
+                    <p>A complete platform to manage stock, orders, transfers, and reporting across all your warehouses.</p>
+                </div>
+
+                <ul class="auth-features">
+                    <li>
+                        <span class="feat-icon"><i class="fas fa-boxes"></i></span>
+                        Real-time inventory tracking
+                    </li>
+                    <li>
+                        <span class="feat-icon"><i class="fas fa-warehouse"></i></span>
+                        Multi-warehouse management
+                    </li>
+                    <li>
+                        <span class="feat-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                        Purchase &amp; Sales orders
+                    </li>
+                    <li>
+                        <span class="feat-icon"><i class="fas fa-cash-register"></i></span>
+                        Point of sale integration
+                    </li>
+                    <li>
+                        <span class="feat-icon"><i class="fas fa-chart-bar"></i></span>
+                        Comprehensive reporting
+                    </li>
+                </ul>
+            </div>
+
+            <div class="auth-left-footer">
+                &copy; @DateTime.Now.Year uStock &mdash; Warehouse POS &amp; Inventory
+            </div>
+
+            <div class="auth-deco auth-deco-1"></div>
+            <div class="auth-deco auth-deco-2"></div>
+            <div class="auth-deco auth-deco-3"></div>
+        </aside>
+
+        <!-- Right Panel: Form -->
+        <main class="auth-right">
+            <div class="auth-form-wrap">
+                @RenderBody()
+            </div>
+        </main>
+
     </div>
-    <!-- /.login-box -->
-    <!-- jQuery -->
+
     <script src="~/adminlte/plugins/jquery/jquery.min.js"></script>
-    <!-- Bootstrap 4 -->
     <script src="~/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <!-- AdminLTE App -->
     <script src="~/adminlte/js/adminlte.min.js"></script>
 
-     @await RenderSectionAsync("scripts", required: false)
+    @await RenderSectionAsync("scripts", required: false)
 </body>
 </html>

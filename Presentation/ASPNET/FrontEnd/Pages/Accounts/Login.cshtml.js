@@ -4,6 +4,7 @@
             email: '',
             password: '',
             rememberMe: false,
+            showPassword: false,
             isSubmitting: false,
             errors: {
                 email: '',

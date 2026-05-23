@@ -1,80 +1,79 @@
 @page
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Sign In";
 }
 
-<div id="app" class="container-fluid" v-cloak>
+<div id="app" v-cloak>
 
-    <div class="card-body login-card-body">
-        <p class="login-box-msg">@ViewData["Title"]</p>
+    <div class="auth-form-title">
+        <h2>Welcome back</h2>
+        <p>Sign in to your uStock account to continue</p>
+    </div>
 
-        <form v-on:submit.prevent="handleSubmit">
-            <div class="input-group mb-3">
+    <form v-on:submit.prevent="handleSubmit" novalidate>
+
+        <div class="auth-field">
+            <label for="Email">Email Address</label>
+            <div class="auth-input-group">
+                <i class="fas fa-envelope a-icon"></i>
                 <input id="Email"
                        name="Email"
                        type="email"
-                       class="form-control"
-                       placeholder="name@example.com"
+                       placeholder="name@company.com"
                        v-model="state.email"
-                       v-on:input="state.errors.email = ''">
-                <div class="input-group-append">
-                    <div class="input-group-text">
-                        <span class="fas fa-envelope"></span>
-                    </div>
-                </div>
+                       v-on:input="state.errors.email = ''"
+                       autocomplete="email">
             </div>
-            <label v-if="state.errors.email" class="text-danger">{{ state.errors.email }}</label>
-            <div class="input-group mb-3">
+            <span v-if="state.errors.email" class="auth-field-error">{{ state.errors.email }}</span>
+        </div>
+
+        <div class="auth-field">
+            <label for="Password">Password</label>
+            <div class="auth-input-group">
+                <i class="fas fa-lock a-icon"></i>
                 <input id="Password"
                        name="Password"
-                       type="password"
-                       class="form-control"
-                       placeholder="Password"
+                       :type="state.showPassword ? 'text' : 'password'"
+                       placeholder="Enter your password"
                        v-model="state.password"
-                       v-on:input="state.errors.password = ''">
-                <div class="input-group-append">
-                    <div class="input-group-text">
-                        <span class="fas fa-lock"></span>
-                    </div>
-                </div>
+                       v-on:input="state.errors.password = ''"
+                       autocomplete="current-password">
+                <button type="button"
+                        class="auth-pw-toggle"
+                        v-on:click="state.showPassword = !state.showPassword"
+                        tabindex="-1"
+                        aria-label="Toggle password visibility">
+                    <i :class="state.showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
             </div>
-            <label v-if="state.errors.password" class="text-danger">{{ state.errors.password }}</label>
-            <div class="row">
-                <div class="col-8">
-                    <div class="icheck-primary">
-                        <input type="checkbox" id="remember" v-model="state.rememberMe">
-                        <label for="remember">
-                            Remember Me
-                        </label>
-                    </div>
-                </div>
-                <!-- /.col -->
-                <div class="col-4">
-                    <button type="submit"
-                            v-bind:disabled="state.isSubmitting"
-                            class="btn btn-primary btn-block">
-                        <span class="spinner-border spinner-border-sm me-2"
-                              v-if="state.isSubmitting"
-                              role="status"
-                              aria-hidden="true"></span>
-                        <i v-if="!state.isSubmitting" class="fas fa-sign-in-alt me-1"></i><span>{{ state.isSubmitting ? '...' : 'Log In' }}</span>
-                    </button>
-                </div>
-                <!-- /.col -->
-            </div>
-        </form>
+            <span v-if="state.errors.password" class="auth-field-error">{{ state.errors.password }}</span>
+        </div>
 
-        <p class="mb-1">
-            <a asp-page="/Accounts/ForgotPassword">Forgot Password</a>
-        </p>
-        <p class="mb-0">
-            <a asp-page="/Accounts/Register" class="text-center">Register a new membership</a>
-        </p>
-    </div>
+        <div class="auth-options-row">
+            <label class="auth-remember">
+                <input type="checkbox" v-model="state.rememberMe">
+                Remember me
+            </label>
+            <a asp-page="/Accounts/ForgotPassword" class="auth-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="auth-btn" v-bind:disabled="state.isSubmitting">
+            <span class="spinner-border spinner-border-sm"
+                  v-if="state.isSubmitting"
+                  role="status"
+                  aria-hidden="true"></span>
+            <i v-if="!state.isSubmitting" class="fas fa-sign-in-alt"></i>
+            {{ state.isSubmitting ? 'Signing in...' : 'Sign In' }}
+        </button>
+
+    </form>
+
+    <p class="auth-bottom-link">
+        Don't have an account? <a asp-page="/Accounts/Register">Create one</a>
+    </p>
 
 </div>
 
-
 @section scripts {
-    <script type ="module" src="~/FrontEnd/Pages/Accounts/Login.cshtml.js"></script>
+    <script type="module" src="~/FrontEnd/Pages/Accounts/Login.cshtml.js"></script>
 }
