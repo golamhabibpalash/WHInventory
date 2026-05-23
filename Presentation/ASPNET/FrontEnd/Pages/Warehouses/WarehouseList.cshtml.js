@@ -50,20 +50,20 @@
                     throw error;
                 }
             },
-            createMainData: async (name, description, createdById) => {
+            createMainData: async (name, description, createdById, isSystemWarehouse) => {
                 try {
                     const response = await AxiosManager.post('/Warehouse/CreateWarehouse', {
-                        name, description, createdById
+                        name, description, createdById, systemWarehouse: isSystemWarehouse
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, description, updatedById) => {
+            updateMainData: async (id, name, description, updatedById, isSystemWarehouse) => {
                 try {
                     const response = await AxiosManager.post('/Warehouse/UpdateWarehouse', {
-                        id, name, description, updatedById
+                        id, name, description, updatedById, systemWarehouse: isSystemWarehouse
                     });
                     return response;
                 } catch (error) {
@@ -126,10 +126,10 @@
                     }
 
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.description, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.description, StorageManager.getUserId(), state.isSystemWarehouse)
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.description, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.description, StorageManager.getUserId(), state.isSystemWarehouse);
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();

@@ -16,6 +16,7 @@ public class UpdateWarehouseRequest : IRequest<UpdateWarehouseResult>
     public string? Name { get; init; }
     public string? Description { get; init; }
     public string? UpdatedById { get; init; }
+    public bool? SystemWarehouse { get; init; }
 }
 
 public class UpdateWarehouseValidator : AbstractValidator<UpdateWarehouseRequest>
@@ -60,6 +61,7 @@ public class UpdateWarehouseHandler : IRequestHandler<UpdateWarehouseRequest, Up
 
         entity.Name = request.Name;
         entity.Description = request.Description;
+        entity.SystemWarehouse = request.SystemWarehouse ?? entity.SystemWarehouse;
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

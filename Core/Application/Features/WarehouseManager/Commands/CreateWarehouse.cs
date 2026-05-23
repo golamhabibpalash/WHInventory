@@ -15,6 +15,7 @@ public class CreateWarehouseRequest : IRequest<CreateWarehouseResult>
     public string? Name { get; init; }
     public string? Description { get; init; }
     public string? CreatedById { get; init; }
+    public bool? SystemWarehouse { get; init; }
 }
 
 public class CreateWarehouseValidator : AbstractValidator<CreateWarehouseRequest>
@@ -45,7 +46,7 @@ public class CreateWarehouseHandler : IRequestHandler<CreateWarehouseRequest, Cr
         entity.CreatedById = request.CreatedById;
 
         entity.Name = request.Name;
-        entity.SystemWarehouse = false;
+        entity.SystemWarehouse = request.SystemWarehouse ?? false;
         entity.Description = request.Description;
 
         await _repository.CreateAsync(entity, cancellationToken);
