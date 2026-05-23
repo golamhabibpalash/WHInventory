@@ -273,25 +273,25 @@
 </style>
 <style>
     /* CSS scrollbar sidebar */
-    #navbarnav::-webkit-scrollbar {
+    .main-sidebar .sidebar::-webkit-scrollbar {
         width: 12px;
     }
 
-    #navbarnav::-webkit-scrollbar-track {
+    .main-sidebar .sidebar::-webkit-scrollbar-track {
         background-color: #191C24;
     }
 
-    #navbarnav::-webkit-scrollbar-thumb {
+    .main-sidebar .sidebar::-webkit-scrollbar-thumb {
         background-color: #2a2a3c;
         border-radius: 6px;
         border: 3px solid #191C24;
         transition: filter 0.3s;
     }
 
-        #navbarnav::-webkit-scrollbar-thumb:hover {
-            cursor: pointer;
-            background-color: var(--dark);
-        }
+    .main-sidebar .sidebar::-webkit-scrollbar-thumb:hover {
+        cursor: pointer;
+        background-color: var(--dark);
+    }
 
 </style>
 <style>
@@ -320,9 +320,26 @@
 </style>
 <style>
     #navbarnav {
-        width: 250px;
-        height: 70vh;
+        width: 100%;
+        height: auto;
+        overflow-y: visible;
+    }
+
+    /* Fixed sidebar: always visible, never scrolls with page body */
+    .main-sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        overflow: hidden;
+        z-index: 1038;
+    }
+
+    /* Sidebar inner content scrolls independently when taller than viewport */
+    .main-sidebar .sidebar {
+        height: calc(100vh - 57px);
         overflow-y: auto;
+        overflow-x: hidden;
     }
 
     a {

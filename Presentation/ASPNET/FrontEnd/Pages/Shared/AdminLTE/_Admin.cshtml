@@ -21,6 +21,11 @@
 </head>
 
 <body class="hold-transition sidebar-mini">
+    <script>
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.body.classList.add('sidebar-collapse');
+        }
+    </script>
     <!-- Site wrapper -->
     <div class="wrapper">
         <!-- Navbar -->

@@ -48,6 +48,21 @@
         }
     });
 
+    // Persist sidebar collapsed/expanded state across page loads and navigation
+    (function () {
+        new MutationObserver(function (mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                if (mutations[i].attributeName === 'class') {
+                    localStorage.setItem(
+                        'sidebarCollapsed',
+                        document.body.classList.contains('sidebar-collapse')
+                    );
+                    break;
+                }
+            }
+        }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    })();
+
     var hideSpinnerAndShowContent = () => {
         const spinner = document.getElementById('spinner');
         if (spinner) {
