@@ -1,182 +1,338 @@
-﻿@page
+@page
 @{
     ViewData["Title"] = "Default Dashboard";
 }
 
+@section styles {
+<style>
+    /* ── KPI stat cards ─────────────────────────────────── */
+    .kpi-card {
+        background: #fff;
+        border-radius: 12px;
+        border-left: 4px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.04);
+        overflow: hidden;
+        height: 100%;
+        transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .kpi-card:hover {
+        box-shadow: 0 6px 22px rgba(0,0,0,.1);
+        transform: translateY(-2px);
+    }
+    .kpi-card-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.35rem 1.5rem;
+    }
+    .kpi-content {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .kpi-label {
+        font-size: .68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .09em;
+        color: #64748b;
+        margin-bottom: .3rem;
+        white-space: nowrap;
+    }
+    .kpi-value {
+        font-size: 2.05rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+        margin-bottom: .3rem;
+        letter-spacing: -.02em;
+    }
+    .kpi-sub {
+        font-size: .7rem;
+        color: #94a3b8;
+        white-space: nowrap;
+    }
+    .kpi-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        margin-left: 1rem;
+    }
+
+    /* ── Dashboard panels (charts / grids) ──────────────── */
+    .dash-panel {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.04);
+        padding: 1.5rem;
+        height: 100%;
+    }
+    .dash-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+    }
+    .dash-panel-title {
+        font-size: .875rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+    .dash-panel-link {
+        font-size: .78rem;
+        color: #1b84ff;
+        font-weight: 500;
+        text-decoration: none;
+    }
+    .dash-panel-link:hover { color: #1b84ff; text-decoration: underline; }
+</style>
+}
+
 <div id="app" v-cloak>
     <div class="form-card" id="formcard">
+
+        <!-- ── Row 1: Order documents ───────────────────────── -->
         <div class="container-fluid pt-4 px-4">
-            <div class="row g-4">
+            <div class="row g-3">
+
                 <div class="col-sm-6 col-xl-3">
-                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
-                        <i class="fas fa-chart-line fa-3x" style="color: #E94649;"></i>
-                        <div class="ms-3">
-                            <p class="mb-2">Sales</p>
-                            <h6 class="mb-0 text-end"><span ref="cardSalesQtyRef"></span> Qty.</h6>
+                    <div class="kpi-card" style="border-left-color:#1b84ff;">
+                        <div class="kpi-card-inner">
+                            <div class="kpi-content">
+                                <span class="kpi-label">Sales</span>
+                                <div class="kpi-value"><span ref="cardSalesQtyRef">0</span></div>
+                                <span class="kpi-sub">sales orders</span>
+                            </div>
+                            <div class="kpi-icon" style="background:rgba(27,132,255,.1);color:#1b84ff;">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm-6 col-xl-3">
-                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
-                        <i class="fas fa-undo-alt fa-3x" style="color: #F6B53F;"></i>
-                        <div class="ms-3">
-                            <p class="mb-2">Sales Rtrn.</p>
-                            <h6 class="mb-0 text-end"><span ref="cardSalesReturnQtyRef"></span> Qty.</h6>
+                    <div class="kpi-card" style="border-left-color:#f59e0b;">
+                        <div class="kpi-card-inner">
+                            <div class="kpi-content">
+                                <span class="kpi-label">Sales Return</span>
+                                <div class="kpi-value"><span ref="cardSalesReturnQtyRef">0</span></div>
+                                <span class="kpi-sub">return orders</span>
+                            </div>
+                            <div class="kpi-icon" style="background:rgba(245,158,11,.1);color:#f59e0b;">
+                                <i class="fas fa-undo-alt"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm-6 col-xl-3">
-                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
-                        <i class="fas fa-shopping-cart fa-3x text-primary"></i>
-                        <div class="ms-3">
-                            <p class="mb-2">Purchase</p>
-                            <h6 class="mb-0 text-end"><span ref="cardPurchaseQtyRef"></span> Qty.</h6>
+                    <div class="kpi-card" style="border-left-color:#10b981;">
+                        <div class="kpi-card-inner">
+                            <div class="kpi-content">
+                                <span class="kpi-label">Purchase</span>
+                                <div class="kpi-value"><span ref="cardPurchaseQtyRef">0</span></div>
+                                <span class="kpi-sub">purchase orders</span>
+                            </div>
+                            <div class="kpi-icon" style="background:rgba(16,185,129,.1);color:#10b981;">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm-6 col-xl-3">
-                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
-                        <i class="fas fa-undo fa-3x" style="color: #C4C24A;"></i>
-                        <div class="ms-3">
-                            <p class="mb-2">Purchase Rtrn.</p>
-                            <h6 class="mb-0 text-end"><span ref="cardPurchaseReturnQtyRef"></span> Qty.</h6>
+                    <div class="kpi-card" style="border-left-color:#8b5cf6;">
+                        <div class="kpi-card-inner">
+                            <div class="kpi-content">
+                                <span class="kpi-label">Purchase Return</span>
+                                <div class="kpi-value"><span ref="cardPurchaseReturnQtyRef">0</span></div>
+                                <span class="kpi-sub">return orders</span>
+                            </div>
+                            <div class="kpi-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6;">
+                                <i class="fas fa-undo"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
-        <div class="container-fluid pt-4 px-4">
-            <div class="row g-4">
+
+        <!-- ── Row 2: Warehouse movements ───────────────────── -->
+        <div class="container-fluid pt-3 px-4">
+            <div class="row g-3">
+
                 <div class="col-sm-6 col-xl-3">
-                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
-                        <i class="fas fa-truck fa-3x" style="color: #C4C24A;"></i>
-                        <div class="ms-3">
-                            <p class="mb-2">Delivery Order</p>
-                            <h6 class="mb-0 text-end"><span ref="cardDeliveryOrderQtyRef"></span> Qty.</h6>
+                    <div class="kpi-card" style="border-left-color:#06b6d4;">
+                        <div class="kpi-card-inner">
+                            <div class="kpi-content">
+                                <span class="kpi-label">Delivery Order</span>
+                                <div class="kpi-value"><span ref="cardDeliveryOrderQtyRef">0</span></div>
+                                <span class="kpi-sub">deliveries dispatched</span>
+                            </div>
+                            <div class="kpi-icon" style="background:rgba(6,182,212,.1);color:#06b6d4;">
+                                <i class="fas fa-truck"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm-6 col-xl-3">
-                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
-                        <i class="fas fa-boxes fa-3x text-primary"></i>
-                        <div class="ms-3">
-                            <p class="mb-2">Goods Receive</p>
-                            <h6 class="mb-0 text-end"><span ref="cardGoodsReceiveQtyRef"></span> Qty.</h6>
+                    <div class="kpi-card" style="border-left-color:#3b82f6;">
+                        <div class="kpi-card-inner">
+                            <div class="kpi-content">
+                                <span class="kpi-label">Goods Receive</span>
+                                <div class="kpi-value"><span ref="cardGoodsReceiveQtyRef">0</span></div>
+                                <span class="kpi-sub">receipts processed</span>
+                            </div>
+                            <div class="kpi-icon" style="background:rgba(59,130,246,.1);color:#3b82f6;">
+                                <i class="fas fa-boxes"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm-6 col-xl-3">
-                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
-                        <i class="fas fa-sign-out-alt fa-3x" style="color: #F6B53F;"></i>
-                        <div class="ms-3">
-                            <p class="mb-2">Transfer Out</p>
-                            <h6 class="mb-0 text-end"><span ref="cardTransferOutQtyRef"></span> Qty.</h6>
+                    <div class="kpi-card" style="border-left-color:#f97316;">
+                        <div class="kpi-card-inner">
+                            <div class="kpi-content">
+                                <span class="kpi-label">Transfer Out</span>
+                                <div class="kpi-value"><span ref="cardTransferOutQtyRef">0</span></div>
+                                <span class="kpi-sub">outbound transfers</span>
+                            </div>
+                            <div class="kpi-icon" style="background:rgba(249,115,22,.1);color:#f97316;">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm-6 col-xl-3">
-                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
-                        <i class="fas fa-sign-in-alt fa-3x" style="color: #E94649"></i>
-                        <div class="ms-3">
-                            <p class="mb-2">Transfer In</p>
-                            <h6 class="mb-0 text-end"><span ref="cardTransferInQtyRef"></span> Qty.</h6>
+                    <div class="kpi-card" style="border-left-color:#22c55e;">
+                        <div class="kpi-card-inner">
+                            <div class="kpi-content">
+                                <span class="kpi-label">Transfer In</span>
+                                <div class="kpi-value"><span ref="cardTransferInQtyRef">0</span></div>
+                                <span class="kpi-sub">inbound transfers</span>
+                            </div>
+                            <div class="kpi-icon" style="background:rgba(34,197,94,.1);color:#22c55e;">
+                                <i class="fas fa-sign-in-alt"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
-        <div class="container-fluid pt-4 px-4">
-            <div class="row g-4">
+
+        <!-- ── Charts: Customer & Vendor groups ─────────────── -->
+        <div class="container-fluid pt-3 px-4">
+            <div class="row g-3">
                 <div class="col-sm-12 col-xl-6">
-                    <div class="bg-white text-center rounded p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h6 class="mb-0">Customer Group</h6>
-                            <a href="/SalesReports/SalesReportList">Sales</a>
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <span class="dash-panel-title">Customer Group</span>
+                            <a href="/SalesReports/SalesReportList" class="dash-panel-link">View Sales</a>
                         </div>
                         <div ref="customerGroupChartRef" align="center"></div>
                     </div>
                 </div>
                 <div class="col-sm-12 col-xl-6">
-                    <div class="bg-white text-center rounded p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h6 class="mb-0">Vendor Group</h6>
-                            <a href="/PurchaseReports/PurchaseReportList">Purchases</a>
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <span class="dash-panel-title">Vendor Group</span>
+                            <a href="/PurchaseReports/PurchaseReportList" class="dash-panel-link">View Purchases</a>
                         </div>
                         <div ref="vendorGroupChartRef" align="center"></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="container-fluid pt-4 px-4">
-            <div class="row g-4">
+
+        <!-- ── Charts: Customer & Vendor categories ─────────── -->
+        <div class="container-fluid pt-3 px-4">
+            <div class="row g-3">
                 <div class="col-sm-12 col-xl-6">
-                    <div class="bg-white text-center rounded p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h6 class="mb-0">Customer Category</h6>
-                            <a href="/SalesReports/SalesReportList">Sales</a>
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <span class="dash-panel-title">Customer Category</span>
+                            <a href="/SalesReports/SalesReportList" class="dash-panel-link">View Sales</a>
                         </div>
                         <div ref="customerCategoryChartRef" align="center"></div>
                     </div>
                 </div>
                 <div class="col-sm-12 col-xl-6">
-                    <div class="bg-white text-center rounded p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h6 class="mb-0">Vendor Category</h6>
-                            <a href="/PurchaseReports/PurchaseReportList">Purchases</a>
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <span class="dash-panel-title">Vendor Category</span>
+                            <a href="/PurchaseReports/PurchaseReportList" class="dash-panel-link">View Purchases</a>
                         </div>
                         <div ref="vendorCategoryChartRef" align="center"></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="container-fluid pt-4 px-4">
-            <div class="row g-4">
+
+        <!-- ── Grids: Latest orders ──────────────────────────── -->
+        <div class="container-fluid pt-3 px-4">
+            <div class="row g-3">
                 <div class="col-sm-12 col-xl-6">
-                    <div class="bg-white text-center rounded p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h6 class="mb-0">Latest Sales</h6>
-                            <a href="/SalesOrders/SalesOrderList">Sales</a>
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <span class="dash-panel-title">Latest Sales</span>
+                            <a href="/SalesOrders/SalesOrderList" class="dash-panel-link">View All</a>
                         </div>
-                        <div ref="salesOrderGridRef" align="center"></div>
+                        <div ref="salesOrderGridRef"></div>
                     </div>
                 </div>
                 <div class="col-sm-12 col-xl-6">
-                    <div class="bg-white text-center rounded p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h6 class="mb-0">Latest Purchase</h6>
-                            <a href="/PurchaseOrders/PurchaseOrderList">Purchases</a>
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <span class="dash-panel-title">Latest Purchase</span>
+                            <a href="/PurchaseOrders/PurchaseOrderList" class="dash-panel-link">View All</a>
                         </div>
-                        <div ref="purchaseOrderGridRef" align="center"></div>
+                        <div ref="purchaseOrderGridRef"></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="container-fluid pt-4 px-4">
-            <div class="row g-4">
+
+        <!-- ── Chart: Inventory stock ────────────────────────── -->
+        <div class="container-fluid pt-3 px-4">
+            <div class="row g-3">
                 <div class="col-sm-12 col-xl-12">
-                    <div class="bg-white text-center rounded p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h6 class="mb-0">Inventory Stock</h6>
-                            <a href="/StockReports/StockReportList">Stocks</a>
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <span class="dash-panel-title">Inventory Stock</span>
+                            <a href="/StockReports/StockReportList" class="dash-panel-link">View Stocks</a>
                         </div>
-                        <div ref="stockChartRef" align="center"></div>
+                        <div ref="stockChartRef"></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="container-fluid pt-4 px-4">
-            <div class="row g-4 mb-4">
+
+        <!-- ── Grid: Inventory transactions ─────────────────── -->
+        <div class="container-fluid pt-3 px-4">
+            <div class="row g-3 mb-4">
                 <div class="col-sm-12 col-xl-12">
-                    <div class="bg-white text-center rounded p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <h6 class="mb-0">Inventory Transaction</h6>
-                            <a href="/TransactionReports/TransactionReportList">Transactions</a>
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <span class="dash-panel-title">Inventory Transaction</span>
+                            <a href="/TransactionReports/TransactionReportList" class="dash-panel-link">View All</a>
                         </div>
-                        <div ref="inventoryTransactionGridRef" align="center"></div>
+                        <div ref="inventoryTransactionGridRef"></div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
