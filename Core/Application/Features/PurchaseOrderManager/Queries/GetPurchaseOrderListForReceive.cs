@@ -2,6 +2,7 @@ using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -78,7 +79,10 @@ public class GetPurchaseOrderListForReceiveHandler : IRequestHandler<GetPurchase
             .ApplyIsDeletedFilter(false)
             .Include(x => x.Vendor)
             .Include(x => x.Tax)
-            .Where(x => receivablePOIds.Contains(x.Id))
+            .Where(x => receivablePOIds.Contains(x.Id)
+                && x.OrderStatus != PurchaseOrderStatus.Draft
+                && x.OrderStatus != PurchaseOrderStatus.Cancelled
+                && x.OrderStatus != PurchaseOrderStatus.Archived)
             .ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetPurchaseOrderListDto>>(entities);

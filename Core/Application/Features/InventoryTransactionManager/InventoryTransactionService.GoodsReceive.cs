@@ -111,6 +111,8 @@ public partial class InventoryTransactionService
         await _inventoryTransactionRepository.CreateAsync(child, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);
 
+        await _purchaseOrderService.RecalculatePOStatus(parent.PurchaseOrderId, cancellationToken);
+
         return child;
     }
 
@@ -143,6 +145,11 @@ public partial class InventoryTransactionService
         _inventoryTransactionRepository.Update(child);
         await _unitOfWork.SaveAsync(cancellationToken);
 
+        var gr = await _queryContext.GoodsReceive
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == child.ModuleId, cancellationToken);
+        await _purchaseOrderService.RecalculatePOStatus(gr?.PurchaseOrderId, cancellationToken);
+
         return child;
     }
 
@@ -159,10 +166,16 @@ public partial class InventoryTransactionService
             throw new Exception($"Child entity not found: {id}");
         }
 
+        var moduleId = child.ModuleId;
         child.UpdatedById = updatedById;
 
         _inventoryTransactionRepository.Delete(child);
         await _unitOfWork.SaveAsync(cancellationToken);
+
+        var gr = await _queryContext.GoodsReceive
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == moduleId, cancellationToken);
+        await _purchaseOrderService.RecalculatePOStatus(gr?.PurchaseOrderId, cancellationToken);
 
         return child;
     }

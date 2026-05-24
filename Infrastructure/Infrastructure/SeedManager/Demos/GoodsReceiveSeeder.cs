@@ -1,6 +1,7 @@
 using Application.Common.Repositories;
 using Application.Features.InventoryTransactionManager;
 using Application.Features.NumberSequenceManager;
+using Application.Features.PurchaseOrderManager;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public class GoodsReceiveSeeder
     private readonly ICommandRepository<InventoryTransaction> _inventoryTransactionRepository;
     private readonly NumberSequenceService _numberSequenceService;
     private readonly InventoryTransactionService _inventoryTransactionService;
+    private readonly PurchaseOrderService _purchaseOrderService;
     private readonly IUnitOfWork _unitOfWork;
 
     public GoodsReceiveSeeder(
@@ -26,6 +28,7 @@ public class GoodsReceiveSeeder
         ICommandRepository<InventoryTransaction> inventoryTransactionRepository,
         NumberSequenceService numberSequenceService,
         InventoryTransactionService inventoryTransactionService,
+        PurchaseOrderService purchaseOrderService,
         IUnitOfWork unitOfWork
     )
     {
@@ -36,6 +39,7 @@ public class GoodsReceiveSeeder
         _inventoryTransactionRepository = inventoryTransactionRepository;
         _numberSequenceService = numberSequenceService;
         _inventoryTransactionService = inventoryTransactionService;
+        _purchaseOrderService = purchaseOrderService;
         _unitOfWork = unitOfWork;
     }
 
@@ -46,7 +50,7 @@ public class GoodsReceiveSeeder
 
         var purchaseOrders = await _purchaseOrderRepository
             .GetQuery()
-            .Where(x => x.OrderStatus >= PurchaseOrderStatus.Confirmed)
+            .Where(x => x.OrderStatus == PurchaseOrderStatus.Confirmed)
             .ToListAsync();
 
         var warehouses = await _warehouseRepository
@@ -94,6 +98,8 @@ public class GoodsReceiveSeeder
             }
 
             await _unitOfWork.SaveAsync();
+
+            await _purchaseOrderService.RecalculatePOStatus(purchaseOrder.Id);
         }
     }
 

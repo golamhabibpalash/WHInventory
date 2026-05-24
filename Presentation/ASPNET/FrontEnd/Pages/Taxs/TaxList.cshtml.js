@@ -248,10 +248,11 @@
                 state.errors.name = 'Name is required.';
                 isValid = false;
             }
-            if (!state.percentage || isNaN(parseFloat(state.percentage))) {
+            const pct = parseFloat(state.percentage);
+            if (state.percentage === null || state.percentage === undefined || state.percentage === '' || isNaN(pct)) {
                 state.errors.percentage = 'Percentage is required and must be a number.';
                 isValid = false;
-            } else if (parseFloat(state.percentage) < 0 || parseFloat(state.percentage) > 100) {
+            } else if (pct < 0 || pct > 100) {
                 state.errors.percentage = 'Percentage must be between 0 and 100.';
                 isValid = false;
             }

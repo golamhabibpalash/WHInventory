@@ -2,6 +2,7 @@ using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
+using Application.Features.PurchaseOrderManager;
 using Application.Features.WarehouseManager;
 using Domain.Entities;
 using Domain.Enums;
@@ -16,13 +17,15 @@ public partial class InventoryTransactionService
     private readonly IQueryContext _queryContext;
     private readonly ICommandRepository<InventoryTransaction> _inventoryTransactionRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly PurchaseOrderService _purchaseOrderService;
 
     public InventoryTransactionService(
         NumberSequenceService numberSequenceService,
         WarehouseService warehouseService,
         IQueryContext queryContext,
         ICommandRepository<InventoryTransaction> inventoryTransactionRepository,
-        IUnitOfWork unitOfWork
+        IUnitOfWork unitOfWork,
+        PurchaseOrderService purchaseOrderService
         )
     {
         _numberSequenceService = numberSequenceService;
@@ -30,6 +33,7 @@ public partial class InventoryTransactionService
         _queryContext = queryContext;
         _inventoryTransactionRepository = inventoryTransactionRepository;
         _unitOfWork = unitOfWork;
+        _purchaseOrderService = purchaseOrderService;
     }
 
     public double GetStock(string? warehouseId, string? productId, string? currentId = null)

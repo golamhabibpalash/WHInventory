@@ -1,5 +1,6 @@
 using Application.Common.Repositories;
 using Application.Features.InventoryTransactionManager;
+using Application.Features.PurchaseOrderManager;
 using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
@@ -31,16 +32,19 @@ public class DeleteGoodsReceiveHandler : IRequestHandler<DeleteGoodsReceiveReque
     private readonly ICommandRepository<GoodsReceive> _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly InventoryTransactionService _inventoryTransactionService;
+    private readonly PurchaseOrderService _purchaseOrderService;
 
     public DeleteGoodsReceiveHandler(
         ICommandRepository<GoodsReceive> repository,
         IUnitOfWork unitOfWork,
-        InventoryTransactionService inventoryTransactionService
+        InventoryTransactionService inventoryTransactionService,
+        PurchaseOrderService purchaseOrderService
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _inventoryTransactionService = inventoryTransactionService;
+        _purchaseOrderService = purchaseOrderService;
     }
     public async Task<DeleteGoodsReceiveResult> Handle(DeleteGoodsReceiveRequest request, CancellationToken cancellationToken)
     {
@@ -52,6 +56,7 @@ public class DeleteGoodsReceiveHandler : IRequestHandler<DeleteGoodsReceiveReque
             throw new Exception($"Entity not found: {request.Id}");
         }
 
+        var purchaseOrderId = entity.PurchaseOrderId;
         entity.UpdatedById = request.DeletedById;
 
         _repository.Delete(entity);
@@ -67,6 +72,8 @@ public class DeleteGoodsReceiveHandler : IRequestHandler<DeleteGoodsReceiveReque
             null,
             cancellationToken
             );
+
+        await _purchaseOrderService.RecalculatePOStatus(purchaseOrderId, cancellationToken);
 
         return new DeleteGoodsReceiveResult
         {

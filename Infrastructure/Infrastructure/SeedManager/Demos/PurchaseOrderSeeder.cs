@@ -55,11 +55,12 @@ public class PurchaseOrderSeeder
 
             foreach (var transDate in transactionDates)
             {
+                var initialStatuses = new[] { PurchaseOrderStatus.Draft, PurchaseOrderStatus.Confirmed, PurchaseOrderStatus.Cancelled, PurchaseOrderStatus.Archived };
                 var purchaseOrder = new PurchaseOrder
                 {
                     Number = _numberSequenceService.GenerateNumber(nameof(PurchaseOrder), "", "PO"),
                     OrderDate = transDate,
-                    OrderStatus = (PurchaseOrderStatus)random.Next(0, Enum.GetNames(typeof(PurchaseOrderStatus)).Length),
+                    OrderStatus = initialStatuses[random.Next(initialStatuses.Length)],
                     VendorId = GetRandomValue(vendors, random),
                     TaxId = GetRandomValue(taxes, random),
                 };

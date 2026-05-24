@@ -23,7 +23,7 @@ public class CreateTaxValidator : AbstractValidator<CreateTaxRequest>
     public CreateTaxValidator()
     {
         RuleFor(x => x.Name).NotEmpty();
-        RuleFor(x => x.Percentage).NotEmpty();
+        RuleFor(x => x.Percentage).NotNull();
     }
 }
 

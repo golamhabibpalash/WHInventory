@@ -11,5 +11,13 @@ public enum PurchaseOrderStatus
     [Description("Confirmed")]
     Confirmed = 2,
     [Description("Archived")]
-    Archived = 3
+    Archived = 3,
+    [Description("Open")]
+    Open = 4,
+    [Description("Partially Received")]
+    PartiallyReceived = 5,
+    [Description("Fully Received")]
+    FullyReceived = 6,
+    [Description("Closed")]
+    Closed = 7
 }
