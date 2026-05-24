@@ -25,7 +25,7 @@ const StorageManager = {
     get: (key) => {
         try {
             const value = localStorage.getItem(key);
-            return value ? JSON.parse(value) : null;
+            return value && value !== 'undefined' ? JSON.parse(value) : null;
         } catch (error) {
             console.error('Failed to retrieve data from localStorage', error);
             return null;

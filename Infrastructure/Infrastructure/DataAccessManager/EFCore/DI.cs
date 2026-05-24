@@ -115,6 +115,10 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE ""Product"" ADD COLUMN IF NOT EXISTS ""ImageName"" varchar(255) NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 ALTER TABLE ""ProductGroup"" ADD COLUMN IF NOT EXISTS ""ParentId"" varchar(50) NULL;
                 CREATE INDEX IF NOT EXISTS ""IX_ProductGroup_ParentId""
                     ON ""ProductGroup"" (""ParentId"");
@@ -178,6 +182,13 @@ public static class DI
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'LogoName')
                 BEGIN
                     ALTER TABLE [Company] ADD [LogoName] nvarchar(500) NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'ImageName')
+                BEGIN
+                    ALTER TABLE [Product] ADD [ImageName] nvarchar(255) NULL;
                 END
             ");
 

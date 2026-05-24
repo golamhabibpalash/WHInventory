@@ -22,6 +22,7 @@ const App = {
             unitMeasureId: null,
             physical: false,
             imageName: '',
+            imagePreviewUrl: '',
             errors: {
                 name: '',
                 unitPrice: '',
@@ -29,11 +30,20 @@ const App = {
                 unitMeasureId: '',
                 image: ''
             },
-            isSubmitting: false
+            isSubmitting: false,
+            productGroupQuickName: '',
+            productGroupQuickDescription: '',
+            productGroupQuickParentId: '',
+            productGroupQuickIsSubmitting: false,
+            productGroupQuickErrors: {
+                name: ''
+            }
         });
 
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
+        const productGroupQuickModalRef = Vue.ref(null);
+        const productGroupQuickParentIdRef = Vue.ref(null);
         const productGroupIdRef = Vue.ref(null);
         const unitMeasureIdRef = Vue.ref(null);
         const imageUploadRef = Vue.ref(null);
@@ -82,6 +92,7 @@ const App = {
             state.unitMeasureId = null;
             state.physical = false;
             state.imageName = '';
+            state.imagePreviewUrl = '';
             state.errors = {
                 name: '',
                 unitPrice: '',
@@ -123,9 +134,7 @@ const App = {
             uploadProductImage: async (file) => {
                 const formData = new FormData();
                 formData.append('file', file);
-                const response = await AxiosManager.post('/Product/UploadProductImage', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                const response = await AxiosManager.post('/Product/UploadProductImage', formData, {});
                 return response;
             },
             deleteMainData: async (id, deletedById) => {
@@ -146,9 +155,27 @@ const App = {
                     throw error;
                 }
             },
+            createProductGroup: async (name, description, createdById, parentId) => {
+                try {
+                    const response = await AxiosManager.post('/ProductGroup/CreateProductGroup', {
+                        name, description, createdById, parentId
+                    });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             getUnitMeasureListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/UnitMeasure/GetUnitMeasureList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getProductImage: async (imageName) => {
+                try {
+                    const response = await AxiosManager.get('/FileImage/GetImage?imageName=' + imageName, { responseType: 'blob' });
                     return response;
                 } catch (error) {
                     throw error;
@@ -190,6 +217,18 @@ const App = {
                     ...item,
                     createdAtUtc: new Date(item.createdAtUtc)
                 }));
+            },
+            loadImagePreview: async (imageName) => {
+                if (!imageName) {
+                    state.imagePreviewUrl = '';
+                    return;
+                }
+                try {
+                    const response = await services.getProductImage(imageName);
+                    state.imagePreviewUrl = URL.createObjectURL(response.data);
+                } catch {
+                    state.imagePreviewUrl = '';
+                }
             },
         };
 
@@ -369,6 +408,7 @@ const App = {
                                 const imageName = response?.data?.content?.imageName;
                                 if (imageName) {
                                     state.imageName = imageName;
+                                    await methods.loadImagePreview(imageName);
                                 } else {
                                     state.errors.image = 'Image upload failed. Please try again.';
                                 }
@@ -383,7 +423,85 @@ const App = {
             },
         };
 
+        const productGroupQuickParentListLookup = {
+            obj: null,
+            create: () => {
+                productGroupQuickParentListLookup.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.productGroupListLookupData,
+                    fields: { value: 'id', text: 'hierarchyPath' },
+                    placeholder: '-- No Parent --',
+                    popupHeight: '200px',
+                    allowFiltering: true,
+                    showClearButton: true,
+                    change: (e) => {
+                        state.productGroupQuickParentId = e.value ?? '';
+                    }
+                });
+                productGroupQuickParentListLookup.obj.appendTo(productGroupQuickParentIdRef.value);
+            },
+            refresh: () => {
+                if (productGroupQuickParentListLookup.obj) {
+                    productGroupQuickParentListLookup.obj.dataSource = state.productGroupListLookupData;
+                    productGroupQuickParentListLookup.obj.value = state.productGroupQuickParentId || null;
+                }
+            }
+        };
+
+        const productGroupQuickModal = {
+            obj: null,
+            create: () => {
+                productGroupQuickModal.obj = new bootstrap.Modal(productGroupQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         const handler = {
+            openProductGroupQuickCreate: () => {
+                state.productGroupQuickName = '';
+                state.productGroupQuickDescription = '';
+                state.productGroupQuickParentId = '';
+                state.productGroupQuickErrors = { name: '' };
+                productGroupQuickParentListLookup.refresh();
+                productGroupQuickModal.obj.show();
+            },
+            closeProductGroupQuickCreate: () => {
+                productGroupQuickModal.obj.hide();
+            },
+            submitProductGroupQuickCreate: async () => {
+                state.productGroupQuickErrors = { name: '' };
+                if (!state.productGroupQuickName) {
+                    state.productGroupQuickErrors.name = 'Name is required.';
+                    return;
+                }
+                try {
+                    state.productGroupQuickIsSubmitting = true;
+                    const parentId = state.productGroupQuickParentId === '' ? null : state.productGroupQuickParentId;
+                    const response = await services.createProductGroup(
+                        state.productGroupQuickName,
+                        state.productGroupQuickDescription,
+                        StorageManager.getUserId(),
+                        parentId
+                    );
+                    if (response.data.code === 200) {
+                        const newGroup = response.data.content.data;
+                        await methods.populateProductGroupListLookupData();
+                        productGroupListLookup.obj.setProperties({
+                            dataSource: state.productGroupListLookupData,
+                            value: newGroup.id
+                        });
+                        state.productGroupId = newGroup.id;
+                        productGroupQuickModal.obj.hide();
+                    } else {
+                        state.productGroupQuickErrors.name = response.data.message ?? 'Failed to create product group.';
+                    }
+                } catch (error) {
+                    state.productGroupQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
+                } finally {
+                    state.productGroupQuickIsSubmitting = false;
+                }
+            },
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -479,6 +597,8 @@ const App = {
                 unitPriceNumber.create();
 
                 mainModal.create();
+                productGroupQuickModal.create();
+                productGroupQuickParentListLookup.create();
                 imageDropzone.init();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
                     resetFormState();
@@ -591,6 +711,7 @@ const App = {
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.imageName = selectedRecord.imageName ?? '';
+                                await methods.loadImagePreview(state.imageName);
                                 mainModal.obj.show();
                             }
                         }
@@ -609,6 +730,7 @@ const App = {
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.imageName = selectedRecord.imageName ?? '';
+                                await methods.loadImagePreview(state.imageName);
                                 mainModal.obj.show();
                             }
                         }
@@ -635,6 +757,8 @@ const App = {
         return {
             mainGridRef,
             mainModalRef,
+            productGroupQuickModalRef,
+            productGroupQuickParentIdRef,
             productGroupIdRef,
             unitMeasureIdRef,
             imageUploadRef,

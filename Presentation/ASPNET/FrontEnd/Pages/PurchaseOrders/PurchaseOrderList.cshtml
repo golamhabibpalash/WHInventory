@@ -43,7 +43,16 @@
                                         <div class="row mb-2">
                                             <div class="col-md-6">
                                                 <label for="VendorId">Vendor</label>
-                                                <div ref="vendorIdRef"></div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div ref="vendorIdRef" class="flex-grow-1"></div>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-success flex-shrink-0"
+                                                            v-on:click="handler.openVendorQuickCreate"
+                                                            v-bind:disabled="state.deleteMode"
+                                                            title="Quick-create a new vendor">
+                                                        <i class="fas fa-plus me-1"></i>New
+                                                    </button>
+                                                </div>
                                                 <label class="text-danger">{{ state.errors.vendorId }}</label>
                                             </div>
                                             <div class="col-md-6">
@@ -137,6 +146,92 @@
                             v-if="state.isNewlyCreated"
                             v-on:click="handler.handleSubmitClose">
                         <i class="fas fa-check me-1"></i>Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Quick Create Modal -->
+    <div class="modal fade" ref="vendorQuickModalRef" id="VendorQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-store me-2"></i>Quick Create Vendor</h5>
+                    <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeVendorQuickCreate" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new vendor will be automatically selected after creation.</p>
+                    <div class="row mb-2">
+                        <div class="col-md-8">
+                            <label>Name <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorQuickName" type="text" class="form-control" placeholder="Vendor name" />
+                            <span class="text-danger small">{{ state.vendorQuickErrors.name }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Country</label>
+                            <input v-model="state.vendorQuickCountry" type="text" class="form-control" placeholder="Optional" />
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <label>Vendor Group <span class="text-danger">*</span></label>
+                            <div ref="vendorQuickGroupIdRef"></div>
+                            <span class="text-danger small">{{ state.vendorQuickErrors.vendorGroupId }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Vendor Category <span class="text-danger">*</span></label>
+                            <div ref="vendorQuickCategoryIdRef"></div>
+                            <span class="text-danger small">{{ state.vendorQuickErrors.vendorCategoryId }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <label>Street <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorQuickStreet" type="text" class="form-control" />
+                            <span class="text-danger small">{{ state.vendorQuickErrors.street }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label>City <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorQuickCity" type="text" class="form-control" />
+                            <span class="text-danger small">{{ state.vendorQuickErrors.city }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4">
+                            <label>State <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorQuickState" type="text" class="form-control" />
+                            <span class="text-danger small">{{ state.vendorQuickErrors.state }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Zip Code <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorQuickZipCode" type="text" class="form-control" />
+                            <span class="text-danger small">{{ state.vendorQuickErrors.zipCode }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <label>Phone Number <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorQuickPhoneNumber" type="text" class="form-control" />
+                            <span class="text-danger small">{{ state.vendorQuickErrors.phoneNumber }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Email Address <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorQuickEmailAddress" type="email" class="form-control" />
+                            <span class="text-danger small">{{ state.vendorQuickErrors.emailAddress }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeVendorQuickCreate">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success"
+                            v-on:click="handler.submitVendorQuickCreate"
+                            v-bind:disabled="state.vendorQuickIsSubmitting">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.vendorQuickIsSubmitting"></span>
+                        <i class="fas fa-store me-1" v-else></i>
+                        {{ state.vendorQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
             </div>

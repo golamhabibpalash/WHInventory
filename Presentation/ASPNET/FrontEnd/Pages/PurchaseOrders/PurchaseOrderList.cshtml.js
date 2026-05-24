@@ -28,7 +28,31 @@ const App = {
             isSubmitting: false,
             subTotalAmount: '0.00',
             taxAmount: '0.00',
-            totalAmount: '0.00'
+            totalAmount: '0.00',
+            vendorGroupListLookupData: [],
+            vendorCategoryListLookupData: [],
+            vendorQuickName: '',
+            vendorQuickCountry: '',
+            vendorQuickVendorGroupId: null,
+            vendorQuickVendorCategoryId: null,
+            vendorQuickStreet: '',
+            vendorQuickCity: '',
+            vendorQuickState: '',
+            vendorQuickZipCode: '',
+            vendorQuickPhoneNumber: '',
+            vendorQuickEmailAddress: '',
+            vendorQuickIsSubmitting: false,
+            vendorQuickErrors: {
+                name: '',
+                vendorGroupId: '',
+                vendorCategoryId: '',
+                street: '',
+                city: '',
+                state: '',
+                zipCode: '',
+                phoneNumber: '',
+                emailAddress: '',
+            },
         });
 
         const mainGridRef = Vue.ref(null);
@@ -39,6 +63,9 @@ const App = {
         const taxIdRef = Vue.ref(null);
         const orderStatusRef = Vue.ref(null);
         const secondaryGridRef = Vue.ref(null);
+        const vendorQuickModalRef = Vue.ref(null);
+        const vendorQuickGroupIdRef = Vue.ref(null);
+        const vendorQuickCategoryIdRef = Vue.ref(null);
 
         const validateForm = function () {
             state.errors.orderDate = '';
@@ -199,7 +226,34 @@ const App = {
                 } catch (error) {
                     throw error;
                 }
-            }
+            },
+            createVendor: async (name, vendorGroupId, vendorCategoryId, street, city, state, zipCode, country, phoneNumber, emailAddress, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/Vendor/CreateVendor', {
+                        name, vendorGroupId, vendorCategoryId, street, city, state, zipCode, country,
+                        phoneNumber, emailAddress, createdById
+                    });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getVendorGroupListLookupData: async () => {
+                try {
+                    const response = await AxiosManager.get('/VendorGroup/GetVendorGroupList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getVendorCategoryListLookupData: async () => {
+                try {
+                    const response = await AxiosManager.get('/VendorCategory/GetVendorCategoryList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
         };
 
         const methods = {
@@ -237,7 +291,19 @@ const App = {
             },
             populateProductListLookupData: async () => {
                 const response = await services.getProductListLookupData();
-                state.productListLookupData = response?.data?.content?.data;
+                state.productListLookupData = response?.data?.content?.data ?? [];
+            },
+            populateVendorGroupListLookupData: async () => {
+                if (state.vendorGroupListLookupData.length > 0) return;
+                const response = await services.getVendorGroupListLookupData();
+                state.vendorGroupListLookupData = response?.data?.content?.data ?? [];
+                vendorGroupListLookupQuick.obj.dataSource = state.vendorGroupListLookupData;
+            },
+            populateVendorCategoryListLookupData: async () => {
+                if (state.vendorCategoryListLookupData.length > 0) return;
+                const response = await services.getVendorCategoryListLookupData();
+                state.vendorCategoryListLookupData = response?.data?.content?.data ?? [];
+                vendorCategoryListLookupQuick.obj.dataSource = state.vendorCategoryListLookupData;
             },
             refreshPaymentSummary: async (id) => {
                 const record = state.mainData.find(item => item.id === id);
@@ -384,6 +450,60 @@ const App = {
             }
         };
 
+        const vendorGroupListLookupQuick = {
+            obj: null,
+            create: () => {
+                vendorGroupListLookupQuick.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.vendorGroupListLookupData,
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'Select a Vendor Group',
+                    filterBarPlaceholder: 'Search',
+                    sortOrder: 'Ascending',
+                    allowFiltering: true,
+                    filtering: (e) => {
+                        e.preventDefaultAction = true;
+                        let query = new ej.data.Query();
+                        if (e.text !== '') {
+                            query = query.where('name', 'startsWith', e.text, true);
+                        }
+                        e.updateData(state.vendorGroupListLookupData, query);
+                    },
+                    change: (e) => {
+                        state.vendorQuickVendorGroupId = e.value;
+                        state.vendorQuickErrors.vendorGroupId = '';
+                    }
+                });
+                vendorGroupListLookupQuick.obj.appendTo(vendorQuickGroupIdRef.value);
+            }
+        };
+
+        const vendorCategoryListLookupQuick = {
+            obj: null,
+            create: () => {
+                vendorCategoryListLookupQuick.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.vendorCategoryListLookupData,
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'Select a Vendor Category',
+                    filterBarPlaceholder: 'Search',
+                    sortOrder: 'Ascending',
+                    allowFiltering: true,
+                    filtering: (e) => {
+                        e.preventDefaultAction = true;
+                        let query = new ej.data.Query();
+                        if (e.text !== '') {
+                            query = query.where('name', 'startsWith', e.text, true);
+                        }
+                        e.updateData(state.vendorCategoryListLookupData, query);
+                    },
+                    change: (e) => {
+                        state.vendorQuickVendorCategoryId = e.value;
+                        state.vendorQuickErrors.vendorCategoryId = '';
+                    }
+                });
+                vendorCategoryListLookupQuick.obj.appendTo(vendorQuickCategoryIdRef.value);
+            }
+        };
+
         const taxListLookup = {
             obj: null,
             trackingChange: false,
@@ -493,6 +613,123 @@ const App = {
                 state.errors.orderStatus = '';
             }
         );
+
+        const vendorQuickModal = {
+            obj: null,
+            create: () => {
+                vendorQuickModal.obj = new bootstrap.Modal(vendorQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
+        const vendorQuickHandler = {
+            resetForm: () => {
+                state.vendorQuickName = '';
+                state.vendorQuickCountry = '';
+                state.vendorQuickVendorGroupId = null;
+                state.vendorQuickVendorCategoryId = null;
+                state.vendorQuickStreet = '';
+                state.vendorQuickCity = '';
+                state.vendorQuickState = '';
+                state.vendorQuickZipCode = '';
+                state.vendorQuickPhoneNumber = '';
+                state.vendorQuickEmailAddress = '';
+                state.vendorQuickErrors = {
+                    name: '', vendorGroupId: '', vendorCategoryId: '',
+                    street: '', city: '', state: '', zipCode: '',
+                    phoneNumber: '', emailAddress: ''
+                };
+                if (vendorGroupListLookupQuick.obj) vendorGroupListLookupQuick.obj.value = null;
+                if (vendorCategoryListLookupQuick.obj) vendorCategoryListLookupQuick.obj.value = null;
+            },
+            open: async () => {
+                vendorQuickHandler.resetForm();
+                await methods.populateVendorGroupListLookupData();
+                await methods.populateVendorCategoryListLookupData();
+                vendorQuickModal.obj.show();
+            },
+            close: () => {
+                vendorQuickModal.obj.hide();
+            },
+            submit: async () => {
+                const errors = {
+                    name: '', vendorGroupId: '', vendorCategoryId: '',
+                    street: '', city: '', state: '', zipCode: '',
+                    phoneNumber: '', emailAddress: ''
+                };
+                let isValid = true;
+
+                if (!state.vendorQuickName) { errors.name = 'Name is required.'; isValid = false; }
+                if (!state.vendorQuickVendorGroupId) { errors.vendorGroupId = 'Vendor Group is required.'; isValid = false; }
+                if (!state.vendorQuickVendorCategoryId) { errors.vendorCategoryId = 'Vendor Category is required.'; isValid = false; }
+                if (!state.vendorQuickStreet) { errors.street = 'Street is required.'; isValid = false; }
+                if (!state.vendorQuickCity) { errors.city = 'City is required.'; isValid = false; }
+                if (!state.vendorQuickState) { errors.state = 'State is required.'; isValid = false; }
+                if (!state.vendorQuickZipCode) { errors.zipCode = 'Zip Code is required.'; isValid = false; }
+                if (!state.vendorQuickPhoneNumber) { errors.phoneNumber = 'Phone Number is required.'; isValid = false; }
+                if (!state.vendorQuickEmailAddress) { errors.emailAddress = 'Email Address is required.'; isValid = false; }
+
+                state.vendorQuickErrors = errors;
+                if (!isValid) return;
+
+                try {
+                    state.vendorQuickIsSubmitting = true;
+
+                    const response = await services.createVendor(
+                        state.vendorQuickName,
+                        state.vendorQuickVendorGroupId,
+                        state.vendorQuickVendorCategoryId,
+                        state.vendorQuickStreet,
+                        state.vendorQuickCity,
+                        state.vendorQuickState,
+                        state.vendorQuickZipCode,
+                        state.vendorQuickCountry,
+                        state.vendorQuickPhoneNumber,
+                        state.vendorQuickEmailAddress,
+                        StorageManager.getUserId()
+                    );
+
+                    if (response.data.code === 200) {
+                        const newVendor = response.data.content.data;
+
+                        // Refresh vendor dropdown data source and auto-select new vendor
+                        await methods.populateVendorListLookupData();
+                        vendorListLookup.obj.setProperties({
+                            dataSource: state.vendorListLookupData,
+                            value: newVendor.id
+                        });
+                        state.vendorId = newVendor.id;
+
+                        vendorQuickModal.obj.hide();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Vendor Created',
+                            text: `"${newVendor.name}" has been created and selected.`,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Create Failed',
+                            text: response.data.message ?? 'Please check your data.',
+                            confirmButtonText: 'Try Again'
+                        });
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'An Error Occurred',
+                        text: error.response?.data?.message ?? 'Please try again.',
+                        confirmButtonText: 'OK'
+                    });
+                } finally {
+                    state.vendorQuickIsSubmitting = false;
+                }
+            }
+        };
 
         const mainGrid = {
             obj: null,
@@ -638,6 +875,8 @@ const App = {
             }
         };
 
+        let productObj, priceObj, quantityObj, totalObj, numberObj, summaryObj;
+
         const secondaryGrid = {
             obj: null,
             create: async (dataSource) => {
@@ -672,10 +911,9 @@ const App = {
                             validationRules: { required: true },
                             disableHtmlEncode: false,
                             valueAccessor: (field, data, column) => {
-                                const product = state.productListLookupData.find(item => item.id === data[field]);
+                                const product = (state.productListLookupData ?? []).find(item => item.id === data[field]);
                                 return product ? `${product.name}` : '';
                             },
-                            editType: 'dropdownedit',
                             edit: {
                                 create: () => {
                                     let productElem = document.createElement('input');
@@ -972,6 +1210,9 @@ const App = {
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
+                vendorQuickModal.create();
+                vendorGroupListLookupQuick.create();
+                vendorCategoryListLookupQuick.create();
                 await methods.populateVendorListLookupData();
                 vendorListLookup.create();
                 await methods.populateTaxListLookupData();
@@ -1002,11 +1243,17 @@ const App = {
             taxIdRef,
             orderStatusRef,
             secondaryGridRef,
+            vendorQuickModalRef,
+            vendorQuickGroupIdRef,
+            vendorQuickCategoryIdRef,
             state,
             methods,
             handler: {
                 handleSubmit: methods.handleFormSubmit,
-                handleSubmitClose: methods.handleSubmitClose
+                handleSubmitClose: methods.handleSubmitClose,
+                openVendorQuickCreate: vendorQuickHandler.open,
+                closeVendorQuickCreate: vendorQuickHandler.close,
+                submitVendorQuickCreate: vendorQuickHandler.submit,
             }
         };
     }

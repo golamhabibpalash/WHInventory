@@ -67,11 +67,7 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 try {
-                    const response = await AxiosManager.post('/FileImage/UploadImage', formData, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    });
+                    const response = await AxiosManager.post('/FileImage/UploadImage', formData, {});
                     return response;
                 } catch (error) {
                     throw error;

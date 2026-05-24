@@ -65,13 +65,16 @@
 
     const request = async (method, url, data = {}, customHeaders = {}, responseType = 'json') => {
         try {
+            const headers = { ...customHeaders };
+            // Let the browser set Content-Type (with boundary) automatically for FormData
+            if (data instanceof FormData) {
+                headers['Content-Type'] = null;
+            }
             const response = await axiosInstance({
                 method,
                 url,
                 data,
-                headers: {
-                    ...customHeaders,
-                },
+                headers,
                 responseType,
             });
             return response;
