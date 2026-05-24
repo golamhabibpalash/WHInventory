@@ -21,33 +21,37 @@ public class CreateUnitMeasureRequest : IRequest<CreateUnitMeasureResult>
 
 public class CreateUnitMeasureValidator : AbstractValidator<CreateUnitMeasureRequest>
 {
-    public CreateUnitMeasureValidator(IQueryContext context)
+    public CreateUnitMeasureValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MustAsync(async (name, cancellationToken) =>
-            {
-                return !await context.UnitMeasure.AnyAsync(x => x.Name == name && !x.IsDeleted, cancellationToken);
-            }).WithMessage("Unit name already exist.");
+        RuleFor(x => x.Name).NotEmpty();
     }
 }
 
 public class CreateUnitMeasureHandler : IRequestHandler<CreateUnitMeasureRequest, CreateUnitMeasureResult>
 {
     private readonly ICommandRepository<UnitMeasure> _repository;
+    private readonly IQueryContext _queryContext;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateUnitMeasureHandler(
         ICommandRepository<UnitMeasure> repository,
+        IQueryContext queryContext,
         IUnitOfWork unitOfWork
         )
     {
         _repository = repository;
+        _queryContext = queryContext;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<CreateUnitMeasureResult> Handle(CreateUnitMeasureRequest request, CancellationToken cancellationToken = default)
     {
+        var nameExists = await _queryContext.UnitMeasure
+            .AnyAsync(x => x.Name!.ToLower() == request.Name!.ToLower() && !x.IsDeleted, cancellationToken);
+
+        if (nameExists)
+            throw new Exception("Unit name already exist.");
+
         var entity = new UnitMeasure();
         entity.CreatedById = request.CreatedById;
 

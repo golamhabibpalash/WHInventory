@@ -22,41 +22,42 @@ public class UpdateUnitMeasureRequest : IRequest<UpdateUnitMeasureResult>
 
 public class UpdateUnitMeasureValidator : AbstractValidator<UpdateUnitMeasureRequest>
 {
-    public UpdateUnitMeasureValidator(IQueryContext context)
+    public UpdateUnitMeasureValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MustAsync(async (request, name, cancellationToken) =>
-            {
-                return !await context.UnitMeasure.AnyAsync(x => x.Name == name && x.Id != request.Id && !x.IsDeleted, cancellationToken);
-            }).WithMessage("Unit name already exist.");
+        RuleFor(x => x.Name).NotEmpty();
     }
 }
 
 public class UpdateUnitMeasureHandler : IRequestHandler<UpdateUnitMeasureRequest, UpdateUnitMeasureResult>
 {
     private readonly ICommandRepository<UnitMeasure> _repository;
+    private readonly IQueryContext _queryContext;
     private readonly IUnitOfWork _unitOfWork;
 
     public UpdateUnitMeasureHandler(
         ICommandRepository<UnitMeasure> repository,
+        IQueryContext queryContext,
         IUnitOfWork unitOfWork
         )
     {
         _repository = repository;
+        _queryContext = queryContext;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<UpdateUnitMeasureResult> Handle(UpdateUnitMeasureRequest request, CancellationToken cancellationToken)
     {
+        var nameExists = await _queryContext.UnitMeasure
+            .AnyAsync(x => x.Name!.ToLower() == request.Name!.ToLower() && x.Id != request.Id && !x.IsDeleted, cancellationToken);
+
+        if (nameExists)
+            throw new Exception("Unit name already exist.");
 
         var entity = await _repository.GetAsync(request.Id ?? string.Empty, cancellationToken);
 
         if (entity == null)
-        {
             throw new Exception($"Entity not found: {request.Id}");
-        }
 
         entity.UpdatedById = request.UpdatedById;
 
@@ -72,4 +73,3 @@ public class UpdateUnitMeasureHandler : IRequestHandler<UpdateUnitMeasureRequest
         };
     }
 }
-
