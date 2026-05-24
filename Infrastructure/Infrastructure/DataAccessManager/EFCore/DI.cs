@@ -114,6 +114,15 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE ""ProductGroup"" ADD COLUMN IF NOT EXISTS ""ParentId"" varchar(50) NULL;
+                CREATE INDEX IF NOT EXISTS ""IX_ProductGroup_ParentId""
+                    ON ""ProductGroup"" (""ParentId"");
+                ALTER TABLE ""ProductGroup"" DROP CONSTRAINT IF EXISTS ""FK_ProductGroup_ProductGroup_ParentId"";
+                ALTER TABLE ""ProductGroup"" ADD CONSTRAINT ""FK_ProductGroup_ProductGroup_ParentId""
+                    FOREIGN KEY (""ParentId"") REFERENCES ""ProductGroup"" (""Id"") ON DELETE RESTRICT;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 CREATE TABLE IF NOT EXISTS ""NavigationMenuSortOrder"" (
                     ""Id""            varchar(50)  NOT NULL PRIMARY KEY,
                     ""IsDeleted""     boolean      NOT NULL DEFAULT false,
@@ -134,6 +143,16 @@ public static class DI
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'LogoName')
                 BEGIN
                     ALTER TABLE [Company] ADD [LogoName] nvarchar(500) NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'ProductGroup' AND COLUMN_NAME = 'ParentId')
+                BEGIN
+                    ALTER TABLE [ProductGroup] ADD [ParentId] nvarchar(50) NULL;
+                    CREATE INDEX [IX_ProductGroup_ParentId] ON [ProductGroup] ([ParentId]);
+                    ALTER TABLE [ProductGroup] ADD CONSTRAINT [FK_ProductGroup_ProductGroup_ParentId]
+                        FOREIGN KEY ([ParentId]) REFERENCES [ProductGroup] ([Id]);
                 END
             ");
 

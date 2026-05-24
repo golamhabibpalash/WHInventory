@@ -35,6 +35,13 @@
                                                 <input ref="nameRef" v-model="state.name">
                                                 <label class="text-danger">{{ state.errors.name }}</label>
                                             </div>
+                                            <div class="col-md-6">
+                                                <label for="ParentId">Parent Group</label>
+                                                <select v-model="state.parentId" id="ParentId" name="ParentId" class="form-select">
+                                                    <option value="">-- No Parent --</option>
+                                                    <option v-for="item in parentOptions" :value="item.id" :key="item.id">{{ item.name }}</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <div class="row mb-2">
                                             <div class="col-12">

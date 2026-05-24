@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Infrastructure.DataAccessManager.EFCore.Common;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using static Domain.Common.Constants;
 
@@ -13,8 +14,12 @@ public class ProductGroupConfiguration : BaseEntityConfiguration<ProductGroup>
 
         builder.Property(x => x.Name).HasMaxLength(NameConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.Description).HasMaxLength(DescriptionConsts.MaxLength).IsRequired(false);
+        builder.Property(x => x.ParentId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
+
+        builder.HasOne(x => x.Parent).WithMany(x => x.Children).HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => e.Name);
+        builder.HasIndex(e => e.ParentId);
     }
 }
 

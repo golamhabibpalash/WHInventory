@@ -7,10 +7,29 @@
             id: '',
             name: '',
             description: '',
+            parentId: '',
             errors: {
                 name: ''
             },
             isSubmitting: false
+        });
+
+        const parentOptions = Vue.computed(() => {
+            if (!state.mainData) return [];
+            if (state.id) {
+                const excludeIds = new Set([state.id]);
+                const collectDescendants = (parentId) => {
+                    state.mainData
+                        .filter(item => item.parentId === parentId)
+                        .forEach(child => {
+                            excludeIds.add(child.id);
+                            collectDescendants(child.id);
+                        });
+                };
+                collectDescendants(state.id);
+                return state.mainData.filter(item => !excludeIds.has(item.id));
+            }
+            return state.mainData;
         });
 
         const mainGridRef = Vue.ref(null);
@@ -57,6 +76,7 @@
             state.id = '';
             state.name = '';
             state.description = '';
+            state.parentId = '';
             state.errors = {
                 name: ''
             };
@@ -71,20 +91,20 @@
                     throw error;
                 }
             },
-            createMainData: async (name, description, createdById) => {
+            createMainData: async (name, description, createdById, parentId) => {
                 try {
                     const response = await AxiosManager.post('/ProductGroup/CreateProductGroup', {
-                        name, description, createdById
+                        name, description, createdById, parentId
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, description, updatedById) => {
+            updateMainData: async (id, name, description, updatedById, parentId) => {
                 try {
                     const response = await AxiosManager.post('/ProductGroup/UpdateProductGroup', {
-                        id, name, description, updatedById
+                        id, name, description, updatedById, parentId
                     });
                     return response;
                 } catch (error) {
@@ -123,11 +143,13 @@
                         return;
                     }
 
+                    const parentId = state.parentId === '' ? null : state.parentId;
+
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.description, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.description, StorageManager.getUserId(), parentId)
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.description, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.description, StorageManager.getUserId(), parentId);
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -138,6 +160,7 @@
                             state.id = response?.data?.content?.data.id ?? '';
                             state.name = response?.data?.content?.data.name ?? '';
                             state.description = response?.data?.content?.data.description ?? '';
+                            state.parentId = response?.data?.content?.data.parentId ?? '';
 
                             Swal.fire({
                                 icon: 'success',
@@ -238,6 +261,7 @@
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
                         { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
+                        { field: 'parentName', headerText: 'Parent Group', width: 200, minWidth: 200 },
                         { field: 'description', headerText: 'Description', width: 400, minWidth: 400 },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
                     ],
@@ -252,7 +276,7 @@
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
-                        mainGrid.obj.autoFitColumns(['name', 'description', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['name', 'parentName', 'description', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -294,6 +318,7 @@
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.description = selectedRecord.description ?? '';
+                                state.parentId = selectedRecord.parentId ?? '';
                                 mainModal.obj.show();
                             }
                         }
@@ -306,6 +331,7 @@
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.description = selectedRecord.description ?? '';
+                                state.parentId = selectedRecord.parentId ?? '';
                                 mainModal.obj.show();
                             }
                         }
@@ -335,6 +361,7 @@
             nameRef,
             state,
             handler,
+            parentOptions,
         };
     }
 };

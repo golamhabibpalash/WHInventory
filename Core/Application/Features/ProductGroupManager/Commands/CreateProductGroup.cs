@@ -15,6 +15,7 @@ public class CreateProductGroupRequest : IRequest<CreateProductGroupResult>
     public string? Name { get; init; }
     public string? Description { get; init; }
     public string? CreatedById { get; init; }
+    public string? ParentId { get; init; }
 }
 
 public class CreateProductGroupValidator : AbstractValidator<CreateProductGroupRequest>
@@ -46,6 +47,7 @@ public class CreateProductGroupHandler : IRequestHandler<CreateProductGroupReque
 
         entity.Name = request.Name;
         entity.Description = request.Description;
+        entity.ParentId = string.IsNullOrWhiteSpace(request.ParentId) ? null : request.ParentId;
 
         await _repository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);

@@ -1,7 +1,9 @@
+using Application.Common.CQS.Queries;
 using Application.Common.Repositories;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.ProductGroupManager.Commands;
 
@@ -28,14 +30,17 @@ public class DeleteProductGroupHandler : IRequestHandler<DeleteProductGroupReque
 {
     private readonly ICommandRepository<ProductGroup> _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IQueryContext _queryContext;
 
     public DeleteProductGroupHandler(
         ICommandRepository<ProductGroup> repository,
-        IUnitOfWork unitOfWork
+        IUnitOfWork unitOfWork,
+        IQueryContext queryContext
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _queryContext = queryContext;
     }
 
     public async Task<DeleteProductGroupResult> Handle(DeleteProductGroupRequest request, CancellationToken cancellationToken)
@@ -46,6 +51,14 @@ public class DeleteProductGroupHandler : IRequestHandler<DeleteProductGroupReque
         if (entity == null)
         {
             throw new Exception($"Entity not found: {request.Id}");
+        }
+
+        var hasChildren = await _queryContext.ProductGroup
+            .AnyAsync(x => x.ParentId == entity.Id && x.IsDeleted == false, cancellationToken);
+
+        if (hasChildren)
+        {
+            throw new Exception("Cannot delete a product group that has child groups. Remove or reassign child groups first.");
         }
 
         entity.UpdatedById = request.DeletedById;

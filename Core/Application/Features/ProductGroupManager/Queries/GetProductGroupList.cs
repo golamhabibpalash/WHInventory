@@ -12,6 +12,8 @@ public record GetProductGroupListDto
     public string? Id { get; init; }
     public string? Name { get; init; }
     public string? Description { get; init; }
+    public string? ParentId { get; init; }
+    public string? ParentName { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
 
@@ -19,7 +21,8 @@ public class GetProductGroupListProfile : Profile
 {
     public GetProductGroupListProfile()
     {
-        CreateMap<ProductGroup, GetProductGroupListDto>();
+        CreateMap<ProductGroup, GetProductGroupListDto>()
+            .ForMember(d => d.ParentName, o => o.MapFrom(s => s.Parent != null ? s.Parent.Name : null));
     }
 }
 
@@ -51,6 +54,7 @@ public class GetProductGroupListHandler : IRequestHandler<GetProductGroupListReq
             .ProductGroup
             .AsNoTracking()
             .ApplyIsDeletedFilter(request.IsDeleted)
+            .Include(x => x.Parent)
             .AsQueryable();
 
         var entities = await query.ToListAsync(cancellationToken);
