@@ -48,7 +48,30 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(docker run *)",
-      "Bash(docker exec *)"
+      "Bash(docker exec *)",
+      "PowerShell(Get-Process *)",
+      "Bash(node -e \"try{require.resolve\\('puppeteer'\\);console.log\\('puppeteer available'\\)}catch\\(e\\){console.log\\('no puppeteer'\\)}\")",
+      "Bash(node -e \"try{require.resolve\\('playwright'\\);console.log\\('playwright available'\\)}catch\\(e\\){console.log\\('no playwright'\\)}\")",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(where chrome *)",
+      "Bash(ls \"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8080/Products/ProductList)",
+      "Bash(xargs grep -ilE \"StorageManager|setToken|getToken|login\")",
+      "Bash(xargs grep -ilE \"class StorageManager|StorageManager =|setUserId|getToken\")",
+      "Bash(mkdir -p /tmp/uitest)",
+      "Read(//tmp/**)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"console.log\\(require\\('puppeteer-core/package.json'\\).version\\)\")",
+      "Bash(curl -s http://localhost:8080/Accounts/Login)",
+      "Bash(sed -i \"s#const CHROME = .*#const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';#\" test.js)",
+      "Bash(node test.js)",
+      "Bash(node -e \"require\\('fs'\\).writeFileSync\\('valid.png', Buffer.from\\('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==','base64'\\)\\)\")",
+      "Bash(node -e \"require\\('fs'\\).writeFileSync\\('big.png', Buffer.alloc\\(1500000, 1\\)\\)\")",
+      "Bash(node -e \"require\\('fs'\\).writeFileSync\\('bad.txt', 'not an image'\\)\")",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(node upload.js)",
+      "Bash(curl -s -X POST \"http://localhost:8080/api/Security/Login\" -H \"Content-Type: application/json\" -d '{\"email\":\"admin@root.com\",\"password\":\"123456\"}')"
     ]
   }
 }

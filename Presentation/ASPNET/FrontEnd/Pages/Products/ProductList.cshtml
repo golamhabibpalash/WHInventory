@@ -71,6 +71,25 @@
                                                 <textarea v-model="state.description" id="Description" name="Description" class="form-control" rows="3"></textarea>
                                             </div>
                                         </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-5 text-center mb-3">
+                                                <label class="d-block text-start">Product Image</label>
+                                                <img v-if="state.imageName"
+                                                     :src="'api/FileImage/GetImage?imageName=' + state.imageName"
+                                                     alt="Product Image"
+                                                     style="max-height:140px; max-width:100%; object-fit:contain; border:1px solid #dee2e6; border-radius:6px; padding:8px;" />
+                                                <div v-else class="text-muted border rounded" style="height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                                                    <i class="fas fa-box fa-3x mb-2"></i>
+                                                    <span>Default product image</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <label>Upload Image</label>
+                                                <div ref="imageUploadRef" id="ImageUpload" class="dropzone"></div>
+                                                <small class="text-muted">PNG or JPG only, maximum 1 MB.</small>
+                                                <label class="text-danger d-block">{{ state.errors.image }}</label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

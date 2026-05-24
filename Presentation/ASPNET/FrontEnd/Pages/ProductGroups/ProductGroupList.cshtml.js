@@ -35,6 +35,7 @@
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
+        const parentIdRef = Vue.ref(null);
 
         const nameText = {
             obj: null,
@@ -51,11 +52,42 @@
             }
         };
 
+        const parentListLookup = {
+            obj: null,
+            create: () => {
+                parentListLookup.obj = new ej.dropdowns.DropDownList({
+                    dataSource: parentOptions.value,
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: '-- No Parent --',
+                    popupHeight: '200px',
+                    allowFiltering: true,
+                    showClearButton: true,
+                    change: (e) => {
+                        state.parentId = e.value ?? '';
+                    }
+                });
+                parentListLookup.obj.appendTo(parentIdRef.value);
+            },
+            refresh: () => {
+                if (parentListLookup.obj) {
+                    parentListLookup.obj.dataSource = parentOptions.value;
+                    parentListLookup.obj.value = state.parentId || null;
+                }
+            }
+        };
+
         Vue.watch(
             () => state.name,
             (newVal, oldVal) => {
                 state.errors.name = '';
                 nameText.refresh();
+            }
+        );
+
+        Vue.watch(
+            [parentOptions, () => state.parentId],
+            () => {
+                parentListLookup.refresh();
             }
         );
 
@@ -218,6 +250,7 @@
                 await mainGrid.create(state.mainData);
 
                 nameText.create();
+                parentListLookup.create();
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
                     resetFormState();
@@ -359,6 +392,7 @@
             mainGridRef,
             mainModalRef,
             nameRef,
+            parentIdRef,
             state,
             handler,
             parentOptions,

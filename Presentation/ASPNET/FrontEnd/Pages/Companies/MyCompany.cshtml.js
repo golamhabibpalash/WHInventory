@@ -35,6 +35,7 @@
         const mainModalRef = Vue.ref(null);
         const changeLogoModalRef = Vue.ref(null);
         const logoUploadRef = Vue.ref(null);
+        const logoFileInputRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const currencyRef = Vue.ref(null);
         const streetRef = Vue.ref(null);
@@ -577,13 +578,14 @@
                     this.on('addedfile', async function (file) {
                         try {
                             const response = await services.uploadImage(file);
-                            if (response?.data?.content?.data?.imageName) {
-                                const logoName = response.data.content.data.imageName;
+                            if (response?.data?.content?.imageName) {
+                                const logoName = response.data.content.imageName;
                                 const saveResponse = await services.updateLogoData(state.id, logoName, StorageManager.getUserId());
                                 if (saveResponse.data.code === 200) {
                                     state.logoName = logoName;
                                     await methods.populateMainData();
                                     mainGrid.refresh();
+                                    changeLogoModal.obj.hide();
                                     Swal.fire({ icon: 'success', title: 'Logo Updated' });
                                 } else {
                                     Swal.fire({ icon: 'error', title: 'Save Failed', text: saveResponse.data.message, confirmButtonText: 'OK' });
@@ -620,6 +622,31 @@
                 mainModal.create();
                 changeLogoModal.create();
                 initLogoDropzone();
+                if (logoFileInputRef.value) {
+                    logoFileInputRef.value.addEventListener('change', async function (e) {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                            const response = await services.uploadImage(file);
+                            if (response?.data?.content?.imageName) {
+                                const logoName = response.data.content.imageName;
+                                const saveResponse = await services.updateLogoData(state.id, logoName, StorageManager.getUserId());
+                                if (saveResponse.data.code === 200) {
+                                    state.logoName = logoName;
+                                    await methods.populateMainData();
+                                    mainGrid.refresh();
+                                    changeLogoModal.obj.hide();
+                                    Swal.fire({ icon: 'success', title: 'Logo Updated' });
+                                } else {
+                                    Swal.fire({ icon: 'error', title: 'Save Failed', text: saveResponse.data.message, confirmButtonText: 'OK' });
+                                }
+                            }
+                        } catch (error) {
+                            Swal.fire({ icon: 'error', title: 'Upload Failed', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                        }
+                        e.target.value = '';
+                    });
+                }
 
                 mainModalRef.value.addEventListener('hidden.bs.modal', () => {
                     Object.keys(state).forEach(key => {
@@ -655,6 +682,7 @@
             mainModalRef,
             changeLogoModalRef,
             logoUploadRef,
+            logoFileInputRef,
             nameRef,
             currencyRef,
             streetRef,

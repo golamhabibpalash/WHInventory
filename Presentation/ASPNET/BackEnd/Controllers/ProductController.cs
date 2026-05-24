@@ -44,6 +44,38 @@ public class ProductController : BaseApiController
     }
 
     [Authorize]
+    [HttpPost("UploadProductImage")]
+    public async Task<ActionResult<ApiSuccessResult<UploadProductImageResult>>> UploadProductImageAsync(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("An image file is required.");
+        }
+
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream, cancellationToken);
+        var fileData = memoryStream.ToArray();
+        var extension = Path.GetExtension(file.FileName).TrimStart('.');
+
+        var request = new UploadProductImageRequest
+        {
+            OriginalFileName = file.FileName,
+            Extension = extension,
+            Data = fileData,
+            Size = fileData.Length
+        };
+
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<UploadProductImageResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(UploadProductImageAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
     [HttpPost("DeleteProduct")]
     public async Task<ActionResult<ApiSuccessResult<DeleteProductResult>>> DeleteProductAsync(DeleteProductRequest request, CancellationToken cancellationToken)
     {

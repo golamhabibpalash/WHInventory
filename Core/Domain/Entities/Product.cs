@@ -13,4 +13,5 @@ public class Product : BaseEntity
     public UnitMeasure? UnitMeasure { get; set; }
     public string? ProductGroupId { get; set; }
     public ProductGroup? ProductGroup { get; set; }
+    public string? ImageName { get; set; }
 }

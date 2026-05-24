@@ -19,6 +19,7 @@ public record GetProductListDto
     public string? UnitMeasureName { get; init; }
     public string? ProductGroupId { get; init; }
     public string? ProductGroupName { get; init; }
+    public string? ImageName { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
 

@@ -9,6 +9,7 @@ public static class FileImageHelper
         { ".png", "image/png" },
         { ".gif", "image/gif" },
         { ".bmp", "image/bmp" },
+        { ".svg", "image/svg+xml" },
     };
 
     public static string GetMimeType(string extension)

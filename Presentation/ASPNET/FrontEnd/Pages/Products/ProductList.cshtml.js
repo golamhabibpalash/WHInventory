@@ -1,4 +1,11 @@
-﻿const App = {
+﻿// Disable Dropzone auto-discovery immediately at script load (before DOMContentLoaded),
+// so it does not try to auto-initialize the <div class="dropzone"> without a URL.
+// The uploader is created explicitly in imageDropzone.init().
+if (window.Dropzone) {
+    Dropzone.autoDiscover = false;
+}
+
+const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
@@ -14,11 +21,13 @@
             productGroupId: null,
             unitMeasureId: null,
             physical: false,
+            imageName: '',
             errors: {
                 name: '',
                 unitPrice: '',
                 productGroupId: '',
-                unitMeasureId: ''
+                unitMeasureId: '',
+                image: ''
             },
             isSubmitting: false
         });
@@ -27,6 +36,7 @@
         const mainModalRef = Vue.ref(null);
         const productGroupIdRef = Vue.ref(null);
         const unitMeasureIdRef = Vue.ref(null);
+        const imageUploadRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
         const unitPriceRef = Vue.ref(null);
@@ -71,11 +81,13 @@
             state.productGroupId = null;
             state.unitMeasureId = null;
             state.physical = false;
+            state.imageName = '';
             state.errors = {
                 name: '',
                 unitPrice: '',
                 productGroupId: '',
-                unitMeasureId: ''
+                unitMeasureId: '',
+                image: ''
             };
         };
 
@@ -88,25 +100,33 @@
                     throw error;
                 }
             },
-            createMainData: async (name, unitPrice, physical, description, productGroupId, unitMeasureId, createdById) => {
+            createMainData: async (name, unitPrice, physical, description, productGroupId, unitMeasureId, imageName, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Product/CreateProduct', {
-                        name, unitPrice, physical, description, productGroupId, unitMeasureId, createdById
+                        name, unitPrice, physical, description, productGroupId, unitMeasureId, imageName, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, unitPrice, physical, description, productGroupId, unitMeasureId, updatedById) => {
+            updateMainData: async (id, name, unitPrice, physical, description, productGroupId, unitMeasureId, imageName, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Product/UpdateProduct', {
-                        id, name, unitPrice, physical, description, productGroupId, unitMeasureId, updatedById
+                        id, name, unitPrice, physical, description, productGroupId, unitMeasureId, imageName, updatedById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
+            },
+            uploadProductImage: async (file) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                const response = await AxiosManager.post('/Product/UploadProductImage', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                return response;
             },
             deleteMainData: async (id, deletedById) => {
                 try {
@@ -139,7 +159,26 @@
         const methods = {
             populateProductGroupListLookupData: async () => {
                 const response = await services.getProductGroupListLookupData();
-                state.productGroupListLookupData = response?.data?.content?.data;
+                const groups = response?.data?.content?.data ?? [];
+
+                // Build a full hierarchical path (e.g. "A > B > C") for each group
+                // by walking its parent chain. Guards against missing/cyclic parents.
+                const byId = new Map(groups.map(g => [g.id, g]));
+                const buildPath = (group) => {
+                    const segments = [];
+                    const visited = new Set();
+                    let current = group;
+                    while (current && !visited.has(current.id)) {
+                        visited.add(current.id);
+                        segments.unshift(current.name);
+                        current = current.parentId ? byId.get(current.parentId) : null;
+                    }
+                    return segments.join(' > ');
+                };
+
+                state.productGroupListLookupData = groups
+                    .map(g => ({ ...g, hierarchyPath: buildPath(g) }))
+                    .sort((a, b) => a.hierarchyPath.localeCompare(b.hierarchyPath));
             },
             populateUnitMeasureListLookupData: async () => {
                 const response = await services.getUnitMeasureListLookupData();
@@ -160,9 +199,10 @@
                 if (state.productGroupListLookupData && Array.isArray(state.productGroupListLookupData)) {
                     productGroupListLookup.obj = new ej.dropdowns.DropDownList({
                         dataSource: state.productGroupListLookupData,
-                        fields: { value: 'id', text: 'name' },
+                        fields: { value: 'id', text: 'hierarchyPath' },
                         placeholder: 'Select a Product Group',
                         popupHeight: '200px',
+                        allowFiltering: true,
                         change: (e) => {
                             state.productGroupId = e.value;
                         }
@@ -293,6 +333,56 @@
             }
         );
 
+        const imageDropzone = {
+            initialized: false,
+            allowedExtensions: ['png', 'jpg', 'jpeg'],
+            maxFileSizeInBytes: 1 * 1024 * 1024, // 1 MB
+            init: () => {
+                if (imageDropzone.initialized || !imageUploadRef.value) return;
+                imageDropzone.initialized = true;
+                Dropzone.autoDiscover = false;
+                new Dropzone(imageUploadRef.value, {
+                    url: 'api/Product/UploadProductImage',
+                    paramName: 'file',
+                    maxFiles: 1,
+                    autoProcessQueue: false,
+                    addRemoveLinks: false,
+                    dictDefaultMessage: 'Drop product image here or click to upload',
+                    init: function () {
+                        this.on('addedfile', async function (file) {
+                            state.errors.image = '';
+
+                            const extension = (file.name.split('.').pop() || '').toLowerCase();
+                            if (!imageDropzone.allowedExtensions.includes(extension)) {
+                                state.errors.image = 'Only PNG and JPG images are allowed.';
+                                this.removeFile(file);
+                                return;
+                            }
+                            if (file.size > imageDropzone.maxFileSizeInBytes) {
+                                state.errors.image = 'Image must be 1 MB or smaller.';
+                                this.removeFile(file);
+                                return;
+                            }
+
+                            try {
+                                const response = await services.uploadProductImage(file);
+                                const imageName = response?.data?.content?.imageName;
+                                if (imageName) {
+                                    state.imageName = imageName;
+                                } else {
+                                    state.errors.image = 'Image upload failed. Please try again.';
+                                }
+                            } catch (error) {
+                                state.errors.image = error.response?.data?.message ?? 'Image upload failed. Please try again.';
+                            } finally {
+                                this.removeFile(file);
+                            }
+                        });
+                    }
+                });
+            },
+        };
+
         const handler = {
             handleSubmit: async function () {
                 try {
@@ -304,10 +394,10 @@
                     }
 
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, state.imageName, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, state.imageName, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -323,6 +413,7 @@
                             state.productGroupId = response?.data?.content?.data.productGroupId ?? '';
                             state.unitMeasureId = response?.data?.content?.data.unitMeasureId ?? '';
                             state.physical = response?.data?.content?.data.physical ?? false;
+                            state.imageName = response?.data?.content?.data.imageName ?? '';
 
                             Swal.fire({
                                 icon: 'success',
@@ -388,6 +479,7 @@
                 unitPriceNumber.create();
 
                 mainModal.create();
+                imageDropzone.init();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
                     resetFormState();
                 });
@@ -498,6 +590,7 @@
                                 state.productGroupId = selectedRecord.productGroupId ?? '';
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
+                                state.imageName = selectedRecord.imageName ?? '';
                                 mainModal.obj.show();
                             }
                         }
@@ -515,6 +608,7 @@
                                 state.productGroupId = selectedRecord.productGroupId ?? '';
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
+                                state.imageName = selectedRecord.imageName ?? '';
                                 mainModal.obj.show();
                             }
                         }
@@ -543,6 +637,7 @@
             mainModalRef,
             productGroupIdRef,
             unitMeasureIdRef,
+            imageUploadRef,
             nameRef,
             numberRef,
             unitPriceRef,
