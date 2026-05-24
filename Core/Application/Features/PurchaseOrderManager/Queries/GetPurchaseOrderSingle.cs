@@ -1,4 +1,5 @@
 using Application.Common.CQS.Queries;
+using Application.Common.Extensions;
 using AutoMapper;
 using Domain.Entities;
 using FluentValidation;
@@ -49,6 +50,7 @@ public class GetPurchaseOrderSingleHandler : IRequestHandler<GetPurchaseOrderSin
         var query = _context
             .PurchaseOrder
             .AsNoTracking()
+            .ApplyIsDeletedFilter()
             .Include(x => x.Vendor)
             .Include(x => x.Tax)
             .Include(x => x.PurchaseOrderItemList.Where(item => !item.IsDeleted))

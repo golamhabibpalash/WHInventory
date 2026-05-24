@@ -76,7 +76,10 @@
       "Bash(curl -s http://localhost:8080/api/Security/GetApplicationList)",
       "Bash(curl *)",
       "Bash(ps -p 628 -p 59860 -o pid,command)",
-      "Bash(kill 59860)"
+      "Bash(kill 59860)",
+      "PowerShell(Stop-Process *)",
+      "Bash(ASPNETCORE_ENVIRONMENT=Production dotnet run --project Presentation/ASPNET/ASPNET.csproj --no-build)",
+      "Bash(echo \"launched pid $!\")"
     ]
   }
 }

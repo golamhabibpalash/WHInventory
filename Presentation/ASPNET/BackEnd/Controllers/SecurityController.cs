@@ -310,7 +310,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("GetUserRoles")]
     public async Task<ActionResult<ApiSuccessResult<GetUserRolesResult>>> GetUserRolesAsync(GetUserRolesRequest request, CancellationToken cancellationToken)
     {
@@ -324,7 +324,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("UpdateUserRole")]
     public async Task<ActionResult<ApiSuccessResult<UpdateUserRoleResult>>> UpdateUserRoleAsync(UpdateUserRoleRequest request, CancellationToken cancellationToken)
     {
@@ -338,6 +338,7 @@ public class SecurityController : BaseApiController
         });
     }
 
+    [Authorize]
     [HttpPost("UpdateAllUserRoles")]
     public async Task<ActionResult<ApiSuccessResult<UpdateAllUserRolesResult>>> UpdateAllUserRolesAsync(UpdateAllUserRolesRequest request, CancellationToken cancellationToken)
     {
@@ -351,7 +352,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("UpdateMyProfileAvatar")]
     public async Task<ActionResult<ApiSuccessResult<UpdateMyProfileAvatarResult>>> UpdateMyProfileAvatarAsync(UpdateMyProfileAvatarRequest request, CancellationToken cancellationToken)
     {

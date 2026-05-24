@@ -1,4 +1,5 @@
 using Application.Common.CQS.Queries;
+using Application.Common.Extensions;
 using AutoMapper;
 using Domain.Entities;
 using FluentValidation;
@@ -70,6 +71,7 @@ public class GetCompanySingleHandler : IRequestHandler<GetCompanySingleRequest, 
         var query = _context
             .Company
             .AsNoTracking()
+            .ApplyIsDeletedFilter()
             .AsQueryable();
 
         query = query

@@ -1,4 +1,5 @@
 using Application.Common.CQS.Queries;
+using Application.Common.Extensions;
 using AutoMapper;
 using Domain.Entities;
 using FluentValidation;
@@ -64,6 +65,7 @@ public class GetTodoItemSingleHandler : IRequestHandler<GetTodoItemSingleRequest
         var query = _context
             .TodoItem
             .AsNoTracking()
+            .ApplyIsDeletedFilter()
             .Include(x => x.Todo)
             .AsQueryable();
 

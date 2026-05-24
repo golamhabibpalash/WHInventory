@@ -6,9 +6,11 @@ namespace ASPNET.BackEnd.Common.Handlers;
 public class CustomExceptionHandler : IExceptionHandler
 {
     private readonly Dictionary<Type, Func<HttpContext, Exception, Task>> _exceptionHandlers;
+    private readonly IHostEnvironment _environment;
 
-    public CustomExceptionHandler()
+    public CustomExceptionHandler(IHostEnvironment environment)
     {
+        _environment = environment;
         _exceptionHandlers = new()
             {
                 { typeof(Exception), HandleException },
@@ -37,13 +39,23 @@ public class CustomExceptionHandler : IExceptionHandler
             ? httpContext.Response.StatusCode
             : StatusCodes.Status500InternalServerError;
 
-        var errorMessage = ex.Message;
+        // Only expose internal exception details (stack trace, source, inner message)
+        // in development. In production these leak implementation details to clients.
+        var includeDetails = _environment.IsDevelopment();
+
+        var errorMessage = includeDetails
+            ? ex.Message
+            : "An unexpected error occurred while processing your request.";
+
+        var error = includeDetails
+            ? new Error(ex.InnerException?.Message, ex.Source, ex.StackTrace, ex.GetType().Name)
+            : new Error(null, null, null, null);
 
         var result = new ApiErrorResult
         {
             Code = statusCode,
             Message = $"Exception: {errorMessage}",
-            Error = new Error(ex.InnerException?.Message, ex.Source, ex.StackTrace, ex.GetType().Name)
+            Error = error
         };
 
         httpContext.Response.ContentType = "application/json";

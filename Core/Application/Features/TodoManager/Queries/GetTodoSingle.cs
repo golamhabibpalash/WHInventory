@@ -1,4 +1,5 @@
 using Application.Common.CQS.Queries;
+using Application.Common.Extensions;
 using AutoMapper;
 using Domain.Entities;
 using FluentValidation;
@@ -59,6 +60,7 @@ public class GetTodoSingleHandler : IRequestHandler<GetTodoSingleRequest, GetTod
         var query = _context
             .Todo
             .AsNoTracking()
+            .ApplyIsDeletedFilter()
             .AsQueryable();
 
         query = query

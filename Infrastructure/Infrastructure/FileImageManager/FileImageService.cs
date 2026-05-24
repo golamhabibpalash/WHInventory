@@ -7,6 +7,9 @@ namespace Infrastructure.FileImageManager;
 
 public class FileImageService : IFileImageService
 {
+    private static readonly HashSet<string> AllowedExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { "jpg", "jpeg", "png", "gif", "bmp" };
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly string _folderPath;
     private readonly int _maxFileSizeInBytes;
@@ -37,6 +40,11 @@ public class FileImageService : IFileImageService
         if (string.IsNullOrWhiteSpace(docExtension) || docExtension.Contains(Path.DirectorySeparatorChar) || docExtension.Contains(Path.AltDirectorySeparatorChar))
         {
             throw new Exception($"Invalid file extension: {nameof(docExtension)}");
+        }
+
+        if (!AllowedExtensions.Contains(docExtension.TrimStart('.')))
+        {
+            throw new Exception($"Unsupported file type '.{docExtension}'. Allowed types: {string.Join(", ", AllowedExtensions)}");
         }
 
         if (fileData == null || fileData.Length == 0)
@@ -77,9 +85,12 @@ public class FileImageService : IFileImageService
 
     public async Task<byte[]> GetFileAsync(string fileName, CancellationToken cancellationToken = default)
     {
-        var filePath = Path.Combine(_folderPath, fileName);
+        // Strip any directory components to prevent path traversal (e.g. "../../appsettings.json").
+        var safeFileName = Path.GetFileName(fileName ?? string.Empty);
 
-        if (!File.Exists(filePath))
+        var filePath = Path.Combine(_folderPath, safeFileName);
+
+        if (string.IsNullOrEmpty(safeFileName) || !File.Exists(filePath))
         {
             filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "noimage.png");
         }
