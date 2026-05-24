@@ -98,6 +98,21 @@
                             `© ${year} <a href="${companyWeb}">${companyName}</a>, All Right Reserved.`;
                         document.getElementById('topbarContent').innerHTML =
                             `Currency: ${currency}`;
+
+                        const logoName = data[0]?.logoName;
+                        if (logoName) {
+                            try {
+                                const logoResponse = await AxiosManager.get('/FileImage/GetImage?imageName=' + logoName, { responseType: 'blob' });
+                                if (logoResponse.status === 200) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = function () {
+                                        const brandImg = document.getElementById('brandLogoImg');
+                                        if (brandImg) brandImg.src = reader.result;
+                                    };
+                                    reader.readAsDataURL(logoResponse.data);
+                                }
+                            } catch (e) { /* keep default logo on error */ }
+                        }
                     }
                 } catch (error) {
                     console.error('Error:', error);

@@ -1,4 +1,4 @@
-﻿const App = {
+const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
@@ -18,6 +18,10 @@
             emailAddress: '',
             website: '',
             logoName: '',
+            logoSrc: '',
+            previewSrc: '',
+            selectedFileName: '',
+            isUploading: false,
             errors: {
                 name: '',
                 currency: '',
@@ -34,7 +38,6 @@
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const changeLogoModalRef = Vue.ref(null);
-        const logoUploadRef = Vue.ref(null);
         const logoFileInputRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const currencyRef = Vue.ref(null);
@@ -48,6 +51,8 @@
         const emailAddressRef = Vue.ref(null);
         const websiteRef = Vue.ref(null);
 
+        let selectedLogoFile = null;
+
         const services = {
             uploadImage: async (file) => {
                 const formData = new FormData();
@@ -56,6 +61,19 @@
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 return response;
+            },
+            getImageSrc: async (imageName) => {
+                if (!imageName) return '';
+                try {
+                    const response = await AxiosManager.get('/FileImage/GetImage?imageName=' + imageName, { responseType: 'blob' });
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(response.data);
+                    });
+                } catch {
+                    return '';
+                }
             },
             updateLogoData: async (id, logoName, updatedById) => {
                 const response = await AxiosManager.post('/Company/UpdateCompanyLogo', { id, logoName, updatedById });
@@ -164,7 +182,8 @@
                     },
                     toolbarClick: (args) => {
                         if (args.item.id === 'MainGrid_excelexport') {
-                            mainGrid.obj.excelExport();
+                            const date = new Date().toISOString().slice(0, 10);
+                            mainGrid.obj.excelExport({ fileName: `Companies_${date}.xlsx` });
                         }
 
                         if (args.item.id === 'EditCustom') {
@@ -216,7 +235,21 @@
                 }));
                 state.mainData = formattedData;
             },
+            loadLogoSrc: async () => {
+                state.logoSrc = await services.getImageSrc(state.logoName);
+            },
         };
+
+        Vue.watch(
+            () => state.logoName,
+            async (newVal) => {
+                if (newVal) {
+                    await methods.loadLogoSrc();
+                } else {
+                    state.logoSrc = '';
+                }
+            }
+        );
 
         const mainModal = {
             obj: null,
@@ -549,6 +582,92 @@
                     state.isSubmitting = false;
                 }
             },
+
+            triggerLogoFileInput: () => {
+                if (logoFileInputRef.value) {
+                    logoFileInputRef.value.click();
+                }
+            },
+
+            onLogoDragOver: (e) => {
+                e.currentTarget.style.backgroundColor = '#f0f7ff';
+                e.currentTarget.style.borderColor = '#0d6efd';
+            },
+
+            onLogoDragLeave: (e) => {
+                e.currentTarget.style.backgroundColor = '';
+                e.currentTarget.style.borderColor = '';
+            },
+
+            onLogoDrop: (e) => {
+                e.currentTarget.style.backgroundColor = '';
+                e.currentTarget.style.borderColor = '';
+                const file = e.dataTransfer.files[0];
+                if (file) handler.handleLogoFile(file);
+            },
+
+            onLogoFileSelected: (e) => {
+                const file = e.target.files?.[0];
+                if (file) handler.handleLogoFile(file);
+                e.target.value = '';
+            },
+
+            handleLogoFile: (file) => {
+                if (!file.type.startsWith('image/')) {
+                    Swal.fire({ icon: 'warning', title: 'Invalid File', text: 'Please select an image file.', confirmButtonText: 'OK' });
+                    return;
+                }
+                if (state.previewSrc && state.previewSrc.startsWith('blob:')) {
+                    URL.revokeObjectURL(state.previewSrc);
+                }
+                state.previewSrc = URL.createObjectURL(file);
+                state.selectedFileName = file.name;
+                selectedLogoFile = file;
+            },
+
+            clearLogoSelection: () => {
+                if (state.previewSrc && state.previewSrc.startsWith('blob:')) {
+                    URL.revokeObjectURL(state.previewSrc);
+                }
+                state.previewSrc = '';
+                state.selectedFileName = '';
+                selectedLogoFile = null;
+            },
+
+            uploadLogo: async () => {
+                if (!selectedLogoFile) return;
+                try {
+                    state.isUploading = true;
+                    const response = await services.uploadImage(selectedLogoFile);
+                    if (response?.data?.content?.imageName) {
+                        const logoName = response.data.content.imageName;
+                        const saveResponse = await services.updateLogoData(state.id, logoName, StorageManager.getUserId());
+                        if (saveResponse.data.code === 200) {
+                            const newLogoSrc = await services.getImageSrc(logoName);
+                            handler.clearLogoSelection();
+                            state.logoName = logoName;
+                            state.logoSrc = newLogoSrc;
+
+                            // Update sidebar brand logo instantly
+                            const brandImg = document.getElementById('brandLogoImg');
+                            if (brandImg && newLogoSrc) brandImg.src = newLogoSrc;
+
+                            await methods.populateMainData();
+                            mainGrid.refresh();
+                            changeLogoModal.obj.hide();
+                            Swal.fire({ icon: 'success', title: 'Logo Updated', timer: 1500, showConfirmButton: false });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Save Failed', text: saveResponse.data.message, confirmButtonText: 'OK' });
+                        }
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Upload Failed', text: 'No image name returned from server.', confirmButtonText: 'OK' });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Upload Failed', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                } finally {
+                    state.isUploading = false;
+                }
+            },
         };
 
         const changeLogoModal = {
@@ -559,45 +678,6 @@
                     keyboard: false
                 });
             }
-        };
-
-        let logoDropzoneInitialized = false;
-        const initLogoDropzone = () => {
-            if (logoDropzoneInitialized || !logoUploadRef.value) return;
-            logoDropzoneInitialized = true;
-            Dropzone.autoDiscover = false;
-            new Dropzone(logoUploadRef.value, {
-                url: 'api/FileImage/UploadImage',
-                paramName: 'file',
-                maxFilesize: 5,
-                acceptedFiles: 'image/*',
-                addRemoveLinks: true,
-                dictDefaultMessage: 'Drop company logo here or click to upload',
-                autoProcessQueue: false,
-                init: function () {
-                    this.on('addedfile', async function (file) {
-                        try {
-                            const response = await services.uploadImage(file);
-                            if (response?.data?.content?.imageName) {
-                                const logoName = response.data.content.imageName;
-                                const saveResponse = await services.updateLogoData(state.id, logoName, StorageManager.getUserId());
-                                if (saveResponse.data.code === 200) {
-                                    state.logoName = logoName;
-                                    await methods.populateMainData();
-                                    mainGrid.refresh();
-                                    changeLogoModal.obj.hide();
-                                    Swal.fire({ icon: 'success', title: 'Logo Updated' });
-                                } else {
-                                    Swal.fire({ icon: 'error', title: 'Save Failed', text: saveResponse.data.message, confirmButtonText: 'OK' });
-                                }
-                            }
-                        } catch (error) {
-                            Swal.fire({ icon: 'error', title: 'Upload Failed', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
-                        }
-                        this.removeAllFiles();
-                    });
-                }
-            });
         };
 
         Vue.onMounted(async () => {
@@ -621,32 +701,6 @@
 
                 mainModal.create();
                 changeLogoModal.create();
-                initLogoDropzone();
-                if (logoFileInputRef.value) {
-                    logoFileInputRef.value.addEventListener('change', async function (e) {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        try {
-                            const response = await services.uploadImage(file);
-                            if (response?.data?.content?.imageName) {
-                                const logoName = response.data.content.imageName;
-                                const saveResponse = await services.updateLogoData(state.id, logoName, StorageManager.getUserId());
-                                if (saveResponse.data.code === 200) {
-                                    state.logoName = logoName;
-                                    await methods.populateMainData();
-                                    mainGrid.refresh();
-                                    changeLogoModal.obj.hide();
-                                    Swal.fire({ icon: 'success', title: 'Logo Updated' });
-                                } else {
-                                    Swal.fire({ icon: 'error', title: 'Save Failed', text: saveResponse.data.message, confirmButtonText: 'OK' });
-                                }
-                            }
-                        } catch (error) {
-                            Swal.fire({ icon: 'error', title: 'Upload Failed', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
-                        }
-                        e.target.value = '';
-                    });
-                }
 
                 mainModalRef.value.addEventListener('hidden.bs.modal', () => {
                     Object.keys(state).forEach(key => {
@@ -665,15 +719,21 @@
                         emailAddress: ''
                     };
                 });
+
+                changeLogoModalRef.value.addEventListener('hidden.bs.modal', () => {
+                    handler.clearLogoSelection();
+                });
+
             } catch (e) {
                 console.error('page init error:', e);
             } finally {
-                
+
             }
         });
 
         Vue.onUnmounted(() => {
             mainModalRef.value?.removeEventListener('hidden.bs.modal', () => { });
+            changeLogoModalRef.value?.removeEventListener('hidden.bs.modal', () => { });
         });
 
         return {
@@ -681,7 +741,6 @@
             mainGridRef,
             mainModalRef,
             changeLogoModalRef,
-            logoUploadRef,
             logoFileInputRef,
             nameRef,
             currencyRef,

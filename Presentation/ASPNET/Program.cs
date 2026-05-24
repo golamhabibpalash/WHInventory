@@ -2,6 +2,8 @@ using ASPNET.BackEnd;
 using ASPNET.BackEnd.Common.Middlewares;
 using ASPNET.FrontEnd;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 //>>> Create Logs folder for Serilog
