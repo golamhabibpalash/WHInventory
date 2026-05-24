@@ -28,20 +28,21 @@ public static class DI
         var serviceProvider = scope.ServiceProvider;
 
         var context = serviceProvider.GetRequiredService<DataContext>();
-        if (!context.Roles.Any()) //if empty, thats mean never been seeded before
+
+        // Always run role/admin seeders — both are idempotent and handle new roles on upgrades
+        var roleSeeder = serviceProvider.GetRequiredService<RoleSeeder>();
+        roleSeeder.GenerateDataAsync().Wait();
+
+        var userAdminSeeder = serviceProvider.GetRequiredService<UserAdminSeeder>();
+        userAdminSeeder.GenerateDataAsync().Wait();
+
+        if (!context.Company.Any())
         {
-            var roleSeeder = serviceProvider.GetRequiredService<RoleSeeder>();
-            roleSeeder.GenerateDataAsync().Wait();
-
-            var userAdminSeeder = serviceProvider.GetRequiredService<UserAdminSeeder>();
-            userAdminSeeder.GenerateDataAsync().Wait();
-
             var companySeeder = serviceProvider.GetRequiredService<CompanySeeder>();
             companySeeder.GenerateDataAsync().Wait();
 
             var systemWarehouseSeeder = serviceProvider.GetRequiredService<SystemWarehouseSeeder>();
             systemWarehouseSeeder.GenerateDataAsync().Wait();
-
         }
 
         return host;

@@ -52,6 +52,8 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<PositiveAdjustment> PositiveAdjustment { get; set; }
     public DbSet<Scrapping> Scrapping { get; set; }
     public DbSet<NavigationMenuSortOrder> NavigationMenuSortOrder { get; set; }
+    public DbSet<AuditLog> AuditLog { get; set; }
+    public DbSet<UserActivityLog> UserActivityLog { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -96,6 +98,8 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new PositiveAdjustmentConfiguration());
         modelBuilder.ApplyConfiguration(new ScrappingConfiguration());
         modelBuilder.ApplyConfiguration(new NavigationMenuSortOrderConfiguration());
+        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
+        modelBuilder.ApplyConfiguration(new UserActivityLogConfiguration());
 
     }
 

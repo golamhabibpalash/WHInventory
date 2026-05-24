@@ -1,0 +1,80 @@
+@page
+@{
+    ViewData["Title"] = "Audit Log";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header d-flex align-items-center gap-3 flex-wrap">
+                    <span class="fw-semibold"><i class="fas fa-shield-alt me-2 text-warning"></i>Filters</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-nowrap">Entity Type</label>
+                        <input v-model="state.filterEntityType" type="text" class="form-control form-control-sm" style="width:160px;" placeholder="e.g. Customer" />
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-nowrap">From</label>
+                        <input v-model="state.filterFromDate" type="date" class="form-control form-control-sm" style="width:145px;" />
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-nowrap">To</label>
+                        <input v-model="state.filterToDate" type="date" class="form-control form-control-sm" style="width:145px;" />
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary" v-on:click="handler.applyFilter">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" v-on:click="handler.clearFilter">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal fade" ref="detailModalRef" id="DetailModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>Audit Log Detail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-2">
+                        <div class="col-md-4"><strong>Entity Type:</strong> {{ state.detail.entityType }}</div>
+                        <div class="col-md-4"><strong>Entity Id:</strong> {{ state.detail.entityId }}</div>
+                        <div class="col-md-4"><strong>Operation:</strong>
+                            <span :class="operationBadgeClass(state.detail.operationType)">{{ state.detail.operationType }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-4"><strong>User Id:</strong> {{ state.detail.userId }}</div>
+                        <div class="col-md-4"><strong>IP Address:</strong> {{ state.detail.ipAddress }}</div>
+                        <div class="col-md-4"><strong>Timestamp:</strong> {{ formatDate(state.detail.createdAtUtc) }}</div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="fw-semibold text-muted">Old Values</label>
+                            <pre class="bg-light border rounded p-2" style="max-height:320px; overflow:auto; font-size:0.8rem;">{{ formatJson(state.detail.oldValues) }}</pre>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-semibold text-muted">New Values</label>
+                            <pre class="bg-light border rounded p-2" style="max-height:320px; overflow:auto; font-size:0.8rem;">{{ formatJson(state.detail.newValues) }}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/AuditLogs/AuditLogList.cshtml.js"></script>
+}

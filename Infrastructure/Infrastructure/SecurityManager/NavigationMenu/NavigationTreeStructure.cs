@@ -313,6 +313,26 @@ public static class NavigationTreeStructure
                     "IsModule": false
                 }
             ]
+        },
+        {
+            "URL": "#",
+            "Name": "Logs",
+            "Icon": "fas fa-history",
+            "IsModule": true,
+            "Children": [
+                {
+                    "URL": "/AuditLogs/AuditLogList",
+                    "Name": "Audit Log",
+                    "Icon": "fas fa-shield-alt",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/UserActivityLogs/UserActivityLogList",
+                    "Name": "User Activity Log",
+                    "Icon": "fas fa-user-clock",
+                    "IsModule": false
+                }
+            ]
         }
     ]
     """;

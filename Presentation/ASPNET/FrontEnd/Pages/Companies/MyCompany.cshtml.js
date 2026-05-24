@@ -53,6 +53,8 @@ const App = {
 
         let selectedLogoFile = null;
 
+        let isCreateMode = false;
+
         const services = {
             uploadImage: async (file) => {
                 const formData = new FormData();
@@ -87,6 +89,31 @@ const App = {
                     throw error;
                 }
             },
+            createCompany: async (
+                name, description, currency, street, city, state, zipCode, country,
+                phoneNumber, faxNumber, emailAddress, website, createdById
+            ) => {
+                try {
+                    const response = await AxiosManager.post('/Company/CreateCompany', {
+                        name,
+                        description,
+                        currency,
+                        street,
+                        city,
+                        state,
+                        zipCode,
+                        country,
+                        phoneNumber,
+                        faxNumber,
+                        emailAddress,
+                        website,
+                        createdById
+                    });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             updateMainData: async (
                 id, name, description, currency, street, city, state, zipCode, country,
                 phoneNumber, faxNumber, emailAddress, website, updatedById
@@ -113,6 +140,17 @@ const App = {
                     throw error;
                 }
             },
+        };
+
+        const toggleToolbarButtons = () => {
+            const hasData = state.mainData && state.mainData.length > 0;
+            const addBtn = document.getElementById('MainGrid_AddCustom');
+            const editBtn = document.getElementById('MainGrid_EditCustom');
+            const logoBtn = document.getElementById('MainGrid_ChangeLogoCustom');
+            if (addBtn) addBtn.style.display = hasData ? 'none' : '';
+            if (editBtn) editBtn.style.display = hasData ? '' : 'none';
+            if (logoBtn) logoBtn.style.display = hasData ? '' : 'none';
+            mainGrid.obj.toolbarModule.enableItems(['AddCustom'], !hasData);
         };
 
         const mainGrid = {
@@ -151,14 +189,16 @@ const App = {
                     toolbar: [
                         'ExcelExport', 'Search',
                         { type: 'Separator' },
+                        { text: 'Add', tooltipText: 'Add Company', prefixIcon: 'e-add', id: 'AddCustom' },
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
                         { text: 'Change Logo', tooltipText: 'Change Company Logo', prefixIcon: 'e-image', id: 'ChangeLogoCustom' },
                         { type: 'Separator' },
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
-                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'ChangeLogoCustom'], false);
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'ChangeLogoCustom', 'AddCustom'], false);
                         mainGrid.obj.autoFitColumns(['name', 'currency', 'street', 'phoneNumber', 'emailAddress', 'createdAtUtc']);
+                        toggleToolbarButtons();
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -186,8 +226,31 @@ const App = {
                             mainGrid.obj.excelExport({ fileName: `Companies_${date}.xlsx` });
                         }
 
+                        if (args.item.id === 'AddCustom') {
+                            state.deleteMode = false;
+                            isCreateMode = true;
+                            state.mainTitle = 'Add Company';
+                            state.id = '';
+                            state.name = '';
+                            state.description = '';
+                            state.currency = '';
+                            state.street = '';
+                            state.city = '';
+                            state.state = '';
+                            state.zipCode = '';
+                            state.country = '';
+                            state.phoneNumber = '';
+                            state.faxNumber = '';
+                            state.emailAddress = '';
+                            state.website = '';
+                            state.logoName = '';
+                            mainModal.obj.show();
+                        }
+
                         if (args.item.id === 'EditCustom') {
                             state.deleteMode = false;
+                            isCreateMode = false;
+                            state.mainTitle = 'Edit Company';
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
                                 state.id = selectedRecord.id ?? '';
@@ -529,24 +592,47 @@ const App = {
 
                     if (!isValid) return;
 
-                    const response = await services.updateMainData(
-                        state.id,
-                        state.name,
-                        state.description,
-                        state.currency,
-                        state.street,
-                        state.city,
-                        state.state,
-                        state.zipCode,
-                        state.country,
-                        state.phoneNumber,
-                        state.faxNumber,
-                        state.emailAddress,
-                        state.website,
-                        StorageManager.getUserId()
-                    );
+                    let response;
+
+                    if (state.id) {
+                        response = await services.updateMainData(
+                            state.id,
+                            state.name,
+                            state.description,
+                            state.currency,
+                            state.street,
+                            state.city,
+                            state.state,
+                            state.zipCode,
+                            state.country,
+                            state.phoneNumber,
+                            state.faxNumber,
+                            state.emailAddress,
+                            state.website,
+                            StorageManager.getUserId()
+                        );
+                    } else {
+                        response = await services.createCompany(
+                            state.name,
+                            state.description,
+                            state.currency,
+                            state.street,
+                            state.city,
+                            state.state,
+                            state.zipCode,
+                            state.country,
+                            state.phoneNumber,
+                            state.faxNumber,
+                            state.emailAddress,
+                            state.website,
+                            StorageManager.getUserId()
+                        );
+                    }
 
                     if (response.data.code === 200) {
+                        if (!state.id) {
+                            state.id = response.data.content.data.id;
+                        }
                         await methods.populateMainData();
                         mainGrid.refresh();
                         Swal.fire({

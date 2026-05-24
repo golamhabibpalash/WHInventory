@@ -1,0 +1,41 @@
+@page
+@{
+    ViewData["Title"] = "User Activity Log";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-3">
+                <div class="card-header d-flex align-items-center gap-3 flex-wrap">
+                    <span class="fw-semibold"><i class="fas fa-user-clock me-2 text-info"></i>Filters</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-nowrap">Activity Type</label>
+                        <input v-model="state.filterActivityType" type="text" class="form-control form-control-sm" style="width:160px;" placeholder="e.g. PageView" />
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-nowrap">From</label>
+                        <input v-model="state.filterFromDate" type="date" class="form-control form-control-sm" style="width:145px;" />
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-nowrap">To</label>
+                        <input v-model="state.filterToDate" type="date" class="form-control form-control-sm" style="width:145px;" />
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary" v-on:click="handler.applyFilter">
+                        <i class="fas fa-search me-1"></i>Search
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" v-on:click="handler.clearFilter">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/UserActivityLogs/UserActivityLogList.cshtml.js"></script>
+}

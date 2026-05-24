@@ -43,5 +43,7 @@ public interface IEntityDbSet
     DbSet<PositiveAdjustment> PositiveAdjustment { get; set; }
     DbSet<Scrapping> Scrapping { get; set; }
     DbSet<NavigationMenuSortOrder> NavigationMenuSortOrder { get; set; }
+    DbSet<AuditLog> AuditLog { get; set; }
+    DbSet<UserActivityLog> UserActivityLog { get; set; }
 }
 

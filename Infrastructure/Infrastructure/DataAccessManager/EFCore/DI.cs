@@ -81,6 +81,7 @@ public static class DI
         }
 
 
+        services.AddHttpContextAccessor();
         services.AddScoped<ICommandContext, CommandContext>();
         services.AddScoped<IQueryContext, QueryContext>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -136,6 +137,40 @@ public static class DI
                 CREATE INDEX IF NOT EXISTS ""IX_NavigationMenuSortOrder_UserId""
                     ON ""NavigationMenuSortOrder"" (""UserId"");
             ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ""AuditLog"" (
+                    ""Id""            varchar(50)   NOT NULL PRIMARY KEY,
+                    ""EntityType""    varchar(255)  NULL,
+                    ""EntityId""      varchar(50)   NULL,
+                    ""OperationType"" varchar(50)   NULL,
+                    ""OldValues""     text          NULL,
+                    ""NewValues""     text          NULL,
+                    ""UserId""        varchar(450)  NULL,
+                    ""IpAddress""     varchar(50)   NULL,
+                    ""CreatedAtUtc""  timestamp     NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_EntityType"" ON ""AuditLog"" (""EntityType"");
+                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_UserId""     ON ""AuditLog"" (""UserId"");
+                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_CreatedAtUtc"" ON ""AuditLog"" (""CreatedAtUtc"");
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ""UserActivityLog"" (
+                    ""Id""           varchar(50)   NOT NULL PRIMARY KEY,
+                    ""UserId""       varchar(450)  NULL,
+                    ""UserEmail""    varchar(255)  NULL,
+                    ""ActivityType"" varchar(100)  NULL,
+                    ""Description""  varchar(2000) NULL,
+                    ""PageUrl""      varchar(2000) NULL,
+                    ""IpAddress""    varchar(50)   NULL,
+                    ""UserAgent""    varchar(500)  NULL,
+                    ""CreatedAtUtc"" timestamp     NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_UserId""       ON ""UserActivityLog"" (""UserId"");
+                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_ActivityType""  ON ""UserActivityLog"" (""ActivityType"");
+                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_CreatedAtUtc""  ON ""UserActivityLog"" (""CreatedAtUtc"");
+            ");
         }
         else
         {
@@ -171,6 +206,46 @@ public static class DI
                     );
                     CREATE INDEX [IX_NavigationMenuSortOrder_UserId]
                         ON [NavigationMenuSortOrder] ([UserId]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AuditLog')
+                BEGIN
+                    CREATE TABLE [AuditLog] (
+                        [Id]            nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [EntityType]    nvarchar(255)  NULL,
+                        [EntityId]      nvarchar(50)   NULL,
+                        [OperationType] nvarchar(50)   NULL,
+                        [OldValues]     nvarchar(max)  NULL,
+                        [NewValues]     nvarchar(max)  NULL,
+                        [UserId]        nvarchar(450)  NULL,
+                        [IpAddress]     nvarchar(50)   NULL,
+                        [CreatedAtUtc]  datetime2      NULL
+                    );
+                    CREATE INDEX [IX_AuditLog_EntityType]   ON [AuditLog] ([EntityType]);
+                    CREATE INDEX [IX_AuditLog_UserId]        ON [AuditLog] ([UserId]);
+                    CREATE INDEX [IX_AuditLog_CreatedAtUtc]  ON [AuditLog] ([CreatedAtUtc]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'UserActivityLog')
+                BEGIN
+                    CREATE TABLE [UserActivityLog] (
+                        [Id]           nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [UserId]       nvarchar(450)  NULL,
+                        [UserEmail]    nvarchar(255)  NULL,
+                        [ActivityType] nvarchar(100)  NULL,
+                        [Description]  nvarchar(2000) NULL,
+                        [PageUrl]      nvarchar(2000) NULL,
+                        [IpAddress]    nvarchar(50)   NULL,
+                        [UserAgent]    nvarchar(500)  NULL,
+                        [CreatedAtUtc] datetime2      NULL
+                    );
+                    CREATE INDEX [IX_UserActivityLog_UserId]       ON [UserActivityLog] ([UserId]);
+                    CREATE INDEX [IX_UserActivityLog_ActivityType]  ON [UserActivityLog] ([ActivityType]);
+                    CREATE INDEX [IX_UserActivityLog_CreatedAtUtc]  ON [UserActivityLog] ([CreatedAtUtc]);
                 END
             ");
         }
