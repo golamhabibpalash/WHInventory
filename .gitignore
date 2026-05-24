@@ -72,3 +72,12 @@ ustock-app.tar.gz
 .env
 .env.*
 !.env.example
+
+# ───────────────────────────────
+#   App runtime artifacts
+# ───────────────────────────────
+app_stdout.txt
+app_stderr.txt
+# Uploaded content (not source code)
+Presentation/ASPNET/wwwroot/app_data/images/
+Presentation/ASPNET/wwwroot/app_data/docs/
