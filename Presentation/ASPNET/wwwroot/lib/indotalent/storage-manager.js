@@ -16,7 +16,7 @@
 const StorageManager = {
     save: (key, value) => {
         try {
-            localStorage.setItem(key, JSON.stringify(value));
+            localStorage.setItem(key, JSON.stringify(value === undefined ? null : value));
         } catch (error) {
             console.error('Failed to save data to localStorage', error);
         }
