@@ -41,7 +41,15 @@
                 phoneNumber: '',
                 emailAddress: '',
             },
-            isSubmitting: false
+            isSubmitting: false,
+            vendorGroupQuickName: '',
+            vendorGroupQuickDescription: '',
+            vendorGroupQuickIsSubmitting: false,
+            vendorGroupQuickErrors: { name: '' },
+            vendorCategoryQuickName: '',
+            vendorCategoryQuickDescription: '',
+            vendorCategoryQuickIsSubmitting: false,
+            vendorCategoryQuickErrors: { name: '' },
         });
 
         const mainGridRef = Vue.ref(null);
@@ -67,6 +75,8 @@
         const tikTokRef = Vue.ref(null);
         const vendorGroupIdRef = Vue.ref(null);
         const vendorCategoryIdRef = Vue.ref(null);
+        const vendorGroupQuickModalRef = Vue.ref(null);
+        const vendorCategoryQuickModalRef = Vue.ref(null);
 
         const services = {
             getMainData: async () => {
@@ -118,6 +128,22 @@
             getVendorCategoryListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/VendorCategory/GetVendorCategoryList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createVendorGroup: async (name, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/VendorGroup/CreateVendorGroup', { name, description, createdById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createVendorCategory: async (name, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/VendorCategory/CreateVendorCategory', { name, description, createdById });
                     return response;
                 } catch (error) {
                     throw error;
@@ -579,7 +605,103 @@
             }
         );
 
+        const vendorGroupQuickModal = {
+            obj: null,
+            create: () => {
+                vendorGroupQuickModal.obj = new bootstrap.Modal(vendorGroupQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
+        const vendorCategoryQuickModal = {
+            obj: null,
+            create: () => {
+                vendorCategoryQuickModal.obj = new bootstrap.Modal(vendorCategoryQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         const handler = {
+            openVendorGroupQuickCreate: () => {
+                state.vendorGroupQuickName = '';
+                state.vendorGroupQuickDescription = '';
+                state.vendorGroupQuickErrors.name = '';
+                vendorGroupQuickModal.obj.show();
+            },
+            closeVendorGroupQuickCreate: () => {
+                vendorGroupQuickModal.obj.hide();
+            },
+            submitVendorGroupQuickCreate: async () => {
+                state.vendorGroupQuickErrors.name = '';
+                if (!state.vendorGroupQuickName.trim()) {
+                    state.vendorGroupQuickErrors.name = 'Name is required.';
+                    return;
+                }
+                try {
+                    state.vendorGroupQuickIsSubmitting = true;
+                    const response = await services.createVendorGroup(
+                        state.vendorGroupQuickName.trim(),
+                        state.vendorGroupQuickDescription,
+                        StorageManager.getUserId()
+                    );
+                    if (response.data.code === 200) {
+                        const newId = response.data.content.data.id;
+                        await methods.populateVendorGroupListLookupData();
+                        vendorGroupListLookup.obj.setProperties({ dataSource: state.vendorGroupListLookupData, value: newId });
+                        state.vendorGroupId = newId;
+                        vendorGroupQuickModal.obj.hide();
+                        Swal.fire({ icon: 'success', title: 'Vendor Group Created', timer: 1500, showConfirmButton: false });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Create Failed', text: response.data.message ?? 'Please check your data.', confirmButtonText: 'Try Again' });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                } finally {
+                    state.vendorGroupQuickIsSubmitting = false;
+                }
+            },
+            openVendorCategoryQuickCreate: () => {
+                state.vendorCategoryQuickName = '';
+                state.vendorCategoryQuickDescription = '';
+                state.vendorCategoryQuickErrors.name = '';
+                vendorCategoryQuickModal.obj.show();
+            },
+            closeVendorCategoryQuickCreate: () => {
+                vendorCategoryQuickModal.obj.hide();
+            },
+            submitVendorCategoryQuickCreate: async () => {
+                state.vendorCategoryQuickErrors.name = '';
+                if (!state.vendorCategoryQuickName.trim()) {
+                    state.vendorCategoryQuickErrors.name = 'Name is required.';
+                    return;
+                }
+                try {
+                    state.vendorCategoryQuickIsSubmitting = true;
+                    const response = await services.createVendorCategory(
+                        state.vendorCategoryQuickName.trim(),
+                        state.vendorCategoryQuickDescription,
+                        StorageManager.getUserId()
+                    );
+                    if (response.data.code === 200) {
+                        const newId = response.data.content.data.id;
+                        await methods.populateVendorCategoryListLookupData();
+                        vendorCategoryListLookup.obj.setProperties({ dataSource: state.vendorCategoryListLookupData, value: newId });
+                        state.vendorCategoryId = newId;
+                        vendorCategoryQuickModal.obj.hide();
+                        Swal.fire({ icon: 'success', title: 'Vendor Category Created', timer: 1500, showConfirmButton: false });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Create Failed', text: response.data.message ?? 'Please check your data.', confirmButtonText: 'Try Again' });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                } finally {
+                    state.vendorCategoryQuickIsSubmitting = false;
+                }
+            },
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -1049,6 +1171,8 @@
                 tikTokText.create();
                 mainModal.create();
                 manageContactModal.create();
+                vendorGroupQuickModal.create();
+                vendorCategoryQuickModal.create();
                 secondaryGrid.create([]);
             } catch (e) {
                 console.error('page init error:', e);
@@ -1081,6 +1205,8 @@
             tikTokRef,
             vendorGroupIdRef,
             vendorCategoryIdRef,
+            vendorGroupQuickModalRef,
+            vendorCategoryQuickModalRef,
             state,
             handler,
         };

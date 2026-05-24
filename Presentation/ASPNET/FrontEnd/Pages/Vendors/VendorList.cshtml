@@ -41,12 +41,30 @@
                                 <div class="row mb-2">
                                     <div class="col-md-6">
                                         <label for="VendorGroupId">Vendor Group</label>
-                                        <div ref="vendorGroupIdRef"></div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div ref="vendorGroupIdRef" class="flex-grow-1"></div>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-success flex-shrink-0"
+                                                    v-on:click="handler.openVendorGroupQuickCreate"
+                                                    v-bind:disabled="state.deleteMode"
+                                                    title="Quick-create a new vendor group">
+                                                <i class="fas fa-plus me-1"></i>New
+                                            </button>
+                                        </div>
                                         <label class="text-danger" v-text="state.errors.vendorGroupId"></label>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="VendorCategoryId">Vendor Category</label>
-                                        <div ref="vendorCategoryIdRef"></div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div ref="vendorCategoryIdRef" class="flex-grow-1"></div>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-info flex-shrink-0"
+                                                    v-on:click="handler.openVendorCategoryQuickCreate"
+                                                    v-bind:disabled="state.deleteMode"
+                                                    title="Quick-create a new vendor category">
+                                                <i class="fas fa-plus me-1"></i>New
+                                            </button>
+                                        </div>
                                         <label class="text-danger" v-text="state.errors.vendorCategoryId"></label>
                                     </div>
                                 </div>
@@ -181,6 +199,76 @@
                         <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
                         <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-1' : 'fas fa-save me-1'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
                         <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="vendorGroupQuickModalRef" id="VendorGroupQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-layer-group me-2"></i>Quick Create Vendor Group</h5>
+                    <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeVendorGroupQuickCreate" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new group will be automatically selected after creation.</p>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Name <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorGroupQuickName" type="text" class="form-control" placeholder="Vendor group name" />
+                            <span class="text-danger small" v-text="state.vendorGroupQuickErrors.name"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Description</label>
+                            <textarea v-model="state.vendorGroupQuickDescription" class="form-control" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeVendorGroupQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-success" v-on:click="handler.submitVendorGroupQuickCreate" v-bind:disabled="state.vendorGroupQuickIsSubmitting">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.vendorGroupQuickIsSubmitting"></span>
+                        <i class="fas fa-layer-group me-1" v-else></i>
+                        {{ state.vendorGroupQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="vendorCategoryQuickModalRef" id="VendorCategoryQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fas fa-tags me-2"></i>Quick Create Vendor Category</h5>
+                    <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeVendorCategoryQuickCreate" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new category will be automatically selected after creation.</p>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Name <span class="text-danger">*</span></label>
+                            <input v-model="state.vendorCategoryQuickName" type="text" class="form-control" placeholder="Vendor category name" />
+                            <span class="text-danger small" v-text="state.vendorCategoryQuickErrors.name"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Description</label>
+                            <textarea v-model="state.vendorCategoryQuickDescription" class="form-control" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeVendorCategoryQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-info text-white" v-on:click="handler.submitVendorCategoryQuickCreate" v-bind:disabled="state.vendorCategoryQuickIsSubmitting">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.vendorCategoryQuickIsSubmitting"></span>
+                        <i class="fas fa-tags me-1" v-else></i>
+                        {{ state.vendorCategoryQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
             </div>
