@@ -744,6 +744,9 @@
                     if (!state.phoneNumber) {
                         state.errors.phoneNumber = 'Phone Number is required.';
                         isValid = false;
+                    } else if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(state.phoneNumber.replace(/[\s\-]/g, ''))) {
+                        state.errors.phoneNumber = 'Enter a valid Bangladeshi number (e.g. 01711234567 or +8801711234567).';
+                        isValid = false;
                     }
                     if (!state.emailAddress) {
                         state.errors.emailAddress = 'Email Address is required.';
@@ -941,7 +944,7 @@
                     },
                     toolbarClick: async (args) => {
                         if (args.item.id === 'MainGrid_excelexport') {
-                            mainGrid.obj.excelExport();
+                            mainGrid.obj.excelExport({ fileName: 'VendorList.xlsx' });
                         }
 
                         if (args.item.id === 'AddCustom') {

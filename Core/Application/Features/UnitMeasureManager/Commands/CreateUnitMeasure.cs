@@ -23,11 +23,12 @@ public class CreateUnitMeasureValidator : AbstractValidator<CreateUnitMeasureReq
 {
     public CreateUnitMeasureValidator(IQueryContext context)
     {
-        RuleFor(x => x.Name).NotEmpty();
-        RuleFor(x => x.Name).MustAsync(async (name, cancellationToken) =>
-        {
-            return !await context.UnitMeasure.AnyAsync(x => x.Name == name && !x.IsDeleted, cancellationToken);
-        }).WithMessage("Unit measure name already exists.");
+        RuleFor(x => x.Name)
+            .NotEmpty()
+            .MustAsync(async (name, cancellationToken) =>
+            {
+                return !await context.UnitMeasure.AnyAsync(x => x.Name == name && !x.IsDeleted, cancellationToken);
+            }).WithMessage("Unit name already exist.");
     }
 }
 

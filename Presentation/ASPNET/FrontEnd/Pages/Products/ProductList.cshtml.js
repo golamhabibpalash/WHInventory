@@ -37,12 +37,17 @@ const App = {
             productGroupQuickIsSubmitting: false,
             productGroupQuickErrors: {
                 name: ''
-            }
+            },
+            unitMeasureQuickName: '',
+            unitMeasureQuickDescription: '',
+            unitMeasureQuickIsSubmitting: false,
+            unitMeasureQuickErrors: { name: '' }
         });
 
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const productGroupQuickModalRef = Vue.ref(null);
+        const unitMeasureQuickModalRef = Vue.ref(null);
         const productGroupQuickParentIdRef = Vue.ref(null);
         const productGroupIdRef = Vue.ref(null);
         const unitMeasureIdRef = Vue.ref(null);
@@ -168,6 +173,14 @@ const App = {
             getUnitMeasureListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/UnitMeasure/GetUnitMeasureList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createUnitMeasure: async (name, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/UnitMeasure/CreateUnitMeasure', { name, description, createdById });
                     return response;
                 } catch (error) {
                     throw error;
@@ -457,6 +470,16 @@ const App = {
             }
         };
 
+        const unitMeasureQuickModal = {
+            obj: null,
+            create: () => {
+                unitMeasureQuickModal.obj = new bootstrap.Modal(unitMeasureQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         const handler = {
             openProductGroupQuickCreate: () => {
                 state.productGroupQuickName = '';
@@ -500,6 +523,44 @@ const App = {
                     state.productGroupQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
                 } finally {
                     state.productGroupQuickIsSubmitting = false;
+                }
+            },
+            openUnitMeasureQuickCreate: () => {
+                state.unitMeasureQuickName = '';
+                state.unitMeasureQuickDescription = '';
+                state.unitMeasureQuickErrors = { name: '' };
+                unitMeasureQuickModal.obj.show();
+            },
+            closeUnitMeasureQuickCreate: () => {
+                unitMeasureQuickModal.obj.hide();
+            },
+            submitUnitMeasureQuickCreate: async () => {
+                state.unitMeasureQuickErrors = { name: '' };
+                if (!state.unitMeasureQuickName.trim()) {
+                    state.unitMeasureQuickErrors.name = 'Name is required.';
+                    return;
+                }
+                try {
+                    state.unitMeasureQuickIsSubmitting = true;
+                    const response = await services.createUnitMeasure(
+                        state.unitMeasureQuickName.trim(),
+                        state.unitMeasureQuickDescription,
+                        StorageManager.getUserId()
+                    );
+                    if (response.data.code === 200) {
+                        const newId = response.data.content.data.id;
+                        await methods.populateUnitMeasureListLookupData();
+                        unitMeasureListLookup.obj.setProperties({ dataSource: state.unitMeasureListLookupData, value: newId });
+                        state.unitMeasureId = newId;
+                        unitMeasureQuickModal.obj.hide();
+                        Swal.fire({ icon: 'success', title: 'Unit Measure Created', timer: 1500, showConfirmButton: false });
+                    } else {
+                        state.unitMeasureQuickErrors.name = response.data.message ?? 'Failed to create unit measure.';
+                    }
+                } catch (error) {
+                    state.unitMeasureQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
+                } finally {
+                    state.unitMeasureQuickIsSubmitting = false;
                 }
             },
             handleSubmit: async function () {
@@ -599,6 +660,7 @@ const App = {
                 mainModal.create();
                 productGroupQuickModal.create();
                 productGroupQuickParentListLookup.create();
+                unitMeasureQuickModal.create();
                 imageDropzone.init();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
                     resetFormState();
@@ -759,6 +821,7 @@ const App = {
             mainModalRef,
             productGroupQuickModalRef,
             productGroupQuickParentIdRef,
+            unitMeasureQuickModalRef,
             productGroupIdRef,
             unitMeasureIdRef,
             imageUploadRef,

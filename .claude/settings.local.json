@@ -71,7 +71,12 @@
       "Bash(node -e \"require\\('fs'\\).writeFileSync\\('bad.txt', 'not an image'\\)\")",
       "Bash(awk '{print $5, $9}')",
       "Bash(node upload.js)",
-      "Bash(curl -s -X POST \"http://localhost:8080/api/Security/Login\" -H \"Content-Type: application/json\" -d '{\"email\":\"admin@root.com\",\"password\":\"123456\"}')"
+      "Bash(curl -s -X POST \"http://localhost:8080/api/Security/Login\" -H \"Content-Type: application/json\" -d '{\"email\":\"admin@root.com\",\"password\":\"123456\"}')",
+      "Bash(lsof -ti:8080)",
+      "Bash(curl -s http://localhost:8080/api/Security/GetApplicationList)",
+      "Bash(curl *)",
+      "Bash(ps -p 628 -p 59860 -o pid,command)",
+      "Bash(kill 59860)"
     ]
   }
 }
