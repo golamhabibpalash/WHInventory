@@ -1,18 +1,74 @@
+# ───────────────────────────────
+#   .NET build artifacts
+# ───────────────────────────────
 **/bin/
 **/obj/
-**/.vs/
-**/.vscode/
-**/node_modules/
-**/.idea/
-*.user
+**/[Dd]ebug/
+**/[Rr]elease/
+**/*.nupkg
+**/*.snupkg
 *.suo
+*.user
 *.userosscache
 *.sln.docstates
+*.userprefs
+*.DotSettings
+*.DotSettings.user
+_ReSharper*/
+*.dbmdl
+*.rsnoc
+*.pidb
+*.sourcelink.zip
+*.cache
+**.log
+packages/
+
+# ───────────────────────────────
+#   Visual Studio
+# ───────────────────────────────
 .vs/
+
+# ───────────────────────────────
+#   Visual Studio Code
+# ───────────────────────────────
+.vscode/
+
+# ───────────────────────────────
+#   JetBrains / Rider
+# ───────────────────────────────
+.idea/
+*.sln.iml
+
+# ───────────────────────────────
+#   Node.js / npm / front-end
+# ───────────────────────────────
+node_modules/
+
+# ───────────────────────────────
+#   macOS
+# ───────────────────────────────
+.DS_Store
+*.swp
+*.swo
+*~
+
+# ───────────────────────────────
+#   Windows
+# ───────────────────────────────
+Thumbs.db
+Desktop.ini
+
+# ───────────────────────────────
+#   Project-specific
+# ───────────────────────────────
 wwwroot/app_data/
 appsettings.*.json
 Presentation/ASPNET/appsettings.json
 ustock-app.tar.gz
+
+# ───────────────────────────────
+#   Environment files
+# ───────────────────────────────
 .env
 .env.*
 !.env.example

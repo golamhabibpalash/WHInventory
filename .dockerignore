@@ -1,10 +1,57 @@
+# ───────────────────────────────
+#   .NET build artifacts
+# ───────────────────────────────
 **/bin/
 **/obj/
-**/.vs/
+**/[Dd]ebug/
+**/[Rr]elease/
+**/*.nupkg
+**/*.snupkg
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ───────────────────────────────
+#   Visual Studio / VS Code / Rider
+# ───────────────────────────────
+.vs/
+.vscode/
+.idea/
+
+# ───────────────────────────────
+#   Git
+# ───────────────────────────────
 **/.git/
 **/.gitignore
+**/.gitattributes
+**/.gitmodules
+
+# ───────────────────────────────
+#   Node.js
+# ───────────────────────────────
 **/node_modules/
-*.user
-*.suo
-*.md
+
+# ───────────────────────────────
+#   macOS / Windows
+# ───────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ───────────────────────────────
+#   Project-specific
+# ───────────────────────────────
 deploy/
+*.md
+appsettings.*.json
+wwwroot/app_data/
+.env
+.env.*
+!.env.example
+
+# ───────────────────────────────
+#   Test results
+# ───────────────────────────────
+**/TestResults/
+**/coverage/
