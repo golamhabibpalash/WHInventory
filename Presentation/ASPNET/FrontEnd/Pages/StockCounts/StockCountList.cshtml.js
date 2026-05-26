@@ -420,20 +420,22 @@ const App = {
                 await SecurityManager.authorizePage(['StockCounts']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateWarehouseListLookupData(),
+                    methods.populateStockCountStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
 
-                await methods.populateWarehouseListLookupData();
                 warehouseListLookup.create();
-                await methods.populateStockCountStatusListLookupData();
                 statusListLookup.create();
                 countDatePicker.create();
                 numberText.create();
 
-                await methods.populateProductListLookupData();
                 await secondaryGrid.create(state.secondaryData);
 
             } catch (e) {

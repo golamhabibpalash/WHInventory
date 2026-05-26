@@ -359,19 +359,21 @@ const App = {
                 await SecurityManager.authorizePage(['PositiveAdjustments']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populatePositiveAdjustmentStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                    methods.populateWarehouseListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
-                await methods.populatePositiveAdjustmentStatusListLookupData();
                 numberText.create();
                 adjustmentDatePicker.create();
                 positiveAdjustmentStatusListLookup.create();
 
                 await secondaryGrid.create(state.secondaryData);
-                await methods.populateProductListLookupData();
-                await methods.populateWarehouseListLookupData();
 
             } catch (e) {
             } finally {

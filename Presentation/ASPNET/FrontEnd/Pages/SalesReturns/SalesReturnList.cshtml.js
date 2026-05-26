@@ -425,21 +425,23 @@ const App = {
                 await SecurityManager.authorizePage(['SalesReturns']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateDeliveryOrderListLookupData(),
+                    methods.populateSalesReturnStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                    methods.populateWarehouseListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
-                await methods.populateDeliveryOrderListLookupData();
-                await methods.populateSalesReturnStatusListLookupData();
                 numberText.create();
                 returnDatePicker.create();
                 deliveryOrderListLookup.create();
                 salesReturnStatusListLookup.create();
 
                 await secondaryGrid.create(state.secondaryData);
-                await methods.populateProductListLookupData();
-                await methods.populateWarehouseListLookupData();
 
             } catch (e) {
             } finally {

@@ -428,21 +428,23 @@ const App = {
                 await SecurityManager.authorizePage(['DeliveryOrders']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateSalesOrderListLookupData(),
+                    methods.populateDeliveryOrderStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                    methods.populateWarehouseListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden());
-                await methods.populateSalesOrderListLookupData();
-                await methods.populateDeliveryOrderStatusListLookupData();
                 numberText.create();
                 orderDatePicker.create();
                 salesOrderListLookup.create();
                 statusListLookup.create();
 
                 await secondaryGrid.create(state.secondaryData);
-                await methods.populateProductListLookupData();
-                await methods.populateWarehouseListLookupData();
 
             } catch (e) {
             } finally {

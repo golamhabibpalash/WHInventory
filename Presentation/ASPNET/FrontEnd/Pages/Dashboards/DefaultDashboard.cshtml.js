@@ -312,10 +312,12 @@
                 await SecurityManager.authorizePage(['Dashboards']);
                 await SecurityManager.validateToken();
 
-                await methods.populateCardsData();
-                await methods.populateSalesData();
-                await methods.populatePurchaseData();
-                await methods.populateInventoryData();
+                await Promise.all([
+                    methods.populateCardsData(),
+                    methods.populateSalesData(),
+                    methods.populatePurchaseData(),
+                    methods.populateInventoryData(),
+                ]);
 
                 
 

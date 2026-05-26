@@ -27,5 +27,6 @@ public abstract class BaseEntityConfiguration<T> : IEntityTypeConfiguration<T> w
         builder.Property(e => e.UpdatedById)
             .HasMaxLength(UserIdConsts.MaxLength)
             .IsRequired(false);
+        builder.HasIndex(e => e.IsDeleted);
     }
 }

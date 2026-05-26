@@ -368,9 +368,11 @@
                 await SecurityManager.authorizePage(['CustomerContacts']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateCustomerListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
-                await methods.populateCustomerListLookupData();
                 customerListLookup.create();
                 nameText.create();
                 numberText.create();

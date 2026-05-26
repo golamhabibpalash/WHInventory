@@ -411,20 +411,22 @@ const App = {
                 await SecurityManager.authorizePage(['TransferIns']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateTransferOutListLookupData(),
+                    methods.populateTransferInStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
-                await methods.populateTransferOutListLookupData();
-                await methods.populateTransferInStatusListLookupData();
                 numberText.create();
                 transferReceiveDatePicker.create();
                 transferOutListLookup.create();
                 transferInStatusListLookup.create();
 
                 await secondaryGrid.create(state.secondaryData);
-                await methods.populateProductListLookupData();
 
             } catch (e) {
             } finally {

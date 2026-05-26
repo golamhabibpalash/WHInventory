@@ -1022,11 +1022,13 @@
                 await SecurityManager.authorizePage(['Customers']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateCustomerGroupListLookupData(),
+                    methods.populateCustomerCategoryListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
-                await methods.populateCustomerGroupListLookupData();
                 customerGroupListLookup.create();
-                await methods.populateCustomerCategoryListLookupData();
                 customerCategoryListLookup.create();
                 nameText.create();
                 numberText.create();

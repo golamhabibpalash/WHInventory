@@ -476,14 +476,17 @@ const App = {
                 await SecurityManager.authorizePage(['TransferOuts']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateWarehouseFromListLookupData(),
+                    methods.populateWarehouseToListLookupData(),
+                    methods.populateTransferOutStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
-                await methods.populateWarehouseFromListLookupData();
-                await methods.populateWarehouseToListLookupData();
-                await methods.populateTransferOutStatusListLookupData();
                 numberText.create();
                 transferReleaseDatePicker.create();
                 warehouseFromListLookup.create();
@@ -491,7 +494,6 @@ const App = {
                 transferOutStatusListLookup.create();
 
                 await secondaryGrid.create(state.secondaryData);
-                await methods.populateProductListLookupData();
 
             } catch (e) {
             } finally {

@@ -644,11 +644,13 @@ const App = {
                 await SecurityManager.authorizePage(['Products']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateProductGroupListLookupData(),
+                    methods.populateUnitMeasureListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
-                await methods.populateProductGroupListLookupData();
                 productGroupListLookup.create();
-                await methods.populateUnitMeasureListLookupData();
                 unitMeasureListLookup.create();
 
                 nameText.create();

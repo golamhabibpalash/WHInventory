@@ -491,21 +491,23 @@ const App = {
                 await SecurityManager.authorizePage(['GoodsReceives']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populatePurchaseOrderListLookupData(),
+                    methods.populateGoodsReceiveStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                    methods.populateWarehouseListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
-                await methods.populatePurchaseOrderListLookupData();
-                await methods.populateGoodsReceiveStatusListLookupData();
                 numberText.create();
                 receiveDatePicker.create();
                 purchaseOrderListLookup.create();
                 goodsReceiveStatusListLookup.create();
 
                 await secondaryGrid.create(state.secondaryData);
-                await methods.populateProductListLookupData();
-                await methods.populateWarehouseListLookupData();
 
             } catch (e) {
             } finally {

@@ -1147,11 +1147,13 @@
                 await SecurityManager.authorizePage(['Vendors']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateVendorGroupListLookupData(),
+                    methods.populateVendorCategoryListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
-                await methods.populateVendorGroupListLookupData();
                 vendorGroupListLookup.create();
-                await methods.populateVendorCategoryListLookupData();
                 vendorCategoryListLookup.create();
                 nameText.create();
                 numberText.create();

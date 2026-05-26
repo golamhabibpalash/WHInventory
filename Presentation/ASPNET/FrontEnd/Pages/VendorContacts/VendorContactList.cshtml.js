@@ -368,9 +368,11 @@
                 await SecurityManager.authorizePage(['VendorContacts']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateVendorListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
-                await methods.populateVendorListLookupData();
                 vendorListLookup.create();
                 nameText.create();
                 numberText.create();

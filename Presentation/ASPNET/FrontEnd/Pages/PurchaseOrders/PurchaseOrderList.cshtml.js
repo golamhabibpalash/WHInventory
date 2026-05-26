@@ -1204,7 +1204,13 @@ const App = {
                 await SecurityManager.authorizePage(['PurchaseOrders']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateVendorListLookupData(),
+                    methods.populateTaxListLookupData(),
+                    methods.populatePurchaseOrderStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
@@ -1212,15 +1218,11 @@ const App = {
                 vendorQuickModal.create();
                 vendorGroupListLookupQuick.create();
                 vendorCategoryListLookupQuick.create();
-                await methods.populateVendorListLookupData();
                 vendorListLookup.create();
-                await methods.populateTaxListLookupData();
                 taxListLookup.create();
-                await methods.populatePurchaseOrderStatusListLookupData();
                 purchaseOrderStatusListLookup.create();
                 orderDatePicker.create();
                 numberText.create();
-                await methods.populateProductListLookupData();
                 await secondaryGrid.create(state.secondaryData);
             } catch (e) {
             } finally {

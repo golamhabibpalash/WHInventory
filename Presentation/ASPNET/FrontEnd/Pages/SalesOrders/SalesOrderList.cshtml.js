@@ -1123,23 +1123,25 @@ const App = {
                 await SecurityManager.authorizePage(['SalesOrders']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateCustomerListLookupData(),
+                    methods.populateTaxListLookupData(),
+                    methods.populateSalesOrderStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                    methods.populateCustomerGroupListLookupData(),
+                    methods.populateCustomerCategoryListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
-                await methods.populateCustomerListLookupData();
                 customerListLookup.create();
-                await methods.populateTaxListLookupData();
                 taxListLookup.create();
-                await methods.populateSalesOrderStatusListLookupData();
                 salesOrderStatusListLookup.create();
                 orderDatePicker.create();
                 numberText.create();
-                await methods.populateProductListLookupData();
                 await secondaryGrid.create(state.secondaryData);
-                await methods.populateCustomerGroupListLookupData();
-                await methods.populateCustomerCategoryListLookupData();
                 customerQuickGroupListLookup.create();
                 customerQuickCategoryListLookup.create();
                 customerQuickModal.create();

@@ -247,9 +247,11 @@
                 await SecurityManager.authorizePage(['TodoItems']);
                 await SecurityManager.validateToken();
 
-                await methods.populateMainData();
+                await Promise.all([
+                    methods.populateMainData(),
+                    methods.populateTodoListLookupData(),
+                ]);
                 await mainGrid.create(state.mainData);
-                await methods.populateTodoListLookupData();
                 todoListLookup.create();
                 nameText.create();
 
