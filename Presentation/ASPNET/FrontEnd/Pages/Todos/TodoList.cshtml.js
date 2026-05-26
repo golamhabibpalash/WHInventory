@@ -166,7 +166,6 @@
                 await mainModal.create();
                 nameText.create();
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

@@ -287,7 +287,6 @@
                         createdAt: new Date(item.createdAt)
                     }));
                 } catch (error) {
-                    console.error("Error populating main data:", error);
                     state.mainData = [];
                 }
             },
@@ -306,7 +305,6 @@
 
                     state.secondaryData = result;
                 } catch (error) {
-                    console.error("Error populating secondary data:", error);
                     state.secondaryData = [];
                 }
             },
@@ -457,7 +455,6 @@
                 });
 
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

@@ -94,10 +94,18 @@
                         const year = new Date().getFullYear();
                         const currency = data[0]?.currency ?? '---';
 
-                        document.getElementById('footerContent').innerHTML =
-                            `© ${year} <a href="${companyWeb}">${companyName}</a>, All Right Reserved.`;
-                        document.getElementById('topbarContent').innerHTML =
-                            `Currency: ${currency}`;
+                        const footerEl = document.getElementById('footerContent');
+                        if (footerEl) {
+                            footerEl.textContent = '';
+                            footerEl.appendChild(document.createTextNode(`© ${year} `));
+                            const link = document.createElement('a');
+                            try { link.href = new URL(companyWeb).href; } catch { link.href = '#'; }
+                            link.textContent = companyName;
+                            footerEl.appendChild(link);
+                            footerEl.appendChild(document.createTextNode(', All Right Reserved.'));
+                        }
+                        const topbarEl = document.getElementById('topbarContent');
+                        if (topbarEl) topbarEl.textContent = `Currency: ${currency}`;
 
                         const logoName = data[0]?.logoName;
                         if (logoName) {

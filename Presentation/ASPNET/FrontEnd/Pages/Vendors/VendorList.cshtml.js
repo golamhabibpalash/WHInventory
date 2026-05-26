@@ -228,7 +228,6 @@
                     });
                     vendorGroupListLookup.obj.appendTo(vendorGroupIdRef.value);
                 } else {
-                    console.error('Vendor Group list lookup data is not available or invalid.');
                 }
             },
             refresh: () => {
@@ -252,7 +251,6 @@
                     });
                     vendorCategoryListLookup.obj.appendTo(vendorCategoryIdRef.value);
                 } else {
-                    console.error('Vendor Category list lookup data is not available or invalid.');
                 }
             },
             refresh: () => {
@@ -1178,7 +1176,6 @@
                 vendorCategoryQuickModal.create();
                 secondaryGrid.create([]);
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

@@ -1,4 +1,5 @@
 using Application;
+using ASPNET.BackEnd.Common.Filters;
 using ASPNET.BackEnd.Common.Handlers;
 using Infrastructure;
 using Infrastructure.DataAccessManager.EFCore;
@@ -30,7 +31,10 @@ public static class BackEndConfiguration
                 .AllowAnyMethod()
                 .AllowAnyHeader());
         });
-        services.AddControllers()
+        services.AddControllers(options =>
+            {
+                options.Filters.Add<AuditFieldActionFilter>();
+            })
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;

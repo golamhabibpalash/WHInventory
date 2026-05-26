@@ -175,7 +175,6 @@ const App = {
                 dateFromPicker.create();
                 dateToPicker.create();
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
 
             }

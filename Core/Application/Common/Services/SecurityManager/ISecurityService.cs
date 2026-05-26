@@ -36,7 +36,7 @@ public interface ISecurityService
 
     Task<string> ForgotPasswordConfirmationAsync(
         string email,
-        string tempPassword,
+        string newPassword,
         string code,
         CancellationToken cancellationToken = default
         );

@@ -337,7 +337,6 @@
                 percentageText.create();
                 mainModal.create();
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

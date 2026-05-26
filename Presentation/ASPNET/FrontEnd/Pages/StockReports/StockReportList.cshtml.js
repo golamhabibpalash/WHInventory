@@ -39,7 +39,6 @@
                 await mainGrid.create(state.mainData);
 
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

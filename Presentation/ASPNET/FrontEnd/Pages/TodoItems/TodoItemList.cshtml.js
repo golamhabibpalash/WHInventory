@@ -51,7 +51,6 @@
                     });
                     todoListLookup.obj.appendTo(todoIdRef.value);
                 } else {
-                    console.error('Todo list lookup data is not available or invalid.');
                 }
             },
             refresh: () => {
@@ -260,7 +259,6 @@
                 });
 
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

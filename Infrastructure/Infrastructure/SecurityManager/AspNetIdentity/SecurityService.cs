@@ -76,7 +76,7 @@ public class SecurityService : ISecurityService
             throw new Exception($"User already deleted. {email}");
         }
 
-        var result = await _signInManager.PasswordSignInAsync(user, password, true, lockoutOnFailure: false);
+        var result = await _signInManager.PasswordSignInAsync(user, password, true, lockoutOnFailure: true);
 
         if (result.IsLockedOut)
         {
@@ -258,25 +258,22 @@ public class SecurityService : ISecurityService
         var code = await _userManager.GeneratePasswordResetTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-        var textTempPassword = Guid.NewGuid().ToString().Substring(0, _identitySettings.Password.RequiredLength);
-        var encryptedTempPassword = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(textTempPassword));
-
         var request = _httpContextAccessor?.HttpContext?.Request;
-        var callbackUrl = $"{request?.Scheme}://{request?.Host}/Accounts/ForgotPasswordConfirmation?email={user.Email}&code={code}&tempPassword={encryptedTempPassword}";
+        var callbackUrl = $"{request?.Scheme}://{request?.Host}/Accounts/ForgotPasswordConfirmation?email={user.Email}&code={code}";
         var encodeCallbackUrl = $"{HtmlEncoder.Default.Encode(callbackUrl)}";
 
         var emailSubject = $"Forgot password confirmation";
-        var emailMessage = $"Your temporary password is: <strong>{textTempPassword}</strong>. Please confirm reset your password by <a href='{encodeCallbackUrl}'>clicking here</a>.";
+        var emailMessage = $"Please reset your password by <a href='{encodeCallbackUrl}'>clicking here</a>.";
 
         await _emailService.SendEmailAsync(user.Email ?? "", emailSubject, emailMessage);
 
-        return "A temporary password has been sent to the registered email address.";
+        return "A password reset link has been sent to the registered email address.";
 
     }
 
     public async Task<string> ForgotPasswordConfirmationAsync(
         string email,
-        string tempPassword,
+        string newPassword,
         string code,
         CancellationToken cancellationToken = default)
     {
@@ -288,8 +285,7 @@ public class SecurityService : ISecurityService
         }
 
         code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
-        tempPassword = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(tempPassword));
-        var result = await _userManager.ResetPasswordAsync(user, code, tempPassword);
+        var result = await _userManager.ResetPasswordAsync(user, code, newPassword);
 
         if (!result.Succeeded)
         {
@@ -304,10 +300,10 @@ public class SecurityService : ISecurityService
         CancellationToken cancellationToken
         )
     {
-        var registeredToken = await _context.Token.SingleOrDefaultAsync(x => x.RefreshToken == refreshToken, cancellationToken);
+        var registeredToken = await _context.Token.SingleOrDefaultAsync(x => x.RefreshToken == refreshToken && x.ExpiryDate > DateTime.UtcNow, cancellationToken);
         if (registeredToken == null)
         {
-            throw new Exception("Refresh token invalid, please re-login");
+            throw new Exception("Refresh token invalid or expired, please re-login");
         }
         var user = await _userManager.FindByIdAsync(registeredToken?.UserId ?? "");
         if (user == null)

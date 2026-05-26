@@ -6,6 +6,7 @@ using ASPNET.BackEnd.Common.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ASPNET.BackEnd.Controllers;
 
@@ -102,14 +103,11 @@ public class SecurityController : BaseApiController
     }
 
     [AllowAnonymous]
-    [HttpGet("ForgotPasswordConfirmation")]
+    [HttpPost("ForgotPasswordConfirmation")]
     public async Task<ActionResult<ApiSuccessResult<ForgotPasswordConfirmationResult>>> ForgotPasswordConfirmationAsync(
-        [FromQuery] string email,
-        [FromQuery] string code,
-        [FromQuery] string tempPassword,
+        ForgotPasswordConfirmationRequest request,
         CancellationToken cancellationToken)
     {
-        var request = new ForgotPasswordConfirmationRequest { Email = email, TempPassword = tempPassword, Code = code };
         var response = await _sender.Send(request, cancellationToken);
 
         return Ok(new ApiSuccessResult<ForgotPasswordConfirmationResult>
@@ -155,10 +153,10 @@ public class SecurityController : BaseApiController
     [Authorize]
     [HttpGet("GetMyProfileList")]
     public async Task<ActionResult<ApiSuccessResult<GetMyProfileListResult>>> GetMyProfileListAsync(
-        [FromQuery] string userId,
         CancellationToken cancellationToken
         )
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
         var request = new GetMyProfileListRequest { UserId = userId };
         var response = await _sender.Send(request, cancellationToken);
 
@@ -177,7 +175,15 @@ public class SecurityController : BaseApiController
         CancellationToken cancellationToken
         )
     {
-        var response = await _sender.Send(request, cancellationToken);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        var safeRequest = new UpdateMyProfileRequest
+        {
+            UserId = userId,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            CompanyName = request.CompanyName
+        };
+        var response = await _sender.Send(safeRequest, cancellationToken);
 
         return Ok(new ApiSuccessResult<UpdateMyProfileResult>
         {
@@ -223,7 +229,7 @@ public class SecurityController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpGet("GetUserList")]
     public async Task<ActionResult<ApiSuccessResult<GetUserListResult>>> GetUserListAsync(
         CancellationToken cancellationToken
@@ -240,7 +246,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("CreateUser")]
     public async Task<ActionResult<ApiSuccessResult<CreateUserResult>>> CreateUserAsync(
         CreateUserRequest request,
@@ -258,7 +264,7 @@ public class SecurityController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("UpdateUser")]
     public async Task<ActionResult<ApiSuccessResult<UpdateUserResult>>> UpdateUserAsync(
         UpdateUserRequest request,
@@ -275,7 +281,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("DeleteUser")]
     public async Task<ActionResult<ApiSuccessResult<DeleteUserResult>>> DeleteUserAsync(
     DeleteUserRequest request,
@@ -293,7 +299,7 @@ public class SecurityController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("UpdatePasswordUser")]
     public async Task<ActionResult<ApiSuccessResult<UpdatePasswordUserResult>>> UpdatePasswordUserAsync(
     UpdatePasswordUserRequest request,
@@ -310,7 +316,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("GetUserRoles")]
     public async Task<ActionResult<ApiSuccessResult<GetUserRolesResult>>> GetUserRolesAsync(GetUserRolesRequest request, CancellationToken cancellationToken)
     {
@@ -324,7 +330,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("UpdateUserRole")]
     public async Task<ActionResult<ApiSuccessResult<UpdateUserRoleResult>>> UpdateUserRoleAsync(UpdateUserRoleRequest request, CancellationToken cancellationToken)
     {
@@ -338,7 +344,7 @@ public class SecurityController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpPost("UpdateAllUserRoles")]
     public async Task<ActionResult<ApiSuccessResult<UpdateAllUserRolesResult>>> UpdateAllUserRolesAsync(UpdateAllUserRolesRequest request, CancellationToken cancellationToken)
     {
@@ -356,7 +362,9 @@ public class SecurityController : BaseApiController
     [HttpPost("UpdateMyProfileAvatar")]
     public async Task<ActionResult<ApiSuccessResult<UpdateMyProfileAvatarResult>>> UpdateMyProfileAvatarAsync(UpdateMyProfileAvatarRequest request, CancellationToken cancellationToken)
     {
-        var response = await _sender.Send(request, cancellationToken);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        var safeRequest = new UpdateMyProfileAvatarRequest { UserId = userId, Avatar = request.Avatar };
+        var response = await _sender.Send(safeRequest, cancellationToken);
 
         return Ok(new ApiSuccessResult<UpdateMyProfileAvatarResult>
         {
@@ -383,8 +391,9 @@ public class SecurityController : BaseApiController
     [Authorize]
     [HttpGet("GetNavigationSortOrder")]
     public async Task<ActionResult<ApiSuccessResult<GetNavigationSortOrderResult>>> GetNavigationSortOrderAsync(
-        [FromQuery] string userId, CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
         var request = new GetNavigationSortOrderRequest { UserId = userId };
         var response = await _sender.Send(request, cancellationToken);
         return Ok(new ApiSuccessResult<GetNavigationSortOrderResult>

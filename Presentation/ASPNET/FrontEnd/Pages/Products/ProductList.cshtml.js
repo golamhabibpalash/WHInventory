@@ -261,7 +261,6 @@ const App = {
                     });
                     productGroupListLookup.obj.appendTo(productGroupIdRef.value);
                 } else {
-                    console.error('ProductGroup list lookup data is not available or invalid.');
                 }
             },
             refresh: () => {
@@ -286,7 +285,6 @@ const App = {
                     });
                     unitMeasureListLookup.obj.appendTo(unitMeasureIdRef.value);
                 } else {
-                    console.error('UnitMeasure list lookup data is not available or invalid.');
                 }
             },
             refresh: () => {
@@ -667,7 +665,6 @@ const App = {
                 });
 
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

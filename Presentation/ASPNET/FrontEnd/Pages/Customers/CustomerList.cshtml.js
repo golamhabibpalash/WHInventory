@@ -202,7 +202,6 @@
                     });
                     customerGroupListLookup.obj.appendTo(customerGroupIdRef.value);
                 } else {
-                    console.error('Customer Group list lookup data is not available or invalid.');
                 }
             },
             refresh: () => {
@@ -226,7 +225,6 @@
                     });
                     customerCategoryListLookup.obj.appendTo(customerCategoryIdRef.value);
                 } else {
-                    console.error('Customer Category list lookup data is not available or invalid.');
                 }
             },
             refresh: () => {
@@ -972,7 +970,6 @@
                     },
                     actionComplete: async (args) => {
                         if (args.requestType === 'save' && args.action === 'add') {
-                            console.log(state);
                             const response = await services.createSecondaryData(
                                 args.data.name, args.data.jobTitle, args.data.phoneNumber, args.data.emailAddress, args.data.description, state.id, StorageManager.getUserId()
                             );
@@ -1052,7 +1049,6 @@
                 manageContactModal.create();
                 secondaryGrid.create([]);
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

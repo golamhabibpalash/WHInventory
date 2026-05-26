@@ -9,7 +9,6 @@
                 const response = await AxiosManager.get(`/Security/ConfirmEmail?email=${email}&code=${code}`, {});
                 return response;
             } catch (error) {
-                console.error('Error during emailConfirmation:', error);
                 throw error;
             }
         }
@@ -55,7 +54,6 @@
                 }
 
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 state.isSubmitting = false;
             }

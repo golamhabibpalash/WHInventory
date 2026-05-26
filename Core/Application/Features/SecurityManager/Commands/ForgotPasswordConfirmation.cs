@@ -13,7 +13,8 @@ public class ForgotPasswordConfirmationResult
 public class ForgotPasswordConfirmationRequest : IRequest<ForgotPasswordConfirmationResult>
 {
     public required string Email { get; init; }
-    public required string TempPassword { get; init; }
+    public required string NewPassword { get; init; }
+    public required string ConfirmPassword { get; init; }
     public required string Code { get; init; }
 }
 
@@ -25,8 +26,13 @@ public class ForgotPasswordConfirmationValidator : AbstractValidator<ForgotPassw
             .NotEmpty()
             .EmailAddress();
 
-        RuleFor(x => x.TempPassword)
-            .NotEmpty();
+        RuleFor(x => x.NewPassword)
+            .NotEmpty()
+            .MinimumLength(6);
+
+        RuleFor(x => x.ConfirmPassword)
+            .NotEmpty()
+            .Equal(x => x.NewPassword).WithMessage("Passwords do not match.");
 
         RuleFor(x => x.Code)
             .NotEmpty();
@@ -49,7 +55,7 @@ public class ForgotPasswordConfirmationHandler : IRequestHandler<ForgotPasswordC
     {
         var result = await _securityService.ForgotPasswordConfirmationAsync(
             request.Email,
-            request.TempPassword,
+            request.NewPassword,
             request.Code,
             cancellationToken
             );

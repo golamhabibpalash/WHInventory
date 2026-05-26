@@ -374,7 +374,6 @@ const App = {
                 await methods.populateWarehouseListLookupData();
 
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }
@@ -544,7 +543,6 @@ const App = {
                             headerText: 'Warehouse',
                             width: 250,
                             validationRules: { required: true },
-                            disableHtmlEncode: false,
                             valueAccessor: (field, data, column) => {
                                 const warehouse = state.warehouseListLookupData.find(item => item.id === data[field]);
                                 return warehouse ? `${warehouse.name}` : '';
@@ -578,7 +576,6 @@ const App = {
                             headerText: 'Product',
                             width: 250,
                             validationRules: { required: true },
-                            disableHtmlEncode: false,
                             valueAccessor: (field, data, column) => {
                                 const product = state.productListLookupData.find(item => item.id === data[field]);
                                 return product ? `${product.numberName}` : '';

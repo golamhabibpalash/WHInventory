@@ -90,7 +90,6 @@
                 const cardsDashboard = state.cardsData?.cardsDashboard;
 
                 if (!cardsDashboard) {
-                    console.error('CardsDashboard data is not available.');
                     return;
                 }
 
@@ -321,7 +320,6 @@
                 
 
             } catch (e) {
-                console.error('page init error:', e);
             }
         });
 

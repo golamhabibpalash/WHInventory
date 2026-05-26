@@ -113,7 +113,6 @@
                         doc.save(`sales-order-${state.orderNumber || 'unknown'}.pdf`);
                     });
                 } catch (error) {
-                    console.error('Error generating PDF:', error);
                 } finally {
                     state.isDownloading = false;
                 }
@@ -127,7 +126,6 @@
                 var id = urlParams.get('id');
                 await methods.populatePDFData(id ?? '');
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }

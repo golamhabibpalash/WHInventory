@@ -26,7 +26,6 @@ const App = {
                     state.mainData = response?.data?.content?.data ?? [];
                     mainGrid.refresh();
                 } catch (error) {
-                    console.error('Error loading activity logs:', error);
                 }
             }
         };

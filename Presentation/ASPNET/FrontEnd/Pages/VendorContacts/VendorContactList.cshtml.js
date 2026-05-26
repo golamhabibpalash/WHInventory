@@ -236,7 +236,6 @@
                     });
                     vendorListLookup.obj.appendTo(vendorIdRef.value);
                 } else {
-                    console.error('Vendor list lookup data is not available or invalid.');
                 }
             },
             refresh: () => {
@@ -385,7 +384,6 @@
                 });
 
             } catch (e) {
-                console.error('page init error:', e);
             } finally {
                 
             }
