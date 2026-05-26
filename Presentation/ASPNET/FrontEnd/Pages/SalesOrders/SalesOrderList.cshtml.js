@@ -8,6 +8,8 @@ const App = {
             salesOrderStatusListLookupData: [],
             secondaryData: [],
             productListLookupData: [],
+            customerGroupListLookupData: [],
+            customerCategoryListLookupData: [],
             mainTitle: null,
             id: '',
             number: '',
@@ -27,7 +29,31 @@ const App = {
             isSubmitting: false,
             subTotalAmount: '0.00',
             taxAmount: '0.00',
-            totalAmount: '0.00'
+            totalAmount: '0.00',
+            customerQuickName: '',
+            customerQuickDescription: '',
+            customerQuickStreet: '',
+            customerQuickCity: '',
+            customerQuickAddrState: '',
+            customerQuickZipCode: '',
+            customerQuickCountry: '',
+            customerQuickPhoneNumber: '',
+            customerQuickEmailAddress: '',
+            customerQuickGroupId: null,
+            customerQuickCategoryId: null,
+            customerQuickIsSubmitting: false,
+            customerQuickErrors: {
+                name: '', street: '', city: '', addrState: '', zipCode: '',
+                phoneNumber: '', emailAddress: '', customerGroupId: '', customerCategoryId: ''
+            },
+            customerGroupQuickName: '',
+            customerGroupQuickDescription: '',
+            customerGroupQuickIsSubmitting: false,
+            customerGroupQuickErrors: { name: '' },
+            customerCategoryQuickName: '',
+            customerCategoryQuickDescription: '',
+            customerCategoryQuickIsSubmitting: false,
+            customerCategoryQuickErrors: { name: '' }
         });
 
         const mainGridRef = Vue.ref(null);
@@ -38,6 +64,11 @@ const App = {
         const taxIdRef = Vue.ref(null);
         const orderStatusRef = Vue.ref(null);
         const secondaryGridRef = Vue.ref(null);
+        const customerQuickModalRef = Vue.ref(null);
+        const customerGroupQuickModalRef = Vue.ref(null);
+        const customerCategoryQuickModalRef = Vue.ref(null);
+        const customerQuickGroupIdRef = Vue.ref(null);
+        const customerQuickCategoryIdRef = Vue.ref(null);
 
         const validateForm = function () {
             state.errors.orderDate = '';
@@ -197,6 +228,50 @@ const App = {
                 } catch (error) {
                     throw error;
                 }
+            },
+            createCustomer: async (name, description, customerGroupId, customerCategoryId, street, city, addressState, zipCode, country, phoneNumber, emailAddress, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/Customer/CreateCustomer', {
+                        name, description, customerGroupId, customerCategoryId,
+                        street, city, state: addressState, zipCode, country,
+                        phoneNumber, emailAddress, createdById
+                    });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getCustomerGroupListLookupData: async () => {
+                try {
+                    const response = await AxiosManager.get('/CustomerGroup/GetCustomerGroupList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createCustomerGroup: async (name, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/CustomerGroup/CreateCustomerGroup', { name, description, createdById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getCustomerCategoryListLookupData: async () => {
+                try {
+                    const response = await AxiosManager.get('/CustomerCategory/GetCustomerCategoryList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createCustomerCategory: async (name, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/CustomerCategory/CreateCustomerCategory', { name, description, createdById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
             }
         };
 
@@ -236,6 +311,14 @@ const App = {
             populateProductListLookupData: async () => {
                 const response = await services.getProductListLookupData();
                 state.productListLookupData = response?.data?.content?.data;
+            },
+            populateCustomerGroupListLookupData: async () => {
+                const response = await services.getCustomerGroupListLookupData();
+                state.customerGroupListLookupData = response?.data?.content?.data;
+            },
+            populateCustomerCategoryListLookupData: async () => {
+                const response = await services.getCustomerCategoryListLookupData();
+                state.customerCategoryListLookupData = response?.data?.content?.data;
             },
             refreshPaymentSummary: async (id) => {
                 const record = state.mainData.find(item => item.id === id);
@@ -406,6 +489,82 @@ const App = {
                 if (salesOrderStatusListLookup.obj) {
                     salesOrderStatusListLookup.obj.value = state.orderStatus;
                 }
+            }
+        };
+
+        const customerQuickGroupListLookup = {
+            obj: null,
+            create: () => {
+                customerQuickGroupListLookup.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.customerGroupListLookupData,
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'Select a Customer Group',
+                    popupHeight: '200px',
+                    allowFiltering: true,
+                    change: (e) => { state.customerQuickGroupId = e.value; }
+                });
+                customerQuickGroupListLookup.obj.appendTo(customerQuickGroupIdRef.value);
+            },
+            refresh: () => {
+                if (customerQuickGroupListLookup.obj) {
+                    customerQuickGroupListLookup.obj.setProperties({
+                        dataSource: state.customerGroupListLookupData,
+                        value: state.customerQuickGroupId
+                    });
+                }
+            }
+        };
+
+        const customerQuickCategoryListLookup = {
+            obj: null,
+            create: () => {
+                customerQuickCategoryListLookup.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.customerCategoryListLookupData,
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'Select a Customer Category',
+                    popupHeight: '200px',
+                    allowFiltering: true,
+                    change: (e) => { state.customerQuickCategoryId = e.value; }
+                });
+                customerQuickCategoryListLookup.obj.appendTo(customerQuickCategoryIdRef.value);
+            },
+            refresh: () => {
+                if (customerQuickCategoryListLookup.obj) {
+                    customerQuickCategoryListLookup.obj.setProperties({
+                        dataSource: state.customerCategoryListLookupData,
+                        value: state.customerQuickCategoryId
+                    });
+                }
+            }
+        };
+
+        const customerQuickModal = {
+            obj: null,
+            create: () => {
+                customerQuickModal.obj = new bootstrap.Modal(customerQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
+        const customerGroupQuickModal = {
+            obj: null,
+            create: () => {
+                customerGroupQuickModal.obj = new bootstrap.Modal(customerGroupQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
+        const customerCategoryQuickModal = {
+            obj: null,
+            create: () => {
+                customerCategoryQuickModal.obj = new bootstrap.Modal(customerCategoryQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
             }
         };
 
@@ -980,6 +1139,13 @@ const App = {
                 numberText.create();
                 await methods.populateProductListLookupData();
                 await secondaryGrid.create(state.secondaryData);
+                await methods.populateCustomerGroupListLookupData();
+                await methods.populateCustomerCategoryListLookupData();
+                customerQuickGroupListLookup.create();
+                customerQuickCategoryListLookup.create();
+                customerQuickModal.create();
+                customerGroupQuickModal.create();
+                customerCategoryQuickModal.create();
             } catch (e) {
                 console.error('page init error:', e);
             } finally {
@@ -1000,10 +1166,166 @@ const App = {
             taxIdRef,
             orderStatusRef,
             secondaryGridRef,
+            customerQuickModalRef,
+            customerGroupQuickModalRef,
+            customerCategoryQuickModalRef,
+            customerQuickGroupIdRef,
+            customerQuickCategoryIdRef,
             state,
             methods,
             handler: {
-                handleSubmit: methods.handleFormSubmit
+                handleSubmit: methods.handleFormSubmit,
+                openCustomerQuickCreate: () => {
+                    state.customerQuickName = '';
+                    state.customerQuickDescription = '';
+                    state.customerQuickStreet = '';
+                    state.customerQuickCity = '';
+                    state.customerQuickAddrState = '';
+                    state.customerQuickZipCode = '';
+                    state.customerQuickCountry = '';
+                    state.customerQuickPhoneNumber = '';
+                    state.customerQuickEmailAddress = '';
+                    state.customerQuickGroupId = null;
+                    state.customerQuickCategoryId = null;
+                    state.customerQuickErrors = {
+                        name: '', street: '', city: '', addrState: '', zipCode: '',
+                        phoneNumber: '', emailAddress: '', customerGroupId: '', customerCategoryId: ''
+                    };
+                    customerQuickGroupListLookup.refresh();
+                    customerQuickCategoryListLookup.refresh();
+                    customerQuickModal.obj.show();
+                },
+                closeCustomerQuickCreate: () => {
+                    customerQuickModal.obj.hide();
+                },
+                submitCustomerQuickCreate: async () => {
+                    state.customerQuickErrors = {
+                        name: '', street: '', city: '', addrState: '', zipCode: '',
+                        phoneNumber: '', emailAddress: '', customerGroupId: '', customerCategoryId: ''
+                    };
+                    let isValid = true;
+                    if (!state.customerQuickName?.trim()) { state.customerQuickErrors.name = 'Name is required.'; isValid = false; }
+                    if (!state.customerQuickStreet?.trim()) { state.customerQuickErrors.street = 'Street is required.'; isValid = false; }
+                    if (!state.customerQuickCity?.trim()) { state.customerQuickErrors.city = 'City is required.'; isValid = false; }
+                    if (!state.customerQuickAddrState?.trim()) { state.customerQuickErrors.addrState = 'State / Province is required.'; isValid = false; }
+                    if (!state.customerQuickZipCode?.trim()) { state.customerQuickErrors.zipCode = 'Zip code is required.'; isValid = false; }
+                    if (!state.customerQuickPhoneNumber?.trim()) { state.customerQuickErrors.phoneNumber = 'Phone number is required.'; isValid = false; }
+                    if (!state.customerQuickEmailAddress?.trim()) { state.customerQuickErrors.emailAddress = 'Email address is required.'; isValid = false; }
+                    if (!state.customerQuickGroupId) { state.customerQuickErrors.customerGroupId = 'Customer group is required.'; isValid = false; }
+                    if (!state.customerQuickCategoryId) { state.customerQuickErrors.customerCategoryId = 'Customer category is required.'; isValid = false; }
+                    if (!isValid) return;
+                    try {
+                        state.customerQuickIsSubmitting = true;
+                        const response = await services.createCustomer(
+                            state.customerQuickName.trim(),
+                            state.customerQuickDescription,
+                            state.customerQuickGroupId,
+                            state.customerQuickCategoryId,
+                            state.customerQuickStreet.trim(),
+                            state.customerQuickCity.trim(),
+                            state.customerQuickAddrState.trim(),
+                            state.customerQuickZipCode.trim(),
+                            state.customerQuickCountry,
+                            state.customerQuickPhoneNumber.trim(),
+                            state.customerQuickEmailAddress.trim(),
+                            StorageManager.getUserId()
+                        );
+                        if (response.data.code === 200) {
+                            const newCustomer = response.data.content.data;
+                            await methods.populateCustomerListLookupData();
+                            customerListLookup.obj.setProperties({ dataSource: state.customerListLookupData, value: newCustomer.id });
+                            state.customerId = newCustomer.id;
+                            customerQuickModal.obj.hide();
+                            Swal.fire({ icon: 'success', title: 'Customer Created', timer: 1500, showConfirmButton: false });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Failed', text: response.data.message ?? 'Failed to create customer.' });
+                        }
+                    } catch (error) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message ?? 'An error occurred.' });
+                    } finally {
+                        state.customerQuickIsSubmitting = false;
+                    }
+                },
+                openCustomerGroupQuickCreate: () => {
+                    state.customerGroupQuickName = '';
+                    state.customerGroupQuickDescription = '';
+                    state.customerGroupQuickErrors = { name: '' };
+                    customerQuickModal.obj.hide();
+                    setTimeout(() => customerGroupQuickModal.obj.show(), 300);
+                },
+                closeCustomerGroupQuickCreate: () => {
+                    customerGroupQuickModal.obj.hide();
+                    setTimeout(() => customerQuickModal.obj.show(), 300);
+                },
+                submitCustomerGroupQuickCreate: async () => {
+                    state.customerGroupQuickErrors = { name: '' };
+                    if (!state.customerGroupQuickName?.trim()) {
+                        state.customerGroupQuickErrors.name = 'Name is required.';
+                        return;
+                    }
+                    try {
+                        state.customerGroupQuickIsSubmitting = true;
+                        const response = await services.createCustomerGroup(
+                            state.customerGroupQuickName.trim(),
+                            state.customerGroupQuickDescription,
+                            StorageManager.getUserId()
+                        );
+                        if (response.data.code === 200) {
+                            const newGroup = response.data.content.data;
+                            await methods.populateCustomerGroupListLookupData();
+                            customerQuickGroupListLookup.obj.setProperties({ dataSource: state.customerGroupListLookupData, value: newGroup.id });
+                            state.customerQuickGroupId = newGroup.id;
+                            customerGroupQuickModal.obj.hide();
+                            setTimeout(() => customerQuickModal.obj.show(), 300);
+                        } else {
+                            state.customerGroupQuickErrors.name = response.data.message ?? 'Failed to create customer group.';
+                        }
+                    } catch (error) {
+                        state.customerGroupQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
+                    } finally {
+                        state.customerGroupQuickIsSubmitting = false;
+                    }
+                },
+                openCustomerCategoryQuickCreate: () => {
+                    state.customerCategoryQuickName = '';
+                    state.customerCategoryQuickDescription = '';
+                    state.customerCategoryQuickErrors = { name: '' };
+                    customerQuickModal.obj.hide();
+                    setTimeout(() => customerCategoryQuickModal.obj.show(), 300);
+                },
+                closeCustomerCategoryQuickCreate: () => {
+                    customerCategoryQuickModal.obj.hide();
+                    setTimeout(() => customerQuickModal.obj.show(), 300);
+                },
+                submitCustomerCategoryQuickCreate: async () => {
+                    state.customerCategoryQuickErrors = { name: '' };
+                    if (!state.customerCategoryQuickName?.trim()) {
+                        state.customerCategoryQuickErrors.name = 'Name is required.';
+                        return;
+                    }
+                    try {
+                        state.customerCategoryQuickIsSubmitting = true;
+                        const response = await services.createCustomerCategory(
+                            state.customerCategoryQuickName.trim(),
+                            state.customerCategoryQuickDescription,
+                            StorageManager.getUserId()
+                        );
+                        if (response.data.code === 200) {
+                            const newCategory = response.data.content.data;
+                            await methods.populateCustomerCategoryListLookupData();
+                            customerQuickCategoryListLookup.obj.setProperties({ dataSource: state.customerCategoryListLookupData, value: newCategory.id });
+                            state.customerQuickCategoryId = newCategory.id;
+                            customerCategoryQuickModal.obj.hide();
+                            setTimeout(() => customerQuickModal.obj.show(), 300);
+                        } else {
+                            state.customerCategoryQuickErrors.name = response.data.message ?? 'Failed to create customer category.';
+                        }
+                    } catch (error) {
+                        state.customerCategoryQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
+                    } finally {
+                        state.customerCategoryQuickIsSubmitting = false;
+                    }
+                }
             }
         };
     }

@@ -43,7 +43,16 @@
                                         <div class="row mb-2">
                                             <div class="col-md-6">
                                                 <label for="CustomerId">Customer</label>
-                                                <div ref="customerIdRef"></div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div ref="customerIdRef" class="flex-grow-1"></div>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary flex-shrink-0"
+                                                            v-on:click="handler.openCustomerQuickCreate"
+                                                            v-bind:disabled="state.deleteMode"
+                                                            title="Quick-create a new customer">
+                                                        <i class="fas fa-plus me-1"></i>New
+                                                    </button>
+                                                </div>
                                                 <label class="text-danger">{{ state.errors.customerId }}</label>
                                             </div>
                                             <div class="col-md-6">
@@ -130,6 +139,197 @@
                         <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
                         <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-1' : 'fas fa-save me-1'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
                         <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Quick Create Modal -->
+    <div class="modal fade" ref="customerQuickModalRef" id="CustomerQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Quick Create Customer</h5>
+                    <button type="button" class="btn-close" v-on:click="handler.closeCustomerQuickCreate" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new customer will be automatically selected after creation.</p>
+                    <div class="card mb-3">
+                        <div class="card-header"><h6 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Basic Info</h6></div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <label>Name <span class="text-danger">*</span></label>
+                                    <input v-model="state.customerQuickName" type="text" class="form-control" placeholder="Customer name" />
+                                    <span class="text-danger small">{{ state.customerQuickErrors.name }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Description</label>
+                                    <input v-model="state.customerQuickDescription" type="text" class="form-control" placeholder="Optional" />
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <label>Customer Group <span class="text-danger">*</span></label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div ref="customerQuickGroupIdRef" class="flex-grow-1"></div>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-success flex-shrink-0"
+                                                v-on:click="handler.openCustomerGroupQuickCreate"
+                                                title="Quick-create a new customer group">
+                                            <i class="fas fa-plus me-1"></i>New
+                                        </button>
+                                    </div>
+                                    <span class="text-danger small">{{ state.customerQuickErrors.customerGroupId }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Customer Category <span class="text-danger">*</span></label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div ref="customerQuickCategoryIdRef" class="flex-grow-1"></div>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-warning flex-shrink-0"
+                                                v-on:click="handler.openCustomerCategoryQuickCreate"
+                                                title="Quick-create a new customer category">
+                                            <i class="fas fa-plus me-1"></i>New
+                                        </button>
+                                    </div>
+                                    <span class="text-danger small">{{ state.customerQuickErrors.customerCategoryId }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mb-3">
+                        <div class="card-header"><h6 class="mb-0"><i class="fas fa-map-marker-alt me-2 text-primary"></i>Address</h6></div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-12">
+                                    <label>Street <span class="text-danger">*</span></label>
+                                    <input v-model="state.customerQuickStreet" type="text" class="form-control" placeholder="Street address" />
+                                    <span class="text-danger small">{{ state.customerQuickErrors.street }}</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4">
+                                    <label>City <span class="text-danger">*</span></label>
+                                    <input v-model="state.customerQuickCity" type="text" class="form-control" placeholder="City" />
+                                    <span class="text-danger small">{{ state.customerQuickErrors.city }}</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>State / Province <span class="text-danger">*</span></label>
+                                    <input v-model="state.customerQuickAddrState" type="text" class="form-control" placeholder="State / Province" />
+                                    <span class="text-danger small">{{ state.customerQuickErrors.addrState }}</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Zip Code <span class="text-danger">*</span></label>
+                                    <input v-model="state.customerQuickZipCode" type="text" class="form-control" placeholder="Zip / Postal code" />
+                                    <span class="text-danger small">{{ state.customerQuickErrors.zipCode }}</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-12">
+                                    <label>Country</label>
+                                    <input v-model="state.customerQuickCountry" type="text" class="form-control" placeholder="Country (optional)" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h6 class="mb-0"><i class="fas fa-phone me-2 text-primary"></i>Contact</h6></div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <label>Phone Number <span class="text-danger">*</span></label>
+                                    <input v-model="state.customerQuickPhoneNumber" type="text" class="form-control" placeholder="Phone number" />
+                                    <span class="text-danger small">{{ state.customerQuickErrors.phoneNumber }}</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Email Address <span class="text-danger">*</span></label>
+                                    <input v-model="state.customerQuickEmailAddress" type="email" class="form-control" placeholder="Email address" />
+                                    <span class="text-danger small">{{ state.customerQuickErrors.emailAddress }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-primary" v-on:click="handler.submitCustomerQuickCreate" v-bind:disabled="state.customerQuickIsSubmitting">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.customerQuickIsSubmitting"></span>
+                        <i class="fas fa-user-plus me-1" v-else></i>
+                        {{ state.customerQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CustomerGroup Quick Create Modal -->
+    <div class="modal fade" ref="customerGroupQuickModalRef" id="CustomerGroupQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-users me-2"></i>Quick Create Customer Group</h5>
+                    <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeCustomerGroupQuickCreate" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new group will be automatically selected after creation.</p>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Name <span class="text-danger">*</span></label>
+                            <input v-model="state.customerGroupQuickName" type="text" class="form-control" placeholder="Customer group name" />
+                            <span class="text-danger small">{{ state.customerGroupQuickErrors.name }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Description</label>
+                            <textarea v-model="state.customerGroupQuickDescription" class="form-control" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerGroupQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-success" v-on:click="handler.submitCustomerGroupQuickCreate" v-bind:disabled="state.customerGroupQuickIsSubmitting">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.customerGroupQuickIsSubmitting"></span>
+                        <i class="fas fa-users me-1" v-else></i>
+                        {{ state.customerGroupQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CustomerCategory Quick Create Modal -->
+    <div class="modal fade" ref="customerCategoryQuickModalRef" id="CustomerCategoryQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-tag me-2"></i>Quick Create Customer Category</h5>
+                    <button type="button" class="btn-close" v-on:click="handler.closeCustomerCategoryQuickCreate" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new category will be automatically selected after creation.</p>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Name <span class="text-danger">*</span></label>
+                            <input v-model="state.customerCategoryQuickName" type="text" class="form-control" placeholder="Customer category name" />
+                            <span class="text-danger small">{{ state.customerCategoryQuickErrors.name }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Description</label>
+                            <textarea v-model="state.customerCategoryQuickDescription" class="form-control" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerCategoryQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-warning text-dark" v-on:click="handler.submitCustomerCategoryQuickCreate" v-bind:disabled="state.customerCategoryQuickIsSubmitting">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.customerCategoryQuickIsSubmitting"></span>
+                        <i class="fas fa-tag me-1" v-else></i>
+                        {{ state.customerCategoryQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
             </div>
