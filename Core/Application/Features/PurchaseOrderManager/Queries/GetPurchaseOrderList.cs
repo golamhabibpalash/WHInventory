@@ -1,7 +1,5 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
-using AutoMapper;
-using Domain.Entities;
 using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -26,27 +24,6 @@ public record GetPurchaseOrderListDto
     public DateTime? CreatedAtUtc { get; init; }
 }
 
-public class GetPurchaseOrderListProfile : Profile
-{
-    public GetPurchaseOrderListProfile()
-    {
-        CreateMap<PurchaseOrder, GetPurchaseOrderListDto>()
-            .ForMember(
-                dest => dest.VendorName,
-                opt => opt.MapFrom(src => src.Vendor != null ? src.Vendor.Name : string.Empty)
-            )
-            .ForMember(
-                dest => dest.TaxName,
-                opt => opt.MapFrom(src => src.Tax != null ? src.Tax.Name : string.Empty)
-            )
-            .ForMember(
-                dest => dest.OrderStatusName,
-                opt => opt.MapFrom(src => src.OrderStatus.HasValue ? src.OrderStatus.Value.ToFriendlyName() : string.Empty)
-            );
-
-    }
-}
-
 public class GetPurchaseOrderListResult
 {
     public List<GetPurchaseOrderListDto>? Data { get; init; }
@@ -60,28 +37,38 @@ public class GetPurchaseOrderListRequest : IRequest<GetPurchaseOrderListResult>
 
 public class GetPurchaseOrderListHandler : IRequestHandler<GetPurchaseOrderListRequest, GetPurchaseOrderListResult>
 {
-    private readonly IMapper _mapper;
     private readonly IQueryContext _context;
 
-    public GetPurchaseOrderListHandler(IMapper mapper, IQueryContext context)
+    public GetPurchaseOrderListHandler(IQueryContext context)
     {
-        _mapper = mapper;
         _context = context;
     }
 
     public async Task<GetPurchaseOrderListResult> Handle(GetPurchaseOrderListRequest request, CancellationToken cancellationToken)
     {
-        var query = _context
+        var dtos = await _context
             .PurchaseOrder
             .AsNoTracking()
             .ApplyIsDeletedFilter(request.IsDeleted)
-            .Include(x => x.Vendor)
-            .Include(x => x.Tax)
-            .AsQueryable();
-
-        var entities = await query.Take(2000).ToListAsync(cancellationToken);
-
-        var dtos = _mapper.Map<List<GetPurchaseOrderListDto>>(entities);
+            .Select(x => new GetPurchaseOrderListDto
+            {
+                Id = x.Id,
+                Number = x.Number,
+                OrderDate = x.OrderDate,
+                OrderStatus = x.OrderStatus,
+                OrderStatusName = x.OrderStatus.HasValue ? x.OrderStatus.Value.ToFriendlyName() : string.Empty,
+                Description = x.Description,
+                VendorId = x.VendorId,
+                VendorName = x.Vendor != null ? x.Vendor.Name : string.Empty,
+                TaxId = x.TaxId,
+                TaxName = x.Tax != null ? x.Tax.Name : string.Empty,
+                BeforeTaxAmount = x.BeforeTaxAmount,
+                TaxAmount = x.TaxAmount,
+                AfterTaxAmount = x.AfterTaxAmount,
+                CreatedAtUtc = x.CreatedAtUtc
+            })
+            .Take(2000)
+            .ToListAsync(cancellationToken);
 
         return new GetPurchaseOrderListResult
         {

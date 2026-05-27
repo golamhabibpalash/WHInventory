@@ -741,7 +741,7 @@ const App = {
                     allowSorting: true,
                     allowSelection: true,
                     allowGrouping: true,
-                    groupSettings: { columns: ['vendorName'] },
+                    groupSettings: {},
                     allowTextWrap: true,
                     allowResizing: true,
                     allowPaging: true,
@@ -750,7 +750,6 @@ const App = {
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
                     pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
-                    autoFit: true,
                     showColumnMenu: true,
                     gridLines: 'Horizontal',
                     columns: [
@@ -778,7 +777,6 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
-                        mainGrid.obj.autoFitColumns(['number', 'orderDate', 'vendorName', 'orderStatusName', 'taxName', 'afterTaxAmount', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -1204,26 +1202,28 @@ const App = {
                 await SecurityManager.authorizePage(['PurchaseOrders']);
                 await SecurityManager.validateToken();
 
-                await Promise.all([
-                    methods.populateMainData(),
-                    methods.populateVendorListLookupData(),
-                    methods.populateTaxListLookupData(),
-                    methods.populatePurchaseOrderStatusListLookupData(),
-                    methods.populateProductListLookupData(),
-                ]);
+                await methods.populateMainData();
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
-                vendorQuickModal.create();
-                vendorGroupListLookupQuick.create();
-                vendorCategoryListLookupQuick.create();
-                vendorListLookup.create();
-                taxListLookup.create();
-                purchaseOrderStatusListLookup.create();
                 orderDatePicker.create();
                 numberText.create();
                 await secondaryGrid.create(state.secondaryData);
+
+                Promise.all([
+                    methods.populateVendorListLookupData(),
+                    methods.populateTaxListLookupData(),
+                    methods.populatePurchaseOrderStatusListLookupData(),
+                    methods.populateProductListLookupData(),
+                ]).then(() => {
+                    vendorQuickModal.create();
+                    vendorGroupListLookupQuick.create();
+                    vendorCategoryListLookupQuick.create();
+                    vendorListLookup.create();
+                    taxListLookup.create();
+                    purchaseOrderStatusListLookup.create();
+                });
             } catch (e) {
             } finally {
                 
