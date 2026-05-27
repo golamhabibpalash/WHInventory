@@ -21,6 +21,7 @@ public class VendorContactConfiguration : BaseEntityConfiguration<VendorContact>
 
         builder.HasIndex(e => e.Name);
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.VendorId);
     }
 }
 

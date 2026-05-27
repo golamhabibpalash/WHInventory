@@ -18,6 +18,8 @@ public class SalesOrderItemConfiguration : BaseEntityConfiguration<SalesOrderIte
         builder.Property(x => x.Quantity).IsRequired(false);
         builder.Property(x => x.Total).IsRequired(false);
 
+        builder.HasIndex(e => e.SalesOrderId);
+        builder.HasIndex(e => e.ProductId);
     }
 }
 

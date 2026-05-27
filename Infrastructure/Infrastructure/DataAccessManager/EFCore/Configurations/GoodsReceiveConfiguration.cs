@@ -18,6 +18,7 @@ public class GoodsReceiveConfiguration : BaseEntityConfiguration<GoodsReceive>
         builder.Property(x => x.PurchaseOrderId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
 
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.PurchaseOrderId);
     }
 }
 

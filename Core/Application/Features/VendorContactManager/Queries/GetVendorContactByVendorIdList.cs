@@ -66,7 +66,7 @@ public class GetVendorContactByVendorIdListHandler : IRequestHandler<GetVendorCo
             .Where(x => x.VendorId == request.VendorId)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetVendorContactByVendorIdListDto>>(entities);
 

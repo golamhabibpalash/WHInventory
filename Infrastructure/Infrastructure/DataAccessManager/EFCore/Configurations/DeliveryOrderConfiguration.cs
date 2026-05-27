@@ -18,6 +18,7 @@ public class DeliveryOrderConfiguration : BaseEntityConfiguration<DeliveryOrder>
         builder.Property(x => x.SalesOrderId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
 
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.SalesOrderId);
     }
 }
 

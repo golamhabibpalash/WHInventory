@@ -18,6 +18,8 @@ public class PurchaseOrderItemConfiguration : BaseEntityConfiguration<PurchaseOr
         builder.Property(x => x.Quantity).IsRequired(false);
         builder.Property(x => x.Total).IsRequired(false);
 
+        builder.HasIndex(e => e.PurchaseOrderId);
+        builder.HasIndex(e => e.ProductId);
     }
 }
 

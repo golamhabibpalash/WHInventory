@@ -18,6 +18,7 @@ public class SalesReturnConfiguration : BaseEntityConfiguration<SalesReturn>
         builder.Property(x => x.DeliveryOrderId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
 
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.DeliveryOrderId);
     }
 }
 

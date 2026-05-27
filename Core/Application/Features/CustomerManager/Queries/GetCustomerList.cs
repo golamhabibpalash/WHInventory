@@ -85,7 +85,7 @@ public class GetCustomerListHandler : IRequestHandler<GetCustomerListRequest, Ge
             .Include(x => x.CustomerCategory)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetCustomerListDto>>(entities);
 

@@ -72,7 +72,7 @@ public class GetProductListHandler : IRequestHandler<GetProductListRequest, GetP
             .Include(x => x.ProductGroup)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetProductListDto>>(entities);
 

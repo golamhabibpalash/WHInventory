@@ -21,6 +21,7 @@ public class CustomerContactConfiguration : BaseEntityConfiguration<CustomerCont
 
         builder.HasIndex(e => e.Name);
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.CustomerId);
     }
 }
 

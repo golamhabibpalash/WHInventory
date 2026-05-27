@@ -22,6 +22,8 @@ public class PurchaseOrderConfiguration : BaseEntityConfiguration<PurchaseOrder>
         builder.Property(x => x.AfterTaxAmount).IsRequired(false);
 
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.VendorId);
+        builder.HasIndex(e => e.TaxId);
     }
 }
 

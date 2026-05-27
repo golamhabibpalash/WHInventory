@@ -38,34 +38,17 @@ public partial class InventoryTransactionService
 
     public double GetStock(string? warehouseId, string? productId, string? currentId = null)
     {
-        var result = 0.0;
-        if (currentId == null)
-        {
-            result = _queryContext.InventoryTransaction
-                .ApplyIsDeletedFilter(false)
-                .Include(x => x.Product)
-                .Where(x =>
-                    x.Status == InventoryTransactionStatus.Confirmed &&
-                    x.WarehouseId == warehouseId &&
-                    x.ProductId == productId &&
-                    x.Product!.Physical == true)
-                .Sum(x => x.Stock ?? 0.0);
+        var baseQuery = _queryContext.InventoryTransaction
+            .ApplyIsDeletedFilter(false)
+            .Where(x =>
+                x.Status == InventoryTransactionStatus.Confirmed &&
+                x.WarehouseId == warehouseId &&
+                x.ProductId == productId);
 
-        }
-        else
-        {
+        if (currentId != null)
+            baseQuery = baseQuery.Where(x => x.Id != currentId);
 
-            result = _queryContext.InventoryTransaction
-                .ApplyIsDeletedFilter(false)
-                .Include(x => x.Product)
-                .Where(x =>
-                    x.Status == InventoryTransactionStatus.Confirmed &&
-                    x.WarehouseId == warehouseId &&
-                    x.ProductId == productId &&
-                    x.Product!.Physical == true &&
-                    x.Id != currentId)
-                .Sum(x => x.Stock ?? 0.0);
-        }
+        var result = baseQuery.Sum(x => x.Stock ?? 0.0);
         return result;
     }
 

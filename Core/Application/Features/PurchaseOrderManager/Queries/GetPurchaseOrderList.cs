@@ -79,7 +79,7 @@ public class GetPurchaseOrderListHandler : IRequestHandler<GetPurchaseOrderListR
             .Include(x => x.Tax)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetPurchaseOrderListDto>>(entities);
 

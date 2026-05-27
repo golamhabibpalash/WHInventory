@@ -16,6 +16,7 @@ public class TodoItemConfiguration : BaseEntityConfiguration<TodoItem>
         builder.Property(x => x.TodoId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
 
         builder.HasIndex(e => e.Name);
+        builder.HasIndex(e => e.TodoId);
     }
 }
 

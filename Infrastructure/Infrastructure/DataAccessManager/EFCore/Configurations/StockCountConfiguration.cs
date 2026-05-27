@@ -18,6 +18,7 @@ public class StockCountConfiguration : BaseEntityConfiguration<StockCount>
         builder.Property(x => x.WarehouseId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
 
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.WarehouseId);
     }
 }
 

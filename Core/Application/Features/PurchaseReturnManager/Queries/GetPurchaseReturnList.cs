@@ -69,7 +69,7 @@ public class GetPurchaseReturnListHandler : IRequestHandler<GetPurchaseReturnLis
             .Include(x => x.GoodsReceive)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetPurchaseReturnListDto>>(entities);
 

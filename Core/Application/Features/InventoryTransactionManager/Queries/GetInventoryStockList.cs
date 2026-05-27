@@ -58,25 +58,25 @@ public class GetInventoryStockListHandler : IRequestHandler<GetInventoryStockLis
             .Include(x => x.Warehouse)
             .Include(x => x.Product)
             .Where(x =>
+                x.Status == Domain.Enums.InventoryTransactionStatus.Confirmed &&
                 x.Product!.Physical == true &&
-                x.Warehouse!.SystemWarehouse == false &&
-                x.Status == Domain.Enums.InventoryTransactionStatus.Confirmed
+                x.Warehouse!.SystemWarehouse == false
             )
             .GroupBy(x => new { x.WarehouseId, x.ProductId })
             .Select(group => new GetInventoryStockListDto
             {
                 WarehouseId = group.Key.WarehouseId,
                 ProductId = group.Key.ProductId,
-                WarehouseName = group.Max(x => x.Warehouse!.Name),
-                ProductName = group.Max(x => x.Product!.Name),
-                ProductNumber = group.Max(x => x.Product!.Number),
+                WarehouseName = group.Min(x => x.Warehouse!.Name),
+                ProductName = group.Min(x => x.Product!.Name),
+                ProductNumber = group.Min(x => x.Product!.Number),
                 Stock = group.Sum(x => x.Stock),
-                StatusName = group.Max(x => x.Status.ToString()),
+                StatusName = group.Min(x => x.Status.ToString()),
                 CreatedAtUtc = group.Max(x => x.CreatedAtUtc)
             })
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         return new GetInventoryStockListResult
         {

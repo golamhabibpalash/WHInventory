@@ -22,6 +22,8 @@ public class SalesOrderConfiguration : BaseEntityConfiguration<SalesOrder>
         builder.Property(x => x.AfterTaxAmount).IsRequired(false);
 
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.CustomerId);
+        builder.HasIndex(e => e.TaxId);
     }
 }
 

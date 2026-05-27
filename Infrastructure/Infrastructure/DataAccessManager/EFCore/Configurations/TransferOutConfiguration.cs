@@ -19,6 +19,8 @@ public class TransferOutConfiguration : BaseEntityConfiguration<TransferOut>
         builder.Property(x => x.WarehouseToId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
 
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.WarehouseFromId);
+        builder.HasIndex(e => e.WarehouseToId);
     }
 }
 

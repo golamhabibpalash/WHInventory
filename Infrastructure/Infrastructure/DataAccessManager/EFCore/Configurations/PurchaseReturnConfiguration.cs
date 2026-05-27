@@ -18,6 +18,7 @@ public class PurchaseReturnConfiguration : BaseEntityConfiguration<PurchaseRetur
         builder.Property(x => x.GoodsReceiveId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
 
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.GoodsReceiveId);
     }
 }
 

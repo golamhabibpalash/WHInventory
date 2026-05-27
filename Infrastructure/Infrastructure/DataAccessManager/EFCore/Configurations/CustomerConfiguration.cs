@@ -34,6 +34,8 @@ public class CustomerConfiguration : BaseEntityConfiguration<Customer>
 
         builder.HasIndex(e => e.Name);
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.CustomerGroupId);
+        builder.HasIndex(e => e.CustomerCategoryId);
     }
 }
 

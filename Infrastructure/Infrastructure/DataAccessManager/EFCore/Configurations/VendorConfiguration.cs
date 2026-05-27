@@ -34,6 +34,8 @@ public class VendorConfiguration : BaseEntityConfiguration<Vendor>
 
         builder.HasIndex(e => e.Name);
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.VendorGroupId);
+        builder.HasIndex(e => e.VendorCategoryId);
     }
 }
 

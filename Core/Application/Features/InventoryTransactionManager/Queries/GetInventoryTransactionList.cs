@@ -101,7 +101,7 @@ public class GetInventoryTransactionListHandler : IRequestHandler<GetInventoryTr
             .OrderByDescending(x => x.CreatedAtUtc)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetInventoryTransactionListDto>>(entities);
 

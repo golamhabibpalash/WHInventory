@@ -31,6 +31,12 @@ public class InventoryTransactionConfiguration : BaseEntityConfiguration<Invento
         builder.HasIndex(e => e.Number);
         builder.HasIndex(e => e.ModuleName);
         builder.HasIndex(e => e.ModuleCode);
+        builder.HasIndex(e => e.WarehouseId);
+        builder.HasIndex(e => e.ProductId);
+        builder.HasIndex(e => e.WarehouseFromId);
+        builder.HasIndex(e => e.WarehouseToId);
+        builder.HasIndex(e => e.ModuleId);
+        builder.HasIndex(e => e.Status);
     }
 }
 

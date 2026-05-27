@@ -22,6 +22,8 @@ public class ProductConfiguration : BaseEntityConfiguration<Product>
 
         builder.HasIndex(e => e.Name);
         builder.HasIndex(e => e.Number);
+        builder.HasIndex(e => e.UnitMeasureId);
+        builder.HasIndex(e => e.ProductGroupId);
     }
 }
 

@@ -76,7 +76,7 @@ public class GetSalesOrderItemBySalesOrderIdListHandler : IRequestHandler<GetSal
             .Where(x => x.SalesOrderId == request.SalesOrderId)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetSalesOrderItemBySalesOrderIdListDto>>(entities);
 

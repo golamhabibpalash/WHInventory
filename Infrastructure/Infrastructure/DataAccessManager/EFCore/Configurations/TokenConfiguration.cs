@@ -13,5 +13,7 @@ public class TokenConfiguration : BaseEntityConfiguration<Token>
 
         builder.Property(e => e.UserId).HasMaxLength(UserIdConsts.MaxLength).IsRequired(false);
         builder.Property(e => e.RefreshToken).HasMaxLength(LengthConsts.M).IsRequired(false);
+
+        builder.HasIndex(e => e.UserId);
     }
 }

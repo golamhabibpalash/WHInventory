@@ -62,7 +62,7 @@ public class GetNegativeAdjustmentListHandler : IRequestHandler<GetNegativeAdjus
             .ApplyIsDeletedFilter(request.IsDeleted)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetNegativeAdjustmentListDto>>(entities);
 

@@ -85,7 +85,7 @@ public class GetVendorListHandler : IRequestHandler<GetVendorListRequest, GetVen
             .Include(x => x.VendorCategory)
             .AsQueryable();
 
-        var entities = await query.ToListAsync(cancellationToken);
+        var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetVendorListDto>>(entities);
 
