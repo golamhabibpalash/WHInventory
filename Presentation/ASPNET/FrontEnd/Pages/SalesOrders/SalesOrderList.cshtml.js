@@ -640,7 +640,7 @@ const App = {
                     allowSorting: true,
                     allowSelection: true,
                     allowGrouping: true,
-                    groupSettings: { columns: ['customerName'] },
+                    groupSettings: {},
                     allowTextWrap: true,
                     allowResizing: true,
                     allowPaging: true,
@@ -649,7 +649,6 @@ const App = {
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
                     pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
-                    autoFit: true,
                     showColumnMenu: true,
                     gridLines: 'Horizontal',
                     columns: [
@@ -677,7 +676,6 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
-                        mainGrid.obj.autoFitColumns(['number', 'orderDate', 'customerName', 'orderStatusName', 'taxName', 'afterTaxAmount', 'createdAtUtc']);
                     },
                     beforeExcelExport: (args) => {
                         args.data = args.data.map(function (row) {
