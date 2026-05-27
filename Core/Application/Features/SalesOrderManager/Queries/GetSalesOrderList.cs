@@ -1,7 +1,5 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
-using AutoMapper;
-using Domain.Entities;
 using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -26,27 +24,6 @@ public record GetSalesOrderListDto
     public DateTime? CreatedAtUtc { get; init; }
 }
 
-public class GetSalesOrderListProfile : Profile
-{
-    public GetSalesOrderListProfile()
-    {
-        CreateMap<SalesOrder, GetSalesOrderListDto>()
-            .ForMember(
-                dest => dest.CustomerName,
-                opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Name : string.Empty)
-            )
-            .ForMember(
-                dest => dest.TaxName,
-                opt => opt.MapFrom(src => src.Tax != null ? src.Tax.Name : string.Empty)
-            )
-            .ForMember(
-                dest => dest.OrderStatusName,
-                opt => opt.MapFrom(src => src.OrderStatus.HasValue ? src.OrderStatus.Value.ToFriendlyName() : string.Empty)
-            );
-
-    }
-}
-
 public class GetSalesOrderListResult
 {
     public List<GetSalesOrderListDto>? Data { get; init; }
@@ -60,28 +37,38 @@ public class GetSalesOrderListRequest : IRequest<GetSalesOrderListResult>
 
 public class GetSalesOrderListHandler : IRequestHandler<GetSalesOrderListRequest, GetSalesOrderListResult>
 {
-    private readonly IMapper _mapper;
     private readonly IQueryContext _context;
 
-    public GetSalesOrderListHandler(IMapper mapper, IQueryContext context)
+    public GetSalesOrderListHandler(IQueryContext context)
     {
-        _mapper = mapper;
         _context = context;
     }
 
     public async Task<GetSalesOrderListResult> Handle(GetSalesOrderListRequest request, CancellationToken cancellationToken)
     {
-        var query = _context
+        var dtos = await _context
             .SalesOrder
             .AsNoTracking()
             .ApplyIsDeletedFilter(request.IsDeleted)
-            .Include(x => x.Customer)
-            .Include(x => x.Tax)
-            .AsQueryable();
-
-        var entities = await query.Take(2000).ToListAsync(cancellationToken);
-
-        var dtos = _mapper.Map<List<GetSalesOrderListDto>>(entities);
+            .Select(x => new GetSalesOrderListDto
+            {
+                Id = x.Id,
+                Number = x.Number,
+                OrderDate = x.OrderDate,
+                OrderStatus = x.OrderStatus,
+                OrderStatusName = x.OrderStatus.HasValue ? x.OrderStatus.Value.ToFriendlyName() : string.Empty,
+                Description = x.Description,
+                CustomerId = x.CustomerId,
+                CustomerName = x.Customer != null ? x.Customer.Name : string.Empty,
+                TaxId = x.TaxId,
+                TaxName = x.Tax != null ? x.Tax.Name : string.Empty,
+                BeforeTaxAmount = x.BeforeTaxAmount,
+                TaxAmount = x.TaxAmount,
+                AfterTaxAmount = x.AfterTaxAmount,
+                CreatedAtUtc = x.CreatedAtUtc
+            })
+            .Take(2000)
+            .ToListAsync(cancellationToken);
 
         return new GetSalesOrderListResult
         {

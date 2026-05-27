@@ -1123,33 +1123,35 @@ const App = {
                 await SecurityManager.authorizePage(['SalesOrders']);
                 await SecurityManager.validateToken();
 
-                await Promise.all([
-                    methods.populateMainData(),
+                await methods.populateMainData();
+                await mainGrid.create(state.mainData);
+
+                mainModal.create();
+                mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
+                orderDatePicker.create();
+                numberText.create();
+                await secondaryGrid.create(state.secondaryData);
+
+                Promise.all([
                     methods.populateCustomerListLookupData(),
                     methods.populateTaxListLookupData(),
                     methods.populateSalesOrderStatusListLookupData(),
                     methods.populateProductListLookupData(),
                     methods.populateCustomerGroupListLookupData(),
                     methods.populateCustomerCategoryListLookupData(),
-                ]);
-                await mainGrid.create(state.mainData);
-
-                mainModal.create();
-                mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
-                customerListLookup.create();
-                taxListLookup.create();
-                salesOrderStatusListLookup.create();
-                orderDatePicker.create();
-                numberText.create();
-                await secondaryGrid.create(state.secondaryData);
-                customerQuickGroupListLookup.create();
-                customerQuickCategoryListLookup.create();
-                customerQuickModal.create();
-                customerGroupQuickModal.create();
-                customerCategoryQuickModal.create();
+                ]).then(() => {
+                    customerListLookup.create();
+                    taxListLookup.create();
+                    salesOrderStatusListLookup.create();
+                    customerQuickGroupListLookup.create();
+                    customerQuickCategoryListLookup.create();
+                    customerQuickModal.create();
+                    customerGroupQuickModal.create();
+                    customerCategoryQuickModal.create();
+                });
             } catch (e) {
             } finally {
-                
+
             }
         });
 
