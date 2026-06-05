@@ -79,7 +79,13 @@
       "Bash(kill 59860)",
       "PowerShell(Stop-Process *)",
       "Bash(ASPNETCORE_ENVIRONMENT=Production dotnet run --project Presentation/ASPNET/ASPNET.csproj --no-build)",
-      "Bash(echo \"launched pid $!\")"
+      "Bash(echo \"launched pid $!\")",
+      "Bash(grep -iE \"readme|\\\\.sln$|Test|\\\\.cursor|copilot|Dockerfile|docker-compose\")",
+      "Bash(cd /d D:\\\\Projects\\\\WHInventory)",
+      "Bash(sed -n '/getMainData:/,/},/p' Presentation/ASPNET/FrontEnd/Pages/Customers/CustomerList.cshtml.js)",
+      "Bash(grep -rln \"authorizePage\" Presentation/ASPNET/wwwroot Presentation/ASPNET/FrontEnd)",
+      "Bash(xargs grep -ln \"role\\\\|Role\\\\|Seed\")",
+      "PowerShell(dotnet build *)"
     ]
   }
 }

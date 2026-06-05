@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+Targets **.NET 9** (`net9.0`). Entry point is the `ASPNET` project.
+
 ```bash
 # Build the solution
 dotnet build WHInventory.sln
 
-# Run the application (entry point is the ASPNET project)
+# Run the application
 dotnet run --project Presentation/ASPNET/ASPNET.csproj
 
 # Run with a specific environment
@@ -21,9 +23,20 @@ dotnet build WHInventory.sln -c Release
 dotnet restore WHInventory.sln
 ```
 
-The app starts on `http://localhost:8080` (configured in `appsettings.json` under `Kestrel`). Port 5000 is permanently held by macOS AirPlay Receiver and must not be used. Swagger UI is available at `/swagger` in Development mode.
+The app starts on `http://localhost:8080` (configured in `appsettings.json` under `Kestrel`, bound to `http://+:8080`). Swagger UI is available at `/swagger` in Development mode.
 
-There are no migration commands — the database is created via `EnsureCreated()` at startup. To reset the database, drop it and restart.
+**Build strictness (`Directory.Build.props`):** all projects build with `TreatWarningsAsErrors` for `IDE*` rules and `EnforceCodeStyleInBuild=true`. Code-style violations (e.g. unused usings — IDE0005) **fail the build**, not just warn. Keep usings clean and formatting consistent or `dotnet build` will error.
+
+There are no test projects in the solution. There are no migration commands — the schema is created via `EnsureCreated()` at startup. To reset the database, drop it and restart.
+
+### Docker
+
+A full Docker stack is defined (`docker-compose.yml`: PostgreSQL + app + Cloudflare tunnel). Configuration comes from a `.env` file — copy `.env.example` to `.env` and adjust. `Dockerfile` builds the app image.
+
+```bash
+docker compose up -d          # start the full stack
+docker compose up -d db app   # app + database only (skip the tunnel)
+```
 
 ## Architecture
 
