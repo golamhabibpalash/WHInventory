@@ -15,7 +15,7 @@ public record GetPurchaseOrderItemByPurchaseOrderIdListDto
     public string? ProductId { get; init; }
     public string? ProductName { get; init; }
     public string? ProductNumber { get; init; }
-    public string? Summary { get; init; }
+    public string? Remark { get; init; }
     public double? UnitPrice { get; init; }
     public double? Quantity { get; init; }
     public double? Total { get; init; }
@@ -38,6 +38,10 @@ public class GetPurchaseOrderItemByPurchaseOrderIdListProfile : Profile
             .ForMember(
                 dest => dest.ProductNumber,
                 opt => opt.MapFrom(src => src.Product != null ? src.Product.Number : string.Empty)
+            )
+            .ForMember(
+                dest => dest.Remark,
+                opt => opt.MapFrom(src => src.Summary)
             );
 
     }

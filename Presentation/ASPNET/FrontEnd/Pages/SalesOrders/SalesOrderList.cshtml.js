@@ -191,20 +191,20 @@ const App = {
                     throw error;
                 }
             },
-            createSecondaryData: async (unitPrice, quantity, summary, productId, salesOrderId, createdById) => {
+            createSecondaryData: async (unitPrice, quantity, remark, productId, salesOrderId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/SalesOrderItem/CreateSalesOrderItem', {
-                        unitPrice, quantity, summary, productId, salesOrderId, createdById
+                        unitPrice, quantity, remark, productId, salesOrderId, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateSecondaryData: async (id, unitPrice, quantity, summary, productId, salesOrderId, updatedById) => {
+            updateSecondaryData: async (id, unitPrice, quantity, remark, productId, salesOrderId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/SalesOrderItem/UpdateSalesOrderItem', {
-                        id, unitPrice, quantity, summary, productId, salesOrderId, updatedById
+                        id, unitPrice, quantity, remark, productId, salesOrderId, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -847,8 +847,8 @@ const App = {
                                                 if (priceObj) {
                                                     priceObj.value = selectedProduct.unitPrice;
                                                 }
-                                                if (summaryObj) {
-                                                    summaryObj.value = selectedProduct.description;
+                                                if (remarkObj) {
+                                                    remarkObj.value = selectedProduct.description;
                                                 }
                                                 if (quantityObj) {
                                                     quantityObj.value = 1;
@@ -980,24 +980,24 @@ const App = {
                             }
                         },
                         {
-                            field: 'summary',
-                            headerText: 'Summary',
+                            field: 'remark',
+                            headerText: 'Remark',
                             width: 200,
                             edit: {
                                 create: () => {
-                                    let summaryElem = document.createElement('input');
-                                    return summaryElem;
+                                    let remarkElem = document.createElement('input');
+                                    return remarkElem;
                                 },
                                 read: () => {
-                                    return summaryObj.value;
+                                    return remarkObj.value;
                                 },
                                 destroy: () => {
-                                    summaryObj.destroy();
+                                    remarkObj.destroy();
                                 },
                                 write: (args) => {
-                                    summaryObj = new ej.inputs.TextBox();
-                                    summaryObj.value = args.rowData.summary;
-                                    summaryObj.appendTo(args.element);
+                                    remarkObj = new ej.inputs.TextBox();
+                                    remarkObj.value = args.rowData.remark;
+                                    remarkObj.appendTo(args.element);
                                 }
                             }
                         },
@@ -1050,7 +1050,7 @@ const App = {
                             const userId = StorageManager.getUserId();
                             const data = args.data;
 
-                            await services.createSecondaryData(data?.unitPrice, data?.quantity, data?.summary, data?.productId, salesOrderId, userId);
+                            await services.createSecondaryData(data?.unitPrice, data?.quantity, data?.remark, data?.productId, salesOrderId, userId);
                             await methods.populateSecondaryData(salesOrderId);
                             secondaryGrid.refresh();
 
@@ -1066,7 +1066,7 @@ const App = {
                             const userId = StorageManager.getUserId();
                             const data = args.data;
 
-                            await services.updateSecondaryData(data?.id, data?.unitPrice, data?.quantity, data?.summary, data?.productId, salesOrderId, userId);
+                            await services.updateSecondaryData(data?.id, data?.unitPrice, data?.quantity, data?.remark, data?.productId, salesOrderId, userId);
                             await methods.populateSecondaryData(salesOrderId);
                             secondaryGrid.refresh();
 

@@ -16,7 +16,7 @@ public record GetSalesOrderItemListDto
     public string? ProductId { get; init; }
     public string? ProductName { get; init; }
     public string? ProductNumber { get; init; }
-    public string? Summary { get; init; }
+    public string? Remark { get; init; }
     public double? UnitPrice { get; init; }
     public double? Quantity { get; init; }
     public double? Total { get; init; }
@@ -48,6 +48,10 @@ public class GetSalesOrderItemListProfile : Profile
             .ForMember(
                 dest => dest.OrderDate,
                 opt => opt.MapFrom(src => src.SalesOrder != null ? src.SalesOrder.OrderDate : null)
+            )
+            .ForMember(
+                dest => dest.Remark,
+                opt => opt.MapFrom(src => src.Summary)
             );
 
     }

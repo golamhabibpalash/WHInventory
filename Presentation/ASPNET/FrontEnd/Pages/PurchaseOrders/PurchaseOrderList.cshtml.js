@@ -189,20 +189,20 @@ const App = {
                     throw error;
                 }
             },
-            createSecondaryData: async (unitPrice, quantity, summary, productId, purchaseOrderId, createdById) => {
+            createSecondaryData: async (unitPrice, quantity, remark, productId, purchaseOrderId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/PurchaseOrderItem/CreatePurchaseOrderItem', {
-                        unitPrice, quantity, summary, productId, purchaseOrderId, createdById
+                        unitPrice, quantity, remark, productId, purchaseOrderId, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateSecondaryData: async (id, unitPrice, quantity, summary, productId, purchaseOrderId, updatedById) => {
+            updateSecondaryData: async (id, unitPrice, quantity, remark, productId, purchaseOrderId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/PurchaseOrderItem/UpdatePurchaseOrderItem', {
-                        id, unitPrice, quantity, summary, productId, purchaseOrderId, updatedById
+                        id, unitPrice, quantity, remark, productId, purchaseOrderId, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -873,7 +873,7 @@ const App = {
             }
         };
 
-        let productObj, priceObj, quantityObj, totalObj, numberObj, summaryObj;
+        let productObj, priceObj, quantityObj, totalObj, numberObj, remarkObj;
 
         const secondaryGrid = {
             obj: null,
@@ -937,8 +937,8 @@ const App = {
                                                 if (priceObj) {
                                                     priceObj.value = selectedProduct.unitPrice;
                                                 }
-                                                if (summaryObj) {
-                                                    summaryObj.value = selectedProduct.description;
+                                                if (remarkObj) {
+                                                    remarkObj.value = selectedProduct.description;
                                                 }
                                                 if (quantityObj) {
                                                     quantityObj.value = 1;
@@ -1070,24 +1070,24 @@ const App = {
                             }
                         },
                         {
-                            field: 'summary',
-                            headerText: 'Summary',
+                            field: 'remark',
+                            headerText: 'Remark',
                             width: 200,
                             edit: {
                                 create: () => {
-                                    let summaryElem = document.createElement('input');
-                                    return summaryElem;
+                                    let remarkElem = document.createElement('input');
+                                    return remarkElem;
                                 },
                                 read: () => {
-                                    return summaryObj.value;
+                                    return remarkObj.value;
                                 },
                                 destroy: () => {
-                                    summaryObj.destroy();
+                                    remarkObj.destroy();
                                 },
                                 write: (args) => {
-                                    summaryObj = new ej.inputs.TextBox();
-                                    summaryObj.value = args.rowData.summary;
-                                    summaryObj.appendTo(args.element);
+                                    remarkObj = new ej.inputs.TextBox();
+                                    remarkObj.value = args.rowData.remark;
+                                    remarkObj.appendTo(args.element);
                                 }
                             }
                         },
@@ -1131,7 +1131,7 @@ const App = {
                             const userId = StorageManager.getUserId();
                             const data = args.data;
 
-                            await services.createSecondaryData(data?.unitPrice, data?.quantity, data?.summary, data?.productId, purchaseOrderId, userId);
+                            await services.createSecondaryData(data?.unitPrice, data?.quantity, data?.remark, data?.productId, purchaseOrderId, userId);
                             await methods.populateSecondaryData(purchaseOrderId);
                             secondaryGrid.refresh();
 
@@ -1147,7 +1147,7 @@ const App = {
                             const userId = StorageManager.getUserId();
                             const data = args.data;
 
-                            await services.updateSecondaryData(data?.id, data?.unitPrice, data?.quantity, data?.summary, data?.productId, purchaseOrderId, userId);
+                            await services.updateSecondaryData(data?.id, data?.unitPrice, data?.quantity, data?.remark, data?.productId, purchaseOrderId, userId);
                             await methods.populateSecondaryData(purchaseOrderId);
                             secondaryGrid.refresh();
 

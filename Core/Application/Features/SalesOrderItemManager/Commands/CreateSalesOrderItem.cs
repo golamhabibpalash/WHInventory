@@ -15,7 +15,7 @@ public class CreateSalesOrderItemRequest : IRequest<CreateSalesOrderItemResult>
 {
     public string? SalesOrderId { get; init; }
     public string? ProductId { get; init; }
-    public string? Summary { get; init; }
+    public string? Remark { get; init; }
     public double? UnitPrice { get; init; }
     public double? Quantity { get; init; }
     public string? CreatedById { get; init; }
@@ -56,7 +56,7 @@ public class CreateSalesOrderItemHandler : IRequestHandler<CreateSalesOrderItemR
 
         entity.SalesOrderId = request.SalesOrderId;
         entity.ProductId = request.ProductId;
-        entity.Summary = request.Summary;
+        entity.Summary = request.Remark;
         entity.UnitPrice = request.UnitPrice;
         entity.Quantity = request.Quantity;
 
