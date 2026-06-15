@@ -20,6 +20,7 @@ public class CreateProductRequest : IRequest<CreateProductResult>
     public bool? Physical { get; init; } = true;
     public string? UnitMeasureId { get; init; }
     public string? ProductGroupId { get; init; }
+    public string? BrandId { get; init; }
     public string? ImageName { get; init; }
     public string? CreatedById { get; init; }
 }
@@ -65,6 +66,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Create
         entity.Description = request.Description;
         entity.UnitMeasureId = request.UnitMeasureId;
         entity.ProductGroupId = request.ProductGroupId;
+        entity.BrandId = request.BrandId;
         entity.ImageName = string.IsNullOrWhiteSpace(request.ImageName) ? null : request.ImageName;
 
         await _repository.CreateAsync(entity, cancellationToken);

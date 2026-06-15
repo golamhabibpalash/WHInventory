@@ -23,6 +23,7 @@ public interface IEntityDbSet
     DbSet<Vendor> Vendor { get; set; }
     DbSet<UnitMeasure> UnitMeasure { get; set; }
     DbSet<ProductGroup> ProductGroup { get; set; }
+    DbSet<Brand> Brand { get; set; }
     DbSet<Product> Product { get; set; }
     DbSet<CustomerContact> CustomerContact { get; set; }
     DbSet<VendorContact> VendorContact { get; set; }

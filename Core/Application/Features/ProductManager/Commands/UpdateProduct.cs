@@ -19,6 +19,7 @@ public class UpdateProductRequest : IRequest<UpdateProductResult>
     public bool? Physical { get; init; } = true;
     public string? UnitMeasureId { get; init; }
     public string? ProductGroupId { get; init; }
+    public string? BrandId { get; init; }
     public string? ImageName { get; init; }
     public string? UpdatedById { get; init; }
 }
@@ -68,6 +69,7 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, Update
         entity.Description = request.Description;
         entity.UnitMeasureId = request.UnitMeasureId;
         entity.ProductGroupId = request.ProductGroupId;
+        entity.BrandId = request.BrandId;
         entity.ImageName = string.IsNullOrWhiteSpace(request.ImageName) ? null : request.ImageName;
 
         _repository.Update(entity);

@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Infrastructure.DataAccessManager.EFCore.Common;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using static Domain.Common.Constants;
 
@@ -18,12 +19,16 @@ public class ProductConfiguration : BaseEntityConfiguration<Product>
         builder.Property(x => x.Physical).IsRequired(false);
         builder.Property(x => x.UnitMeasureId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.ProductGroupId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
+        builder.Property(x => x.BrandId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.ImageName).HasMaxLength(PathConsts.MaxLength).IsRequired(false);
+
+        builder.HasOne(x => x.Brand).WithMany().HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(e => e.Name);
         builder.HasIndex(e => e.Number);
         builder.HasIndex(e => e.UnitMeasureId);
         builder.HasIndex(e => e.ProductGroupId);
+        builder.HasIndex(e => e.BrandId);
     }
 }
 

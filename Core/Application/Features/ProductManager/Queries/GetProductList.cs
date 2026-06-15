@@ -19,6 +19,8 @@ public record GetProductListDto
     public string? UnitMeasureName { get; init; }
     public string? ProductGroupId { get; init; }
     public string? ProductGroupName { get; init; }
+    public string? BrandId { get; init; }
+    public string? BrandName { get; init; }
     public string? ImageName { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
@@ -35,6 +37,10 @@ public class GetProductListProfile : Profile
             .ForMember(
                 dest => dest.ProductGroupName,
                 opt => opt.MapFrom(src => src.ProductGroup != null ? src.ProductGroup.Name : string.Empty)
+            )
+            .ForMember(
+                dest => dest.BrandName,
+                opt => opt.MapFrom(src => src.Brand != null ? src.Brand.Name : string.Empty)
             );
 
     }
@@ -70,6 +76,7 @@ public class GetProductListHandler : IRequestHandler<GetProductListRequest, GetP
             .ApplyIsDeletedFilter(request.IsDeleted)
             .Include(x => x.UnitMeasure)
             .Include(x => x.ProductGroup)
+            .Include(x => x.Brand)
             .AsQueryable();
 
         var entities = await query.Take(2000).ToListAsync(cancellationToken);

@@ -32,6 +32,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<Vendor> Vendor { get; set; }
     public DbSet<UnitMeasure> UnitMeasure { get; set; }
     public DbSet<ProductGroup> ProductGroup { get; set; }
+    public DbSet<Brand> Brand { get; set; }
     public DbSet<Product> Product { get; set; }
     public DbSet<CustomerContact> CustomerContact { get; set; }
     public DbSet<VendorContact> VendorContact { get; set; }
@@ -78,6 +79,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new VendorConfiguration());
         modelBuilder.ApplyConfiguration(new UnitMeasureConfiguration());
         modelBuilder.ApplyConfiguration(new ProductGroupConfiguration());
+        modelBuilder.ApplyConfiguration(new BrandConfiguration());
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
         modelBuilder.ApplyConfiguration(new CustomerContactConfiguration());
         modelBuilder.ApplyConfiguration(new VendorContactConfiguration());

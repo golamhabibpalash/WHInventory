@@ -12,6 +12,7 @@ const App = {
             deleteMode: false,
             productGroupListLookupData: [],
             unitMeasureListLookupData: [],
+            brandListLookupData: [],
             mainTitle: null,
             id: '',
             name: '',
@@ -20,6 +21,7 @@ const App = {
             description: '',
             productGroupId: null,
             unitMeasureId: null,
+            brandId: null,
             physical: false,
             imageName: '',
             imagePreviewUrl: '',
@@ -28,6 +30,7 @@ const App = {
                 unitPrice: '',
                 productGroupId: '',
                 unitMeasureId: '',
+                brandId: '',
                 image: ''
             },
             isSubmitting: false,
@@ -41,16 +44,22 @@ const App = {
             unitMeasureQuickName: '',
             unitMeasureQuickDescription: '',
             unitMeasureQuickIsSubmitting: false,
-            unitMeasureQuickErrors: { name: '' }
+            unitMeasureQuickErrors: { name: '' },
+            brandQuickName: '',
+            brandQuickDescription: '',
+            brandQuickIsSubmitting: false,
+            brandQuickErrors: { name: '' }
         });
 
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const productGroupQuickModalRef = Vue.ref(null);
         const unitMeasureQuickModalRef = Vue.ref(null);
+        const brandQuickModalRef = Vue.ref(null);
         const productGroupQuickParentIdRef = Vue.ref(null);
         const productGroupIdRef = Vue.ref(null);
         const unitMeasureIdRef = Vue.ref(null);
+        const brandIdRef = Vue.ref(null);
         const imageUploadRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
@@ -61,6 +70,7 @@ const App = {
             state.errors.unitPrice = '';
             state.errors.productGroupId = '';
             state.errors.unitMeasureId = '';
+            state.errors.brandId = '';
 
             let isValid = true;
 
@@ -95,6 +105,7 @@ const App = {
             state.description = '';
             state.productGroupId = null;
             state.unitMeasureId = null;
+            state.brandId = null;
             state.physical = false;
             state.imageName = '';
             state.imagePreviewUrl = '';
@@ -103,6 +114,7 @@ const App = {
                 unitPrice: '',
                 productGroupId: '',
                 unitMeasureId: '',
+                brandId: '',
                 image: ''
             };
         };
@@ -116,20 +128,20 @@ const App = {
                     throw error;
                 }
             },
-            createMainData: async (name, unitPrice, physical, description, productGroupId, unitMeasureId, imageName, createdById) => {
+            createMainData: async (name, unitPrice, physical, description, productGroupId, unitMeasureId, brandId, imageName, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Product/CreateProduct', {
-                        name, unitPrice, physical, description, productGroupId, unitMeasureId, imageName, createdById
+                        name, unitPrice, physical, description, productGroupId, unitMeasureId, brandId, imageName, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, unitPrice, physical, description, productGroupId, unitMeasureId, imageName, updatedById) => {
+            updateMainData: async (id, name, unitPrice, physical, description, productGroupId, unitMeasureId, brandId, imageName, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Product/UpdateProduct', {
-                        id, name, unitPrice, physical, description, productGroupId, unitMeasureId, imageName, updatedById
+                        id, name, unitPrice, physical, description, productGroupId, unitMeasureId, brandId, imageName, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -186,6 +198,22 @@ const App = {
                     throw error;
                 }
             },
+            getBrandListLookupData: async () => {
+                try {
+                    const response = await AxiosManager.get('/Brand/GetBrandList', { params: { isActive: true } });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createBrand: async (name, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/Brand/CreateBrand', { name, description, createdById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             getProductImage: async (imageName) => {
                 try {
                     const response = await AxiosManager.get('/FileImage/GetImage?imageName=' + imageName, { responseType: 'blob' });
@@ -223,6 +251,10 @@ const App = {
             populateUnitMeasureListLookupData: async () => {
                 const response = await services.getUnitMeasureListLookupData();
                 state.unitMeasureListLookupData = response?.data?.content?.data;
+            },
+            populateBrandListLookupData: async () => {
+                const response = await services.getBrandListLookupData();
+                state.brandListLookupData = response?.data?.content?.data;
             },
             populateMainData: async () => {
                 const response = await services.getMainData();
@@ -290,6 +322,32 @@ const App = {
             refresh: () => {
                 if (unitMeasureListLookup.obj) {
                     unitMeasureListLookup.obj.value = state.unitMeasureId;
+                }
+            },
+        };
+
+        const brandListLookup = {
+            obj: null,
+            create: () => {
+                if (state.brandListLookupData && Array.isArray(state.brandListLookupData)) {
+                    brandListLookup.obj = new ej.dropdowns.DropDownList({
+                        dataSource: state.brandListLookupData,
+                        fields: { value: 'id', text: 'name' },
+                        placeholder: '-- No Brand --',
+                        popupHeight: '200px',
+                        allowFiltering: true,
+                        showClearButton: true,
+                        change: (e) => {
+                            state.brandId = e.value ?? null;
+                        }
+                    });
+                    brandListLookup.obj.appendTo(brandIdRef.value);
+                } else {
+                }
+            },
+            refresh: () => {
+                if (brandListLookup.obj) {
+                    brandListLookup.obj.value = state.brandId;
                 }
             },
         };
@@ -380,6 +438,14 @@ const App = {
             (newVal, oldVal) => {
                 state.errors.unitMeasureId = '';
                 unitMeasureListLookup.refresh();
+            }
+        );
+
+        Vue.watch(
+            () => state.brandId,
+            (newVal, oldVal) => {
+                state.errors.brandId = '';
+                brandListLookup.refresh();
             }
         );
 
@@ -478,6 +544,16 @@ const App = {
             }
         };
 
+        const brandQuickModal = {
+            obj: null,
+            create: () => {
+                brandQuickModal.obj = new bootstrap.Modal(brandQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         const handler = {
             openProductGroupQuickCreate: () => {
                 state.productGroupQuickName = '';
@@ -561,6 +637,44 @@ const App = {
                     state.unitMeasureQuickIsSubmitting = false;
                 }
             },
+            openBrandQuickCreate: () => {
+                state.brandQuickName = '';
+                state.brandQuickDescription = '';
+                state.brandQuickErrors = { name: '' };
+                brandQuickModal.obj.show();
+            },
+            closeBrandQuickCreate: () => {
+                brandQuickModal.obj.hide();
+            },
+            submitBrandQuickCreate: async () => {
+                state.brandQuickErrors = { name: '' };
+                if (!state.brandQuickName.trim()) {
+                    state.brandQuickErrors.name = 'Name is required.';
+                    return;
+                }
+                try {
+                    state.brandQuickIsSubmitting = true;
+                    const response = await services.createBrand(
+                        state.brandQuickName.trim(),
+                        state.brandQuickDescription,
+                        StorageManager.getUserId()
+                    );
+                    if (response.data.code === 200) {
+                        const newBrand = response.data.content.data;
+                        await methods.populateBrandListLookupData();
+                        brandListLookup.obj.setProperties({ dataSource: state.brandListLookupData, value: newBrand.id });
+                        state.brandId = newBrand.id;
+                        brandQuickModal.obj.hide();
+                        Swal.fire({ icon: 'success', title: 'Brand Created', timer: 1500, showConfirmButton: false });
+                    } else {
+                        state.brandQuickErrors.name = response.data.message ?? 'Failed to create brand.';
+                    }
+                } catch (error) {
+                    state.brandQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
+                } finally {
+                    state.brandQuickIsSubmitting = false;
+                }
+            },
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -570,11 +684,13 @@ const App = {
                         return;
                     }
 
+                    const brandId = state.brandId === '' ? null : state.brandId;
+
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, state.imageName, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, state.imageName, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -589,6 +705,7 @@ const App = {
                             state.description = response?.data?.content?.data.description ?? '';
                             state.productGroupId = response?.data?.content?.data.productGroupId ?? '';
                             state.unitMeasureId = response?.data?.content?.data.unitMeasureId ?? '';
+                            state.brandId = response?.data?.content?.data.brandId ?? '';
                             state.physical = response?.data?.content?.data.physical ?? false;
                             state.imageName = response?.data?.content?.data.imageName ?? '';
 
@@ -648,10 +765,12 @@ const App = {
                     methods.populateMainData(),
                     methods.populateProductGroupListLookupData(),
                     methods.populateUnitMeasureListLookupData(),
+                    methods.populateBrandListLookupData(),
                 ]);
                 await mainGrid.create(state.mainData);
                 productGroupListLookup.create();
                 unitMeasureListLookup.create();
+                brandListLookup.create();
 
                 nameText.create();
                 numberText.create();
@@ -661,6 +780,7 @@ const App = {
                 productGroupQuickModal.create();
                 productGroupQuickParentListLookup.create();
                 unitMeasureQuickModal.create();
+                brandQuickModal.create();
                 imageDropzone.init();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
                     resetFormState();
@@ -708,6 +828,7 @@ const App = {
                         { field: 'number', headerText: 'Number', width: 200, minWidth: 200 },
                         { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
                         { field: 'productGroupName', headerText: 'Product Group', width: 150, minWidth: 150 },
+                        { field: 'brandName', headerText: 'Brand', width: 150, minWidth: 150 },
                         { field: 'unitPrice', headerText: 'Unit Price', width: 150, minWidth: 150, format: 'N2' },
                         { field: 'unitMeasureName', headerText: 'Unit Measure', width: 150, minWidth: 150 },
                         { field: 'physical', headerText: 'Physical Product', width: 200, minWidth: 200, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
@@ -724,7 +845,7 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
-                        mainGrid.obj.autoFitColumns(['number', 'name', 'productGroupName', 'unitPrice', 'unitMeasureName', 'physical', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['number', 'name', 'productGroupName', 'brandName', 'unitPrice', 'unitMeasureName', 'physical', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -770,6 +891,7 @@ const App = {
                                 state.description = selectedRecord.description ?? '';
                                 state.productGroupId = selectedRecord.productGroupId ?? '';
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
+                                state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await methods.loadImagePreview(state.imageName);
@@ -789,6 +911,7 @@ const App = {
                                 state.description = selectedRecord.description ?? '';
                                 state.productGroupId = selectedRecord.productGroupId ?? '';
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
+                                state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await methods.loadImagePreview(state.imageName);
@@ -821,8 +944,10 @@ const App = {
             productGroupQuickModalRef,
             productGroupQuickParentIdRef,
             unitMeasureQuickModalRef,
+            brandQuickModalRef,
             productGroupIdRef,
             unitMeasureIdRef,
+            brandIdRef,
             imageUploadRef,
             nameRef,
             numberRef,

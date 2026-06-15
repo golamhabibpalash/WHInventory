@@ -143,6 +143,12 @@ public static class NavigationTreeStructure
                     "IsModule": false
                 },
                 {
+                    "URL": "/Brands/BrandList",
+                    "Name": "Brand",
+                    "Icon": "fas fa-trademark",
+                    "IsModule": false
+                },
+                {
                     "URL": "/Products/ProductList",
                     "Name": "Product",
                     "Icon": "fas fa-cube",
