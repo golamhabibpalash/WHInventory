@@ -4,10 +4,72 @@
     ViewData["Title"] = "Home page";
 }
 
-<div class="lock-overlay">
-    <h1 class="lock-welcome">uStock</h1>
-    <a asp-area="" asp-page="/Accounts/Login" class="lock-login">
-        <i class="fas fa-lock lock-icon"></i>
-    </a>
+<div id="app" v-cloak>
+    <div class="lock-overlay">
+        <div class="lock-bg-shapes">
+            <div class="lock-shape lock-shape-1"></div>
+            <div class="lock-shape lock-shape-2"></div>
+            <div class="lock-shape lock-shape-3"></div>
+            <div class="lock-shape lock-shape-4"></div>
+            <div class="lock-shape lock-shape-5"></div>
+        </div>
+
+        <div class="lock-content">
+            <div class="lock-brand">
+                <div class="lock-brand-icon">
+                    <i class="fas fa-cubes"></i>
+                </div>
+            </div>
+
+            <h1 class="lock-title">{{ state.companyName || 'uStock' }}</h1>
+            <p class="lock-subtitle">Warehouse &amp; Inventory Management System</p>
+
+            <div class="lock-divider">
+                <span class="lock-divider-line"></span>
+                <span class="lock-divider-icon"><i class="fas fa-circle"></i></span>
+                <span class="lock-divider-line"></span>
+            </div>
+
+            <a asp-area="" asp-page="/Accounts/Login" class="lock-login-btn">
+                <span class="lock-btn-text">Unlock Dashboard</span>
+                <span class="lock-btn-icon"><i class="fas fa-arrow-right"></i></span>
+            </a>
+
+            <p class="lock-footer">
+                &copy; @DateTime.Now.Year {{ state.companyName || 'uStock' }}. All rights reserved.
+            </p>
+        </div>
+    </div>
 </div>
 
+@section scripts {
+    <script>
+        const App = {
+            setup() {
+                const state = Vue.reactive({
+                    companyName: ''
+                });
+
+                const fetchLockScreenInfo = async () => {
+                    try {
+                        const response = await AxiosManager.get('/Security/GetLockScreenInfo', {});
+                        const company = response?.data?.content?.data;
+                        if (company) {
+                            state.companyName = company.name || '';
+                        }
+                    } catch (e) {
+                        // fallback to default "uStock" name
+                    }
+                };
+
+                Vue.onMounted(async () => {
+                    await fetchLockScreenInfo();
+                });
+
+                return { state };
+            }
+        };
+
+        Vue.createApp(App).mount('#app');
+    </script>
+}

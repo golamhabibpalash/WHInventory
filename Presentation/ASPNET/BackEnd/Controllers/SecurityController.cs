@@ -21,6 +21,21 @@ public class SecurityController : BaseApiController
     }
 
     [AllowAnonymous]
+    [HttpGet("GetLockScreenInfo")]
+    public async Task<ActionResult<ApiSuccessResult<GetLockScreenInfoResult>>> GetLockScreenInfoAsync(CancellationToken cancellationToken)
+    {
+        var request = new GetLockScreenInfoRequest { };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetLockScreenInfoResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetLockScreenInfoAsync)}",
+            Content = response
+        });
+    }
+
+    [AllowAnonymous]
     [HttpPost("Login")]
     public async Task<ActionResult<ApiSuccessResult<LoginResult>>> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
