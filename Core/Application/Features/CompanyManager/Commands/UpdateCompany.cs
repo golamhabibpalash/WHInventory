@@ -26,6 +26,7 @@ public class UpdateCompanyRequest : IRequest<UpdateCompanyResult>
     public string? EmailAddress { get; init; }
     public string? Website { get; init; }
     public string? UpdatedById { get; init; }
+    public bool AllowNegativeStock { get; init; }
 }
 
 public class UpdateCompanyValidator : AbstractValidator<UpdateCompanyRequest>
@@ -82,6 +83,7 @@ public class UpdateCompanyHandler : IRequestHandler<UpdateCompanyRequest, Update
         entity.FaxNumber = request.FaxNumber;
         entity.EmailAddress = request.EmailAddress;
         entity.Website = request.Website;
+        entity.AllowNegativeStock = request.AllowNegativeStock;
         // LogoName is managed separately via UpdateCompanyLogo — preserve existing value
 
         _repository.Update(entity);

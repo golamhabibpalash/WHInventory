@@ -17,4 +17,5 @@ public class Company : BaseEntity
     public string? EmailAddress { get; set; }
     public string? Website { get; set; }
     public string? LogoName { get; set; }
+    public bool AllowNegativeStock { get; set; } = false;
 }
