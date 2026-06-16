@@ -29,6 +29,7 @@ const App = {
             subTotalAmount: '0.00',
             taxAmount: '0.00',
             totalAmount: '0.00',
+            amountInWords: '',
             vendorGroupListLookupData: [],
             vendorCategoryListLookupData: [],
             vendorQuickName: '',
@@ -114,6 +115,7 @@ const App = {
             state.subTotalAmount = '0.00';
             state.taxAmount = '0.00';
             state.totalAmount = '0.00';
+            state.amountInWords = '';
             state.showComplexDiv = true;
             state.isNewlyCreated = false;
         };
@@ -311,6 +313,7 @@ const App = {
                     state.subTotalAmount = NumberFormatManager.formatToLocale(record.beforeTaxAmount ?? 0);
                     state.taxAmount = NumberFormatManager.formatToLocale(record.taxAmount ?? 0);
                     state.totalAmount = NumberFormatManager.formatToLocale(record.afterTaxAmount ?? 0);
+                    state.amountInWords = AmountInWordsManager.convert(record.afterTaxAmount ?? 0);
                 }
             },
             handleFormSubmit: async () => {

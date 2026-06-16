@@ -120,6 +120,10 @@
                                                     <span class="fw-bold">Total Amount</span>
                                                     <span id="TotalAmount" class="fw-bold text-success">{{ state.totalAmount }}</span>
                                                 </div>
+                                                <div class="py-2 border-top mt-1" v-if="state.amountInWords">
+                                                    <div class="text-muted small fw-bold">Amount in Words</div>
+                                                    <div id="AmountInWords" class="fst-italic text-dark small">{{ state.amountInWords }}</div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

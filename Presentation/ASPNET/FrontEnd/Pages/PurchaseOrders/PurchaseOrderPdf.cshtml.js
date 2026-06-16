@@ -29,6 +29,7 @@
             subTotal: '',
             tax: '',
             totalAmount: '',
+            amountInWords: '',
             items: [],
             isDownloading: false
         });
@@ -57,6 +58,7 @@
                 state.subTotal = NumberFormatManager.formatToLocale(pdfData.beforeTaxAmount) || '';
                 state.tax = NumberFormatManager.formatToLocale(pdfData.taxAmount) || '';
                 state.totalAmount = NumberFormatManager.formatToLocale(pdfData.afterTaxAmount) || '';
+                state.amountInWords = AmountInWordsManager.convert(pdfData.afterTaxAmount || 0);
 
                 methods.bindPDFControls();
             },

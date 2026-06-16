@@ -1,5 +1,6 @@
 using System.Reflection;
 using Application.Common.Behaviors;
+using Application.Common.Services.AmountInWordsManager;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,7 +25,10 @@ public static class DependencyInjection
             x.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
         });
 
-        //>>> Register services in Application.Features 
+        //>>> Amount In Words Service
+        services.AddScoped<IAmountInWordsService, AmountInWordsService>();
+
+        //>>> Register services in Application.Features
         var assembly = Assembly.GetExecutingAssembly();
         var featureTypes = assembly.GetTypes()
             .Where(type => type.IsClass && !type.IsAbstract)

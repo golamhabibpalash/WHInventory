@@ -112,6 +112,10 @@
                             </table>
                         </div>
                     </div>
+                    <div class="amount-in-words-section">
+                        <span class="amount-in-words-label">Amount in Words:</span>
+                        <span class="amount-in-words-text">{{ state.amountInWords }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -234,6 +238,23 @@
             margin: 5px 0;
             text-align: right;
         }
+
+    .amount-in-words-section {
+        margin-top: 14px;
+        padding: 10px 14px;
+        border-top: 2px solid #2c3e50;
+        font-size: 13px;
+    }
+
+    .amount-in-words-label {
+        font-weight: bold;
+        margin-right: 6px;
+    }
+
+    .amount-in-words-text {
+        font-style: italic;
+        color: #2c3e50;
+    }
 </style>
 
 @section scripts {
