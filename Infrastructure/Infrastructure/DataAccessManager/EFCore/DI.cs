@@ -157,6 +157,15 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE ""Product"" ADD COLUMN IF NOT EXISTS ""BrandId"" varchar(50) NULL;
+                CREATE INDEX IF NOT EXISTS ""IX_Product_BrandId""
+                    ON ""Product"" (""BrandId"");
+                ALTER TABLE ""Product"" DROP CONSTRAINT IF EXISTS ""FK_Product_Brand_BrandId"";
+                ALTER TABLE ""Product"" ADD CONSTRAINT ""FK_Product_Brand_BrandId""
+                    FOREIGN KEY (""BrandId"") REFERENCES ""Brand"" (""Id"") ON DELETE SET NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 CREATE TABLE IF NOT EXISTS ""NavigationMenuSortOrder"" (
                     ""Id""            varchar(50)  NOT NULL PRIMARY KEY,
                     ""IsDeleted""     boolean      NOT NULL DEFAULT false,
@@ -265,6 +274,16 @@ public static class DI
                     CREATE INDEX [IX_Brand_IsDeleted] ON [Brand] ([IsDeleted]);
                     CREATE UNIQUE INDEX [IX_Brand_Name] ON [Brand] ([Name]);
                     CREATE INDEX [IX_Brand_Number] ON [Brand] ([Number]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'BrandId')
+                BEGIN
+                    ALTER TABLE [Product] ADD [BrandId] nvarchar(50) NULL;
+                    CREATE INDEX [IX_Product_BrandId] ON [Product] ([BrandId]);
+                    ALTER TABLE [Product] ADD CONSTRAINT [FK_Product_Brand_BrandId]
+                        FOREIGN KEY ([BrandId]) REFERENCES [Brand] ([Id]) ON DELETE SET NULL;
                 END
             ");
 
