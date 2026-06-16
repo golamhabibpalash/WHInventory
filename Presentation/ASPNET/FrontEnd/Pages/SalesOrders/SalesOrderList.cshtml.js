@@ -71,6 +71,11 @@ const App = {
         const customerQuickGroupIdRef = Vue.ref(null);
         const customerQuickCategoryIdRef = Vue.ref(null);
 
+        // Tracks available stock for the product being edited in the line-item grid
+        let currentEditAvailableStock = Infinity;
+        let currentEditProductPhysical = false;
+        let currentEditProductName = '';
+
         const validateForm = function () {
             state.errors.orderDate = '';
             state.errors.customerId = '';
@@ -231,6 +236,14 @@ const App = {
                     throw error;
                 }
             },
+            getInventoryStockList: async () => {
+                try {
+                    const response = await AxiosManager.get('/InventoryTransaction/GetInventoryStockList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             createCustomer: async (name, description, customerGroupId, customerCategoryId, street, city, addressState, zipCode, country, phoneNumber, emailAddress, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Customer/CreateCustomer', {
@@ -311,8 +324,24 @@ const App = {
                 }
             },
             populateProductListLookupData: async () => {
-                const response = await services.getProductListLookupData();
-                state.productListLookupData = response?.data?.content?.data;
+                const [productResponse, stockResponse] = await Promise.all([
+                    services.getProductListLookupData(),
+                    services.getInventoryStockList()
+                ]);
+
+                const products = productResponse?.data?.content?.data ?? [];
+                const stockList = stockResponse?.data?.content?.data ?? [];
+
+                const stockByProduct = {};
+                stockList.forEach(s => {
+                    const pid = s.productId;
+                    stockByProduct[pid] = (stockByProduct[pid] ?? 0) + (s.stock ?? 0);
+                });
+
+                state.productListLookupData = products.map(p => ({
+                    ...p,
+                    availableStock: stockByProduct[p.id] ?? 0
+                }));
             },
             populateCustomerGroupListLookupData: async () => {
                 const response = await services.getCustomerGroupListLookupData();
@@ -836,6 +865,13 @@ const App = {
                                     productObj.destroy();
                                 },
                                 write: (args) => {
+                                    const initProduct = state.productListLookupData.find(p => p.id === args.rowData.productId);
+                                    if (initProduct) {
+                                        currentEditAvailableStock = initProduct.physical ? (initProduct.availableStock ?? 0) : Infinity;
+                                        currentEditProductPhysical = initProduct.physical ?? false;
+                                        currentEditProductName = initProduct.name;
+                                    }
+
                                     productObj = new ej.dropdowns.DropDownList({
                                         dataSource: state.productListLookupData,
                                         fields: { value: 'id', text: 'name' },
@@ -843,6 +879,10 @@ const App = {
                                         change: (e) => {
                                             const selectedProduct = state.productListLookupData.find(item => item.id === e.value);
                                             if (selectedProduct) {
+                                                currentEditAvailableStock = selectedProduct.physical ? (selectedProduct.availableStock ?? 0) : Infinity;
+                                                currentEditProductPhysical = selectedProduct.physical ?? false;
+                                                currentEditProductName = selectedProduct.name;
+
                                                 args.rowData.productId = selectedProduct.id;
                                                 if (numberObj) {
                                                     numberObj.value = selectedProduct.number;
@@ -855,6 +895,9 @@ const App = {
                                                 }
                                                 if (quantityObj) {
                                                     quantityObj.value = 1;
+                                                    quantityObj.placeholder = selectedProduct.physical
+                                                        ? `Max available: ${selectedProduct.availableStock ?? 0}`
+                                                        : '';
                                                     const total = selectedProduct.unitPrice * quantityObj.value;
                                                     if (totalObj) {
                                                         totalObj.value = total;
@@ -921,8 +964,12 @@ const App = {
                                     quantityObj.destroy();
                                 },
                                 write: (args) => {
+                                    const product = state.productListLookupData.find(p => p.id === args.rowData.productId);
+                                    const stockHint = product?.physical ? `Max: ${product.availableStock ?? 0}` : '';
+
                                     quantityObj = new ej.inputs.NumericTextBox({
                                         value: args.rowData.quantity ?? 0,
+                                        placeholder: stockHint,
                                         change: (e) => {
                                             if (priceObj && totalObj) {
                                                 const total = e.value * priceObj.value;
@@ -983,6 +1030,21 @@ const App = {
                             }
                         },
                         {
+                            field: 'availableStock',
+                            headerText: 'Available Stock',
+                            width: 160,
+                            allowEditing: false,
+                            type: 'number',
+                            format: 'N2',
+                            textAlign: 'Right',
+                            valueAccessor: (field, data) => {
+                                if (!data.productId) return '—';
+                                const product = state.productListLookupData.find(p => p.id === data.productId);
+                                if (!product || !product.physical) return 'N/A';
+                                return product.availableStock ?? 0;
+                            }
+                        },
+                        {
                             field: 'remark',
                             headerText: 'Remark',
                             width: 200,
@@ -1010,6 +1072,30 @@ const App = {
                         { type: 'Separator' },
                         'Add', 'Edit', 'Delete', 'Update', 'Cancel',
                     ],
+                    actionBegin: (args) => {
+                        if (args.requestType === 'save') {
+                            const data = args.data;
+                            const product = state.productListLookupData.find(p => p.id === data.productId);
+
+                            if (product && product.physical) {
+                                const available = product.availableStock ?? 0;
+                                const requested = data.quantity ?? 0;
+
+                                if (requested > available) {
+                                    args.cancel = true;
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Insufficient Stock',
+                                        html: `<b>${product.name}</b><br>` +
+                                              `Available Stock: <b>${available.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b><br>` +
+                                              `Requested Quantity: <b>${requested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b><br><br>` +
+                                              `Cannot save. Requested quantity exceeds available stock.`,
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            }
+                        }
+                    },
                     beforeDataBound: () => { },
                     dataBound: function () { },
                     beforeExcelExport: (args) => {
