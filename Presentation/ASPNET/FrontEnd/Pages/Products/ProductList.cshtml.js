@@ -25,13 +25,15 @@ const App = {
             physical: false,
             imageName: '',
             imagePreviewUrl: '',
+            documents: [],
             errors: {
                 name: '',
                 unitPrice: '',
                 productGroupId: '',
                 unitMeasureId: '',
                 brandId: '',
-                image: ''
+                image: '',
+                documents: ''
             },
             isSubmitting: false,
             productGroupQuickName: '',
@@ -61,6 +63,7 @@ const App = {
         const unitMeasureIdRef = Vue.ref(null);
         const brandIdRef = Vue.ref(null);
         const imageUploadRef = Vue.ref(null);
+        const docUploadRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
         const unitPriceRef = Vue.ref(null);
@@ -109,14 +112,17 @@ const App = {
             state.physical = false;
             state.imageName = '';
             state.imagePreviewUrl = '';
+            state.documents = [];
             state.errors = {
                 name: '',
                 unitPrice: '',
                 productGroupId: '',
                 unitMeasureId: '',
                 brandId: '',
-                image: ''
+                image: '',
+                documents: ''
             };
+            docDropzone.reset();
         };
 
         const services = {
@@ -222,6 +228,21 @@ const App = {
                     throw error;
                 }
             },
+            uploadDocuments: async (files, moduleId) => {
+                const formData = new FormData();
+                files.forEach(f => formData.append('files', f));
+                formData.append('moduleName', 'Product');
+                formData.append('moduleId', moduleId);
+                return await AxiosManager.post('/FileDocument/BulkUploadDocuments', formData);
+            },
+            getDocumentsByModule: async (moduleId) => {
+                return await AxiosManager.get('/FileDocument/GetDocumentsByModule', {
+                    params: { moduleName: 'Product', moduleId }
+                });
+            },
+            deleteDocument: async (id, deletedById) => {
+                return await AxiosManager.post('/FileDocument/DeleteDocument', { id, deletedById });
+            },
         };
 
         const methods = {
@@ -273,6 +294,14 @@ const App = {
                     state.imagePreviewUrl = URL.createObjectURL(response.data);
                 } catch {
                     state.imagePreviewUrl = '';
+                }
+            },
+            loadDocuments: async (moduleId) => {
+                try {
+                    const response = await services.getDocumentsByModule(moduleId);
+                    state.documents = response?.data?.content?.data ?? [];
+                } catch {
+                    state.documents = [];
                 }
             },
         };
@@ -500,6 +529,61 @@ const App = {
             },
         };
 
+        const docDropzone = {
+            obj: null,
+            allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'],
+            maxFileSizeInBytes: 25 * 1024 * 1024,
+            init: () => {
+                if (docDropzone.obj || !docUploadRef.value) return;
+                Dropzone.autoDiscover = false;
+                docDropzone.obj = new Dropzone(docUploadRef.value, {
+                    url: '#',
+                    paramName: 'files',
+                    maxFiles: 20,
+                    autoProcessQueue: false,
+                    addRemoveLinks: true,
+                    dictDefaultMessage: 'Drop files here or click to upload (PDF, Word, Excel, PowerPoint)',
+                    dictRemoveFile: 'Remove',
+                    init: function () {
+                        this.on('addedfile', async function (file) {
+                            state.errors.documents = '';
+                            const extension = (file.name.split('.').pop() || '').toLowerCase();
+                            if (!docDropzone.allowedExtensions.includes(extension)) {
+                                state.errors.documents = `File type '.${extension}' is not allowed.`;
+                                this.removeFile(file);
+                                return;
+                            }
+                            if (file.size > docDropzone.maxFileSizeInBytes) {
+                                state.errors.documents = `"${file.name}" exceeds the 25 MB limit.`;
+                                this.removeFile(file);
+                                return;
+                            }
+
+                            if (!state.id) return;
+
+                            try {
+                                const response = await services.uploadDocuments([file], state.id);
+                                if (response?.data?.code === 200) {
+                                    await methods.loadDocuments(state.id);
+                                } else {
+                                    state.errors.documents = response?.data?.message ?? 'Upload failed.';
+                                }
+                            } catch (error) {
+                                state.errors.documents = error.response?.data?.message ?? 'Upload failed.';
+                            } finally {
+                                this.removeFile(file);
+                            }
+                        });
+                    }
+                });
+            },
+            reset: () => {
+                if (docDropzone.obj) {
+                    docDropzone.obj.removeAllFiles(true);
+                }
+            },
+        };
+
         const productGroupQuickParentListLookup = {
             obj: null,
             create: () => {
@@ -675,6 +759,28 @@ const App = {
                     state.brandQuickIsSubmitting = false;
                 }
             },
+            formatFileSize: (bytes) => {
+                if (!bytes) return '—';
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            },
+            deleteDocument: async (docId) => {
+                const confirm = await Swal.fire({
+                    title: 'Remove attachment?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, remove',
+                    cancelButtonText: 'Cancel'
+                });
+                if (!confirm.isConfirmed) return;
+                try {
+                    await services.deleteDocument(docId, StorageManager.getUserId());
+                    await methods.loadDocuments(state.id);
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Failed to remove attachment', text: error.response?.data?.message ?? 'Please try again.' });
+                }
+            },
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -708,10 +814,11 @@ const App = {
                             state.brandId = response?.data?.content?.data.brandId ?? '';
                             state.physical = response?.data?.content?.data.physical ?? false;
                             state.imageName = response?.data?.content?.data.imageName ?? '';
+                            await methods.loadDocuments(state.id);
 
                             Swal.fire({
                                 icon: 'success',
-                                title: state.deleteMode ? 'Delete Successful' : 'Save Successful',
+                                title: 'Save Successful',
                                 text: 'Form will be closed...',
                                 timer: 2000,
                                 showConfirmButton: false
@@ -782,6 +889,7 @@ const App = {
                 unitMeasureQuickModal.create();
                 brandQuickModal.create();
                 imageDropzone.init();
+                docDropzone.init();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
                     resetFormState();
                 });
@@ -894,7 +1002,10 @@ const App = {
                                 state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.imageName = selectedRecord.imageName ?? '';
-                                await methods.loadImagePreview(state.imageName);
+                                await Promise.all([
+                                    methods.loadImagePreview(state.imageName),
+                                    methods.loadDocuments(state.id)
+                                ]);
                                 mainModal.obj.show();
                             }
                         }
@@ -949,6 +1060,7 @@ const App = {
             unitMeasureIdRef,
             brandIdRef,
             imageUploadRef,
+            docUploadRef,
             nameRef,
             numberRef,
             unitPriceRef,
