@@ -53,6 +53,23 @@ public class InventoryTransactionController : BaseApiController
     }
 
     [Authorize]
+    [HttpGet("GetProductStock")]
+    public async Task<ActionResult<ApiSuccessResult<GetProductStockResult>>> GetProductStockAsync(
+        [FromQuery] string productId,
+        CancellationToken cancellationToken)
+    {
+        var request = new GetProductStockRequest { ProductId = productId };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetProductStockResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetProductStockAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
     [HttpPost("DeliveryOrderCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<DeliveryOrderCreateInvenTransResult>>> DeliveryOrderCreateInvenTransAsync(DeliveryOrderCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
