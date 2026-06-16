@@ -123,6 +123,12 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE ""Product"" ADD COLUMN IF NOT EXISTS ""Barcode"" varchar(100) NULL;
+                CREATE INDEX IF NOT EXISTS ""IX_Product_Barcode""
+                    ON ""Product"" (""Barcode"");
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 ALTER TABLE ""ProductGroup"" ADD COLUMN IF NOT EXISTS ""ParentId"" varchar(50) NULL;
                 CREATE INDEX IF NOT EXISTS ""IX_ProductGroup_ParentId""
                     ON ""ProductGroup"" (""ParentId"");
@@ -219,6 +225,14 @@ public static class DI
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'IsWarrantyApplicable')
                 BEGIN
                     ALTER TABLE [Product] ADD [IsWarrantyApplicable] bit NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'Barcode')
+                BEGIN
+                    ALTER TABLE [Product] ADD [Barcode] nvarchar(100) NULL;
+                    CREATE INDEX [IX_Product_Barcode] ON [Product] ([Barcode]);
                 END
             ");
 
