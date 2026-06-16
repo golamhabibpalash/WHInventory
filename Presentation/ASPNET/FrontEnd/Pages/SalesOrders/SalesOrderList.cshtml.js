@@ -54,7 +54,8 @@ const App = {
             customerCategoryQuickName: '',
             customerCategoryQuickDescription: '',
             customerCategoryQuickIsSubmitting: false,
-            customerCategoryQuickErrors: { name: '' }
+            customerCategoryQuickErrors: { name: '' },
+            barcodeInput: ''
         });
 
         const mainGridRef = Vue.ref(null);
@@ -70,6 +71,7 @@ const App = {
         const customerCategoryQuickModalRef = Vue.ref(null);
         const customerQuickGroupIdRef = Vue.ref(null);
         const customerQuickCategoryIdRef = Vue.ref(null);
+        const barcodeScanRef = Vue.ref(null);
 
         // Tracks available stock for the product being edited in the line-item grid
         let currentEditAvailableStock = Infinity;
@@ -283,6 +285,14 @@ const App = {
             createCustomerCategory: async (name, description, createdById) => {
                 try {
                     const response = await AxiosManager.post('/CustomerCategory/CreateCustomerCategory', { name, description, createdById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getProductByBarcode: async (barcode) => {
+                try {
+                    const response = await AxiosManager.get('/Product/GetProductByBarcode', { params: { barcode } });
                     return response;
                 } catch (error) {
                     throw error;
@@ -1260,6 +1270,7 @@ const App = {
             customerCategoryQuickModalRef,
             customerQuickGroupIdRef,
             customerQuickCategoryIdRef,
+            barcodeScanRef,
             state,
             methods,
             handler: {
@@ -1413,6 +1424,57 @@ const App = {
                         state.customerCategoryQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
                     } finally {
                         state.customerCategoryQuickIsSubmitting = false;
+                    }
+                },
+                handleBarcodeInput: async () => {
+                    const barcode = (state.barcodeInput ?? '').trim();
+                    if (!barcode) return;
+
+                    if (!state.id) {
+                        Swal.fire({ icon: 'warning', title: 'Save the order first', text: 'Please save the Sales Order header before adding items via barcode.' });
+                        return;
+                    }
+
+                    try {
+                        const response = await services.getProductByBarcode(barcode);
+                        const product = response?.data?.content?.data;
+
+                        if (!product) {
+                            Swal.fire({ icon: 'error', title: 'Product Not Found', text: `No product found for barcode: ${barcode}` });
+                            state.barcodeInput = '';
+                            return;
+                        }
+
+                        const matchedProduct = state.productListLookupData.find(p => p.id === product.id);
+                        const unitPrice = matchedProduct?.unitPrice ?? product.unitPrice ?? 0;
+                        const quantity = 1;
+
+                        if (product.physical) {
+                            const available = matchedProduct?.availableStock ?? 0;
+                            if (quantity > available) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Insufficient Stock',
+                                    html: `<b>${product.name}</b><br>Available: <b>${available}</b>`
+                                });
+                                state.barcodeInput = '';
+                                return;
+                            }
+                        }
+
+                        await services.createSecondaryData(unitPrice, quantity, null, product.id, state.id, StorageManager.getUserId());
+                        await methods.populateSecondaryData(state.id);
+                        secondaryGrid.refresh();
+                        await methods.populateMainData();
+                        mainGrid.refresh();
+                        await methods.refreshPaymentSummary(state.id);
+
+                        Swal.fire({ icon: 'success', title: `Added: ${product.name}`, timer: 1200, showConfirmButton: false });
+                    } catch (error) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message ?? 'Failed to add product by barcode.' });
+                    } finally {
+                        state.barcodeInput = '';
+                        if (barcodeScanRef.value) barcodeScanRef.value.focus();
                     }
                 }
             }
