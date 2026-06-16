@@ -1,5 +1,7 @@
 using ASPNET.BackEnd.Common.Models;
+using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 
 namespace ASPNET.BackEnd.Common.Handlers;
 
@@ -13,6 +15,8 @@ public class CustomExceptionHandler : IExceptionHandler
         _environment = environment;
         _exceptionHandlers = new()
             {
+                { typeof(ValidationException), HandleValidationException },
+                { typeof(DbUpdateException), HandleDbUpdateException },
                 { typeof(Exception), HandleException },
             };
     }
@@ -33,14 +37,54 @@ public class CustomExceptionHandler : IExceptionHandler
 
     }
 
+    private async Task HandleValidationException(HttpContext httpContext, Exception ex)
+    {
+        var validationException = (ValidationException)ex;
+
+        var errorMessage = validationException.Errors.Any()
+            ? string.Join("; ", validationException.Errors.Select(e => e.ErrorMessage))
+            : validationException.Message;
+
+        var result = new ApiErrorResult
+        {
+            Code = StatusCodes.Status400BadRequest,
+            Message = errorMessage,
+            Error = null
+        };
+
+        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+        httpContext.Response.ContentType = "application/json";
+        await httpContext.Response.WriteAsJsonAsync(result);
+    }
+
+    private async Task HandleDbUpdateException(HttpContext httpContext, Exception ex)
+    {
+        var statusCode = StatusCodes.Status409Conflict;
+        var errorMessage = "A database conflict occurred. The record may have been modified or already exists.";
+
+        if (_environment.IsDevelopment())
+        {
+            errorMessage = ex.InnerException?.Message ?? ex.Message;
+        }
+
+        var result = new ApiErrorResult
+        {
+            Code = statusCode,
+            Message = errorMessage,
+            Error = null
+        };
+
+        httpContext.Response.StatusCode = statusCode;
+        httpContext.Response.ContentType = "application/json";
+        await httpContext.Response.WriteAsJsonAsync(result);
+    }
+
     private async Task HandleException(HttpContext httpContext, Exception ex)
     {
         var statusCode = httpContext.Response.StatusCode != 200
             ? httpContext.Response.StatusCode
             : StatusCodes.Status500InternalServerError;
 
-        // Only expose internal exception details (stack trace, source, inner message)
-        // in development. In production these leak implementation details to clients.
         var includeDetails = _environment.IsDevelopment();
 
         var errorMessage = includeDetails

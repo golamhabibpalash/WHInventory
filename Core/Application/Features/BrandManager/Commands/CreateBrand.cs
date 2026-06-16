@@ -1,8 +1,10 @@
+using Application.Common.CQS.Queries;
 using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.BrandManager.Commands;
 
@@ -33,20 +35,31 @@ public class CreateBrandHandler : IRequestHandler<CreateBrandRequest, CreateBran
     private readonly ICommandRepository<Brand> _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly NumberSequenceService _numberSequenceService;
+    private readonly IQueryContext _queryContext;
 
     public CreateBrandHandler(
         ICommandRepository<Brand> repository,
         IUnitOfWork unitOfWork,
-        NumberSequenceService numberSequenceService
+        NumberSequenceService numberSequenceService,
+        IQueryContext queryContext
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _numberSequenceService = numberSequenceService;
+        _queryContext = queryContext;
     }
 
     public async Task<CreateBrandResult> Handle(CreateBrandRequest request, CancellationToken cancellationToken = default)
     {
+        var duplicate = await _queryContext.Brand
+            .AnyAsync(x => x.Name == request.Name && x.IsDeleted == false, cancellationToken);
+
+        if (duplicate)
+        {
+            throw new ValidationException($"A brand with the name '{request.Name}' already exists.");
+        }
+
         var entity = new Brand();
         entity.CreatedById = request.CreatedById;
 

@@ -1,7 +1,9 @@
+using Application.Common.CQS.Queries;
 using Application.Common.Repositories;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.BrandManager.Commands;
 
@@ -33,14 +35,17 @@ public class UpdateBrandHandler : IRequestHandler<UpdateBrandRequest, UpdateBran
 {
     private readonly ICommandRepository<Brand> _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IQueryContext _queryContext;
 
     public UpdateBrandHandler(
         ICommandRepository<Brand> repository,
-        IUnitOfWork unitOfWork
+        IUnitOfWork unitOfWork,
+        IQueryContext queryContext
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _queryContext = queryContext;
     }
 
     public async Task<UpdateBrandResult> Handle(UpdateBrandRequest request, CancellationToken cancellationToken)
@@ -50,6 +55,14 @@ public class UpdateBrandHandler : IRequestHandler<UpdateBrandRequest, UpdateBran
         if (entity == null)
         {
             throw new Exception($"Entity not found: {request.Id}");
+        }
+
+        var duplicate = await _queryContext.Brand
+            .AnyAsync(x => x.Name == request.Name && x.Id != request.Id && x.IsDeleted == false, cancellationToken);
+
+        if (duplicate)
+        {
+            throw new ValidationException($"A brand with the name '{request.Name}' already exists.");
         }
 
         entity.UpdatedById = request.UpdatedById;
