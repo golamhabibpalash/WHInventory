@@ -10,4 +10,6 @@ public class FileDocument : BaseEntity
     public string? GeneratedName { get; set; }
     public string? Extension { get; set; }
     public long? FileSize { get; set; }
+    public string? ModuleName { get; set; }
+    public string? ModuleId { get; set; }
 }

@@ -9,8 +9,15 @@ public static class FileDocumentHelper
         { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
         { ".xls", "application/vnd.ms-excel" },
         { ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+        { ".ppt", "application/vnd.ms-powerpoint" },
+        { ".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation" },
         { ".txt", "text/plain" },
         { ".csv", "text/csv" },
+    };
+
+    public static readonly HashSet<string> AllowedBulkExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"
     };
 
     public static string GetMimeType(string extension)

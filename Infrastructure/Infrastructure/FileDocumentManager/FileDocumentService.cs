@@ -31,6 +31,8 @@ public class FileDocumentService : IFileDocumentService
         long? size,
         string? description = "",
         string? createdById = "",
+        string? moduleName = "",
+        string? moduleId = "",
         CancellationToken cancellationToken = default)
     {
 
@@ -68,6 +70,8 @@ public class FileDocumentService : IFileDocumentService
         doc.FileSize = size;
         doc.Description = description;
         doc.CreatedById = createdById;
+        doc.ModuleName = string.IsNullOrWhiteSpace(moduleName) ? null : moduleName;
+        doc.ModuleId = string.IsNullOrWhiteSpace(moduleId) ? null : moduleId;
 
         await _docRepository.CreateAsync(doc, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);

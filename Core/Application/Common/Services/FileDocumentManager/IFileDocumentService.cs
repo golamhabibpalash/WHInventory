@@ -9,6 +9,8 @@ public interface IFileDocumentService
         long? size,
         string? description = "",
         string? createdById = "",
+        string? moduleName = "",
+        string? moduleId = "",
         CancellationToken cancellationToken = default);
 
     Task<byte[]> GetFileAsync(string fileName, CancellationToken cancellationToken = default);

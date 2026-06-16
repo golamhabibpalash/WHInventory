@@ -17,6 +17,8 @@ public class CreateDocumentRequest : IRequest<CreateDocumentResult>
     public long? Size { get; init; }
     public string? CreatedById { get; init; }
     public string? Description { get; init; }
+    public string? ModuleName { get; init; }
+    public string? ModuleId { get; init; }
 }
 
 public class CreateDocumentValidator : AbstractValidator<CreateDocumentRequest>
@@ -55,6 +57,8 @@ public class CreateDocumentHandler : IRequestHandler<CreateDocumentRequest, Crea
             request.Size,
             request.Description,
             request.CreatedById,
+            request.ModuleName,
+            request.ModuleId,
             cancellationToken);
 
         return new CreateDocumentResult { DocumentName = result };
