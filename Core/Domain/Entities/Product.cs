@@ -16,4 +16,6 @@ public class Product : BaseEntity
     public string? BrandId { get; set; }
     public Brand? Brand { get; set; }
     public string? ImageName { get; set; }
+    public string? Barcode { get; set; }
+    public bool? IsWarrantyApplicable { get; set; } = false;
 }

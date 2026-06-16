@@ -107,6 +107,24 @@ public class ProductController : BaseApiController
         });
     }
 
+    [Authorize]
+    [HttpGet("GetProductByBarcode")]
+    public async Task<ActionResult<ApiSuccessResult<GetProductByBarcodeResult>>> GetProductByBarcodeAsync(
+        CancellationToken cancellationToken,
+        [FromQuery] string? barcode = null
+        )
+    {
+        var request = new GetProductByBarcodeRequest { Barcode = barcode };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetProductByBarcodeResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetProductByBarcodeAsync)}",
+            Content = response
+        });
+    }
+
 
 }
 

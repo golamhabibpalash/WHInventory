@@ -23,6 +23,9 @@ const App = {
             unitMeasureId: null,
             brandId: null,
             physical: false,
+            isWarrantyApplicable: false,
+            barcode: '',
+            showBarcodePreview: false,
             imageName: '',
             imagePreviewUrl: '',
             documents: [],
@@ -64,6 +67,7 @@ const App = {
         const brandIdRef = Vue.ref(null);
         const imageUploadRef = Vue.ref(null);
         const docUploadRef = Vue.ref(null);
+        const barcodeRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
         const unitPriceRef = Vue.ref(null);
@@ -110,6 +114,9 @@ const App = {
             state.unitMeasureId = null;
             state.brandId = null;
             state.physical = false;
+            state.isWarrantyApplicable = false;
+            state.barcode = '';
+            state.showBarcodePreview = false;
             state.imageName = '';
             state.imagePreviewUrl = '';
             state.documents = [];
@@ -134,20 +141,20 @@ const App = {
                     throw error;
                 }
             },
-            createMainData: async (name, unitPrice, physical, description, productGroupId, unitMeasureId, brandId, imageName, createdById) => {
+            createMainData: async (name, unitPrice, physical, isWarrantyApplicable, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Product/CreateProduct', {
-                        name, unitPrice, physical, description, productGroupId, unitMeasureId, brandId, imageName, createdById
+                        name, unitPrice, physical, isWarrantyApplicable, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, unitPrice, physical, description, productGroupId, unitMeasureId, brandId, imageName, updatedById) => {
+            updateMainData: async (id, name, unitPrice, physical, isWarrantyApplicable, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Product/UpdateProduct', {
-                        id, name, unitPrice, physical, description, productGroupId, unitMeasureId, brandId, imageName, updatedById
+                        id, name, unitPrice, physical, isWarrantyApplicable, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -759,6 +766,21 @@ const App = {
                     state.brandQuickIsSubmitting = false;
                 }
             },
+            renderBarcode: () => {
+                if (!state.barcode || !barcodeRef.value) return;
+                try {
+                    JsBarcode(barcodeRef.value, state.barcode, {
+                        format: 'CODE128',
+                        displayValue: true,
+                        fontSize: 14,
+                        height: 60,
+                        margin: 10
+                    });
+                    state.showBarcodePreview = true;
+                } catch {
+                    state.showBarcodePreview = false;
+                }
+            },
             formatFileSize: (bytes) => {
                 if (!bytes) return '—';
                 if (bytes < 1024) return bytes + ' B';
@@ -793,10 +815,10 @@ const App = {
                     const brandId = state.brandId === '' ? null : state.brandId;
 
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.isWarrantyApplicable, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.isWarrantyApplicable, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -813,6 +835,7 @@ const App = {
                             state.unitMeasureId = response?.data?.content?.data.unitMeasureId ?? '';
                             state.brandId = response?.data?.content?.data.brandId ?? '';
                             state.physical = response?.data?.content?.data.physical ?? false;
+                            state.isWarrantyApplicable = response?.data?.content?.data.isWarrantyApplicable ?? false;
                             state.imageName = response?.data?.content?.data.imageName ?? '';
                             await methods.loadDocuments(state.id);
 
@@ -939,7 +962,8 @@ const App = {
                         { field: 'brandName', headerText: 'Brand', width: 150, minWidth: 150 },
                         { field: 'unitPrice', headerText: 'Unit Price', width: 150, minWidth: 150, format: 'N2' },
                         { field: 'unitMeasureName', headerText: 'Unit Measure', width: 150, minWidth: 150 },
-                        { field: 'physical', headerText: 'Physical Product', width: 200, minWidth: 200, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
+                        { field: 'physical', headerText: 'Physical Product', width: 140, minWidth: 140, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
+                        { field: 'isWarrantyApplicable', headerText: 'Warranty', width: 120, minWidth: 120, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
                     ],
                     toolbar: [
@@ -953,7 +977,7 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
-                        mainGrid.obj.autoFitColumns(['number', 'name', 'productGroupName', 'brandName', 'unitPrice', 'unitMeasureName', 'physical', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['number', 'name', 'productGroupName', 'brandName', 'unitPrice', 'unitMeasureName', 'physical', 'isWarrantyApplicable', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -1001,6 +1025,7 @@ const App = {
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
                                 state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
+                                state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await Promise.all([
                                     methods.loadImagePreview(state.imageName),
@@ -1024,6 +1049,7 @@ const App = {
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
                                 state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
+                                state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await methods.loadImagePreview(state.imageName);
                                 mainModal.obj.show();

@@ -22,6 +22,8 @@ public record GetProductListDto
     public string? BrandId { get; init; }
     public string? BrandName { get; init; }
     public string? ImageName { get; init; }
+    public string? Barcode { get; init; }
+    public bool? IsWarrantyApplicable { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
 

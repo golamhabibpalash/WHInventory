@@ -98,6 +98,31 @@
                                                     <label for="Physical" class="form-check-label">Is Physical Product?</label>
                                                 </div>
                                             </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check mt-1">
+                                                    <input v-model="state.isWarrantyApplicable" id="IsWarrantyApplicable" name="IsWarrantyApplicable" type="checkbox" class="form-check-input">
+                                                    <label for="IsWarrantyApplicable" class="form-check-label">Warranty Applicable</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-8">
+                                                <label for="Barcode">Barcode / SKU</label>
+                                                <div class="input-group">
+                                                    <input v-model="state.barcode" id="Barcode" name="Barcode" type="text" class="form-control" placeholder="Scan or type barcode..." :readonly="state.deleteMode" />
+                                                    <button type="button" class="btn btn-outline-secondary" v-on:click="handler.renderBarcode" title="Preview barcode" :disabled="!state.barcode">
+                                                        <i class="fas fa-barcode"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2" v-if="state.barcode && state.showBarcodePreview">
+                                            <div class="col-12 text-center">
+                                                <svg ref="barcodeRef" id="BarcodePreview"></svg>
+                                                <div class="mt-1">
+                                                    <small class="text-muted">{{ state.barcode }}</small>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="row mb-2">
                                             <div class="col-12">

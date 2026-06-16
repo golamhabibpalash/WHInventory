@@ -21,6 +21,8 @@ public class ProductConfiguration : BaseEntityConfiguration<Product>
         builder.Property(x => x.ProductGroupId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.BrandId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.ImageName).HasMaxLength(PathConsts.MaxLength).IsRequired(false);
+        builder.Property(x => x.Barcode).HasMaxLength(100).IsRequired(false);
+        builder.Property(x => x.IsWarrantyApplicable).IsRequired(false);
 
         builder.HasOne(x => x.Brand).WithMany().HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.SetNull);
 
@@ -29,6 +31,7 @@ public class ProductConfiguration : BaseEntityConfiguration<Product>
         builder.HasIndex(e => e.UnitMeasureId);
         builder.HasIndex(e => e.ProductGroupId);
         builder.HasIndex(e => e.BrandId);
+        builder.HasIndex(e => e.Barcode);
     }
 }
 
