@@ -128,6 +128,25 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ""Brand"" (
+                    ""Id""            varchar(50)   NOT NULL PRIMARY KEY,
+                    ""Name""          varchar(255)  NULL,
+                    ""Number""        varchar(50)   NULL,
+                    ""Description""   varchar(4000) NULL,
+                    ""ImageName""     varchar(255)  NULL,
+                    ""Status""        varchar(50)   NULL,
+                    ""IsDeleted""     boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""  timestamp     NULL,
+                    ""CreatedById""   varchar(450)  NULL,
+                    ""UpdatedAtUtc""  timestamp     NULL,
+                    ""UpdatedById""   varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_Brand_IsDeleted"" ON ""Brand"" (""IsDeleted"");
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Brand_Name"" ON ""Brand"" (""Name"");
+                CREATE INDEX IF NOT EXISTS ""IX_Brand_Number"" ON ""Brand"" (""Number"");
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 CREATE TABLE IF NOT EXISTS ""NavigationMenuSortOrder"" (
                     ""Id""            varchar(50)  NOT NULL PRIMARY KEY,
                     ""IsDeleted""     boolean      NOT NULL DEFAULT false,
@@ -199,6 +218,28 @@ public static class DI
                     CREATE INDEX [IX_ProductGroup_ParentId] ON [ProductGroup] ([ParentId]);
                     ALTER TABLE [ProductGroup] ADD CONSTRAINT [FK_ProductGroup_ProductGroup_ParentId]
                         FOREIGN KEY ([ParentId]) REFERENCES [ProductGroup] ([Id]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Brand')
+                BEGIN
+                    CREATE TABLE [Brand] (
+                        [Id]            nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [Name]          nvarchar(255)  NULL,
+                        [Number]        nvarchar(50)   NULL,
+                        [Description]   nvarchar(4000) NULL,
+                        [ImageName]     nvarchar(255)  NULL,
+                        [Status]        nvarchar(50)   NULL,
+                        [IsDeleted]     bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]  datetime2      NULL,
+                        [CreatedById]   nvarchar(450)  NULL,
+                        [UpdatedAtUtc]  datetime2      NULL,
+                        [UpdatedById]   nvarchar(450)  NULL
+                    );
+                    CREATE INDEX [IX_Brand_IsDeleted] ON [Brand] ([IsDeleted]);
+                    CREATE UNIQUE INDEX [IX_Brand_Name] ON [Brand] ([Name]);
+                    CREATE INDEX [IX_Brand_Number] ON [Brand] ([Number]);
                 END
             ");
 
