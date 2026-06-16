@@ -60,18 +60,18 @@ public class CustomExceptionHandler : IExceptionHandler
     private async Task HandleDbUpdateException(HttpContext httpContext, Exception ex)
     {
         var statusCode = StatusCodes.Status409Conflict;
-        var errorMessage = "A database conflict occurred. The record may have been modified or already exists.";
 
-        if (_environment.IsDevelopment())
-        {
-            errorMessage = ex.InnerException?.Message ?? ex.Message;
-        }
+        var detail = ex.InnerException?.Message ?? ex.Message;
+
+        var errorMessage = _environment.IsDevelopment()
+            ? detail
+            : $"Database conflict: {detail}";
 
         var result = new ApiErrorResult
         {
             Code = statusCode,
             Message = errorMessage,
-            Error = null
+            Error = new Error(detail, null, null, ex.GetType().Name)
         };
 
         httpContext.Response.StatusCode = statusCode;
