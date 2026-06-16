@@ -836,6 +836,7 @@ const App = {
                             state.brandId = response?.data?.content?.data.brandId ?? '';
                             state.physical = response?.data?.content?.data.physical ?? false;
                             state.isWarrantyApplicable = response?.data?.content?.data.isWarrantyApplicable ?? false;
+                            state.barcode = response?.data?.content?.data.barcode ?? '';
                             state.imageName = response?.data?.content?.data.imageName ?? '';
                             await methods.loadDocuments(state.id);
 
@@ -962,6 +963,7 @@ const App = {
                         { field: 'brandName', headerText: 'Brand', width: 150, minWidth: 150 },
                         { field: 'unitPrice', headerText: 'Unit Price', width: 150, minWidth: 150, format: 'N2' },
                         { field: 'unitMeasureName', headerText: 'Unit Measure', width: 150, minWidth: 150 },
+                        { field: 'barcode', headerText: 'Barcode', width: 150, minWidth: 150 },
                         { field: 'physical', headerText: 'Physical Product', width: 140, minWidth: 140, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
                         { field: 'isWarrantyApplicable', headerText: 'Warranty', width: 120, minWidth: 120, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
@@ -1026,6 +1028,7 @@ const App = {
                                 state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
+                                state.barcode = selectedRecord.barcode ?? '';
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await Promise.all([
                                     methods.loadImagePreview(state.imageName),
@@ -1050,6 +1053,7 @@ const App = {
                                 state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
+                                state.barcode = selectedRecord.barcode ?? '';
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await methods.loadImagePreview(state.imageName);
                                 mainModal.obj.show();
@@ -1087,6 +1091,7 @@ const App = {
             brandIdRef,
             imageUploadRef,
             docUploadRef,
+            barcodeRef,
             nameRef,
             numberRef,
             unitPriceRef,
