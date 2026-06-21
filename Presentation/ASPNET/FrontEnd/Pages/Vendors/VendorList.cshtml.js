@@ -886,6 +886,7 @@
                     allowPaging: true,
                     allowExcelExport: true,
                     filterSettings: { type: 'CheckBox' },
+                    searchSettings: { keyDelay: 150, searchAsType: true },
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
                     pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
@@ -1065,6 +1066,7 @@
                         { field: 'description', headerText: 'Description', width: 400, minWidth: 400 },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
                     ],
+                    searchSettings: { keyDelay: 150, searchAsType: true },
                     toolbar: [
                         'ExcelExport', 'Add', 'Edit', 'Delete', 'Update', 'Cancel', 'Search'
                     ],
