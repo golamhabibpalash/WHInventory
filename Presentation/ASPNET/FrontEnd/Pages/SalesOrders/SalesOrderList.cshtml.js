@@ -13,7 +13,7 @@ const App = {
             mainTitle: null,
             id: '',
             number: '',
-            orderDate: '',
+            orderDate: new Date(),
             description: '',
             customerId: null,
             taxId: null,
@@ -109,7 +109,7 @@ const App = {
         const resetFormState = () => {
             state.id = '';
             state.number = '';
-            state.orderDate = '';
+            state.orderDate = new Date();
             state.description = '';
             state.customerId = null;
             state.taxId = null;
