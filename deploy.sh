@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────────────────────
 # uStock — one-shot production deployment on Ubuntu 24.04
+# Platform layout:
+#   Source  → /opt/platform/apps/ustock/
+#   Compose → /opt/platform/docker/apps/ustock/
+#   Nginx   → /opt/platform/nginx/conf.d/ (symlinked to /etc/nginx/sites-enabled/)
+#
 # Run as root on the VPS:
 #   bash <(curl -fsSL https://raw.githubusercontent.com/golamhabibpalash/WHInventory/master/deploy.sh)
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
 REPO="https://github.com/golamhabibpalash/WHInventory.git"
-APP_DIR="/opt/ustock"
+APP_DIR="/opt/platform/apps/ustock"
+COMPOSE_DIR="/opt/platform/docker/apps/ustock"
+COMPOSE_FILE="docker-compose.platform.yml"
+NGINX_CONF_DIR="/opt/platform/nginx/conf.d"
 DOMAIN="ustock.unitymicrofund.com"
 EMAIL="golamhabibpalash@gmail.com"
-COMPOSE_FILE="docker-compose.synology.yml"
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 step() { echo -e "\n${GREEN}▶ $*${NC}"; }
@@ -20,12 +27,12 @@ die()  { echo -e "${RED}✗  $*${NC}" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || die "Run as root: sudo bash deploy.sh"
 
 # ── 1. System update ──────────────────────────────────────────────────────────
-step "[1/8] Updating system packages"
+step "[1/9] Updating system packages"
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
 
 # ── 2. Docker ─────────────────────────────────────────────────────────────────
-step "[2/8] Installing Docker"
+step "[2/9] Installing Docker"
 if command -v docker &>/dev/null; then
     echo "  Already installed: $(docker --version)"
 else
@@ -45,17 +52,24 @@ https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_C
 fi
 
 # ── 3. Nginx + Certbot ────────────────────────────────────────────────────────
-step "[3/8] Installing nginx & certbot"
+step "[3/9] Installing nginx & certbot"
 apt-get install -y -qq nginx certbot python3-certbot-nginx
 
 # ── 4. Firewall ───────────────────────────────────────────────────────────────
-step "[4/8] Configuring UFW firewall"
+step "[4/9] Configuring UFW firewall"
 ufw allow OpenSSH
 ufw allow 'Nginx Full'
 ufw --force enable
 
-# ── 5. Clone / update repo ────────────────────────────────────────────────────
-step "[5/8] Fetching application code"
+# ── 5. Platform directory structure ──────────────────────────────────────────
+step "[5/9] Creating platform directory structure"
+mkdir -p /opt/platform/{apps/{orghub,ustock,eims,unitymicrofund},\
+docker/{apps/{orghub,ustock,eims,unitymicrofund},databases/postgres,monitoring},\
+nginx/conf.d,backups,logs,scripts,docs}
+echo "  /opt/platform/ layout ready."
+
+# ── 6. Clone / update repo ────────────────────────────────────────────────────
+step "[6/9] Fetching application code"
 if [[ -d "$APP_DIR/.git" ]]; then
     echo "  Repo exists — pulling latest…"
     git -C "$APP_DIR" pull
@@ -63,9 +77,9 @@ else
     git clone "$REPO" "$APP_DIR"
 fi
 
-# ── 6. .env file ──────────────────────────────────────────────────────────────
-step "[6/8] Checking .env file"
-ENV_FILE="$APP_DIR/.env"
+# ── 7. .env file ──────────────────────────────────────────────────────────────
+step "[7/9] Checking .env file"
+ENV_FILE="$COMPOSE_DIR/.env"
 if [[ ! -f "$ENV_FILE" ]]; then
     warn ".env not found — creating from template."
     cp "$APP_DIR/.env.example" "$ENV_FILE"
@@ -75,53 +89,27 @@ if [[ ! -f "$ENV_FILE" ]]; then
     echo ""
     read -rp "  Press ENTER once you have saved .env… "
 fi
-
-# Sanity check — abort if template values are still present
 if grep -q "CHANGE_ME" "$ENV_FILE"; then
     die ".env still contains CHANGE_ME placeholders. Edit $ENV_FILE and re-run."
 fi
 echo "  .env OK."
 
-# ── 7. Build & start containers ───────────────────────────────────────────────
-step "[7/8] Building Docker image and starting services (this takes a few minutes)"
-cd "$APP_DIR"
-docker compose -f "$COMPOSE_FILE" --env-file .env up -d --build
+# ── 8. Build & start containers ───────────────────────────────────────────────
+step "[8/9] Building Docker image and starting services (this takes a few minutes)"
+cp "$APP_DIR/$COMPOSE_FILE" "$COMPOSE_DIR/docker-compose.yml"
+cd "$COMPOSE_DIR"
+docker compose --env-file .env up -d --build
 
 echo "  Waiting for app to respond on :8080…"
 timeout 180 bash -c \
     'until curl -s --max-time 5 http://localhost:8080 >/dev/null 2>&1; do sleep 4; done' \
     && echo "  App is up." \
-    || warn "App did not respond within 3 min — check: docker compose -f $APP_DIR/$COMPOSE_FILE logs app"
+    || warn "App did not respond within 3 min — check: docker compose -f $COMPOSE_DIR/docker-compose.yml logs app"
 
-# ── 8. Nginx + SSL ────────────────────────────────────────────────────────────
-step "[8/8] Configuring nginx reverse proxy & SSL"
-NGINX_CONF="/etc/nginx/sites-available/ustock"
-
-cat > "$NGINX_CONF" <<NGINX
-server {
-    listen 80;
-    server_name ${DOMAIN};
-
-    location / {
-        proxy_pass         http://localhost:8080;
-        proxy_http_version 1.1;
-        proxy_set_header   Upgrade \$http_upgrade;
-        proxy_set_header   Connection keep-alive;
-        proxy_set_header   Host \$host;
-        proxy_set_header   X-Real-IP \$remote_addr;
-        proxy_set_header   X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-        client_max_body_size 100M;
-        proxy_read_timeout 300s;
-        proxy_buffer_size       128k;
-        proxy_buffers           4 256k;
-        proxy_busy_buffers_size 256k;
-    }
-}
-NGINX
-
-ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/ustock
+# ── 9. Nginx + SSL ────────────────────────────────────────────────────────────
+step "[9/9] Configuring nginx reverse proxy & SSL"
+cp "$APP_DIR/nginx/ustock.conf" "$NGINX_CONF_DIR/ustock.conf"
+ln -sf "$NGINX_CONF_DIR/ustock.conf" /etc/nginx/sites-enabled/ustock
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl reload nginx
@@ -138,11 +126,11 @@ systemctl reload nginx
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""
-echo -e "${GREEN}╔═══════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║   uStock deployment complete!                        ║${NC}"
-echo -e "${GREEN}║   https://${DOMAIN}  ║${NC}"
-echo -e "${GREEN}╚═══════════════════════════════════════════════════════╝${NC}"
+echo -e "${GREEN}╔══════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║  uStock deployment complete!                        ║${NC}"
+echo -e "${GREEN}║  https://${DOMAIN}  ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo "  Admin login : check ADMIN_EMAIL / ADMIN_PASSWORD in $ENV_FILE"
-echo "  View logs   : docker compose -f $APP_DIR/$COMPOSE_FILE logs -f"
+echo "  View logs   : docker compose -f $COMPOSE_DIR/docker-compose.yml logs -f"
 echo "  Update app  : bash $APP_DIR/update.sh"

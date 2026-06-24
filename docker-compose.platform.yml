@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ustock-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - ustock-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ustock-app:latest
+    build:
+      context: /opt/platform/apps/ustock
+      dockerfile: Dockerfile
+    container_name: ustock-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Host=db;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: uStock
+      Jwt__Audience: uStock
+      Jwt__ExpireInMinute: 60
+      SmtpSettings__Host: ${SMTP_HOST}
+      SmtpSettings__Port: ${SMTP_PORT}
+      SmtpSettings__UserName: ${SMTP_USER}
+      SmtpSettings__Password: ${SMTP_PASSWORD}
+      SmtpSettings__FromAddress: ${SMTP_USER}
+      SmtpSettings__FromName: uStock
+      IsDemoVersion: "false"
+      AspNetIdentity__DefaultAdmin__Email: ${ADMIN_EMAIL}
+      AspNetIdentity__DefaultAdmin__Password: ${ADMIN_PASSWORD}
+      AspNetIdentity__SignIn__RequireConfirmedEmail: "false"
+      Kestrel__Endpoints__Http__Url: "http://+:8080"
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    volumes:
+      - app_data:/app/wwwroot/app_data
+    networks:
+      - ustock-net
+    restart: unless-stopped
+
+networks:
+  ustock-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  app_data:
