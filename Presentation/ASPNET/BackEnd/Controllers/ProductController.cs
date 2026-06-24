@@ -2,6 +2,7 @@ using Application.Features.ProductManager.Commands;
 using Application.Features.ProductManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;
+using ClosedXML.Excel;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -125,6 +126,60 @@ public class ProductController : BaseApiController
         });
     }
 
+    [AllowAnonymous]
+    [HttpGet("DownloadImportTemplate")]
+    public IActionResult DownloadImportTemplate()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Products");
+        sheet.Cell(1, 1).Value = "Name";
+        sheet.Cell(1, 2).Value = "UnitPrice";
+        sheet.Cell(1, 3).Value = "UnitMeasureName";
+        sheet.Cell(1, 4).Value = "ProductGroupName";
+        sheet.Cell(1, 5).Value = "BrandName";
+        sheet.Cell(1, 6).Value = "Barcode";
+        sheet.Cell(1, 7).Value = "Description";
+        sheet.Cell(1, 8).Value = "IsWarrantyApplicable";
+
+        var headerRange = sheet.Range("A1:H1");
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+        sheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "product-import-template.xlsx");
+    }
+
+    [Authorize]
+    [HttpPost("BulkCreateProduct")]
+    public async Task<ActionResult<ApiSuccessResult<BulkCreateProductResult>>> BulkCreateProductAsync(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("An Excel file is required.");
+        }
+
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream, cancellationToken);
+        var fileData = memoryStream.ToArray();
+
+        var request = new BulkCreateProductRequest
+        {
+            Data = fileData
+        };
+
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<BulkCreateProductResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(BulkCreateProductAsync)}",
+            Content = response
+        });
+    }
 
 }
 

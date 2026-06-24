@@ -334,6 +334,90 @@
             </div>
         </div>
     </div>
+
+    <!-- Bulk Upload Modal -->
+    <div class="modal fade" ref="bulkUploadModalRef" id="BulkUploadModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-file-upload me-2"></i>Bulk Product Upload</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-download me-2"></i>
+                        <a href="/api/Product/DownloadImportTemplate" class="alert-link">Download the Excel template</a>
+                        and fill in your product data. The first row must contain the column headers.
+                    </div>
+                    <div class="table-responsive small mb-3">
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Column</th>
+                                    <th>Required</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Name</td><td><span class="badge bg-danger">Yes</span></td><td>Product name</td></tr>
+                                <tr><td>UnitPrice</td><td><span class="badge bg-danger">Yes</span></td><td>Numeric value (e.g. 150.00)</td></tr>
+                                <tr><td>UnitMeasureName</td><td><span class="badge bg-danger">Yes</span></td><td>Must match existing unit measure (e.g. Pcs, Kg)</td></tr>
+                                <tr><td>ProductGroupName</td><td><span class="badge bg-danger">Yes</span></td><td>Must match existing product group</td></tr>
+                                <tr><td>BrandName</td><td><span class="badge bg-secondary">No</span></td><td>Must match existing brand if provided</td></tr>
+                                <tr><td>Barcode</td><td><span class="badge bg-secondary">No</span></td><td>Barcode / SKU</td></tr>
+                                <tr><td>Description</td><td><span class="badge bg-secondary">No</span></td><td>Product description</td></tr>
+                                <tr><td>IsWarrantyApplicable</td><td><span class="badge bg-secondary">No</span></td><td>TRUE or FALSE (defaults to FALSE)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Excel File (.xlsx)</label>
+                        <input ref="bulkFileInputRef" type="file" class="form-control" accept=".xlsx" v-on:change="handler.onBulkFileSelected" />
+                    </div>
+                    <div v-if="state.bulkUploadResult" class="mt-3">
+                        <div class="alert" v-bind:class="state.bulkUploadResult.failureCount > 0 ? 'alert-warning' : 'alert-success'">
+                            <strong>Upload Complete:</strong>
+                            {{ state.bulkUploadResult.successCount }} of {{ state.bulkUploadResult.totalRows }} products created successfully.
+                            <span v-if="state.bulkUploadResult.failureCount > 0">
+                                {{ state.bulkUploadResult.failureCount }} row(s) failed.
+                            </span>
+                        </div>
+                        <div v-if="state.bulkUploadResult.errors && state.bulkUploadResult.errors.length > 0" class="mt-2">
+                            <h6 class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Error Details</h6>
+                            <div class="table-responsive" style="max-height:250px; overflow-y:auto;">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-danger">
+                                        <tr>
+                                            <th>Row</th>
+                                            <th>Name</th>
+                                            <th>Error</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="err in state.bulkUploadResult.errors" :key="err.rowNumber">
+                                            <td>{{ err.rowNumber }}</td>
+                                            <td>{{ err.name }}</td>
+                                            <td class="text-danger">{{ err.message }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                    <button type="button" class="btn btn-primary"
+                            v-on:click="handler.submitBulkUpload"
+                            v-bind:disabled="state.bulkUploadSubmitting || !state.bulkUploadFile">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.bulkUploadSubmitting"></span>
+                        <i class="fas fa-upload me-1" v-else></i>
+                        {{ state.bulkUploadSubmitting ? 'Uploading...' : 'Upload & Create' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section scripts {

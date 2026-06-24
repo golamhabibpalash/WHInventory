@@ -53,7 +53,10 @@ const App = {
             brandQuickName: '',
             brandQuickDescription: '',
             brandQuickIsSubmitting: false,
-            brandQuickErrors: { name: '' }
+            brandQuickErrors: { name: '' },
+            bulkUploadFile: null,
+            bulkUploadSubmitting: false,
+            bulkUploadResult: null
         });
 
         const mainGridRef = Vue.ref(null);
@@ -71,6 +74,8 @@ const App = {
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
         const unitPriceRef = Vue.ref(null);
+        const bulkFileInputRef = Vue.ref(null);
+        const bulkUploadModalRef = Vue.ref(null);
 
         const validateForm = function () {
             state.errors.name = '';
@@ -249,6 +254,11 @@ const App = {
             },
             deleteDocument: async (id, deletedById) => {
                 return await AxiosManager.post('/FileDocument/DeleteDocument', { id, deletedById });
+            },
+            bulkCreateProduct: async (file) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                return await AxiosManager.post('/Product/BulkCreateProduct', formData, {});
             },
         };
 
@@ -803,6 +813,37 @@ const App = {
                     Swal.fire({ icon: 'error', title: 'Failed to remove attachment', text: error.response?.data?.message ?? 'Please try again.' });
                 }
             },
+            onBulkFileSelected: (event) => {
+                const files = event.target.files;
+                state.bulkUploadFile = files.length > 0 ? files[0] : null;
+                state.bulkUploadResult = null;
+            },
+            submitBulkUpload: async () => {
+                if (!state.bulkUploadFile) return;
+                try {
+                    state.bulkUploadSubmitting = true;
+                    state.bulkUploadResult = null;
+                    const response = await services.bulkCreateProduct(state.bulkUploadFile);
+                    const result = response?.data?.content;
+                    if (result) {
+                        state.bulkUploadResult = result;
+                        await methods.populateMainData();
+                        mainGrid.refresh();
+                        if (result.failureCount === 0) {
+                            Swal.fire({ icon: 'success', title: 'All products created successfully', timer: 2000, showConfirmButton: false });
+                        }
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Upload Failed',
+                        text: error.response?.data?.message ?? 'Please try again.',
+                        confirmButtonText: 'OK'
+                    });
+                } finally {
+                    state.bulkUploadSubmitting = false;
+                }
+            },
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -912,6 +953,7 @@ const App = {
                 productGroupQuickParentListLookup.create();
                 unitMeasureQuickModal.create();
                 brandQuickModal.create();
+                bulkUploadModal.create();
                 imageDropzone.init();
                 docDropzone.init();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
@@ -976,6 +1018,7 @@ const App = {
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
                         { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
+                        { text: 'Bulk Upload', tooltipText: 'Bulk Upload', prefixIcon: 'e-upload', id: 'BulkUploadCustom' },
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
@@ -1039,6 +1082,13 @@ const App = {
                             }
                         }
 
+                        if (args.item.id === 'BulkUploadCustom') {
+                            state.bulkUploadResult = null;
+                            state.bulkUploadFile = null;
+                            if (bulkFileInputRef.value) bulkFileInputRef.value.value = '';
+                            bulkUploadModal.obj.show();
+                        }
+
                         if (args.item.id === 'DeleteCustom') {
                             state.deleteMode = true;
                             if (mainGrid.obj.getSelectedRecords().length) {
@@ -1080,6 +1130,16 @@ const App = {
             }
         };
 
+        const bulkUploadModal = {
+            obj: null,
+            create: () => {
+                bulkUploadModal.obj = new bootstrap.Modal(bulkUploadModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         return {
             mainGridRef,
             mainModalRef,
@@ -1087,6 +1147,8 @@ const App = {
             productGroupQuickParentIdRef,
             unitMeasureQuickModalRef,
             brandQuickModalRef,
+            bulkUploadModalRef,
+            bulkFileInputRef,
             productGroupIdRef,
             unitMeasureIdRef,
             brandIdRef,
