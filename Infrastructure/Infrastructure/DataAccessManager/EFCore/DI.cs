@@ -97,11 +97,68 @@ public static class DI
         var serviceProvider = scope.ServiceProvider;
 
         var dataContext = serviceProvider.GetRequiredService<DataContext>();
+
+        if (dataContext.Database.IsNpgsql())
+            MigratePublicSchemaToNamedSchemas(dataContext);
+
         dataContext.Database.EnsureCreated();
 
         EnsureMissingTables(dataContext);
 
         return host;
+    }
+
+    // Runs before EnsureCreated so databases created before the core/auth schema split
+    // are transparently moved without requiring a manual drop.
+    private static void MigratePublicSchemaToNamedSchemas(DataContext dataContext)
+    {
+        dataContext.Database.ExecuteSqlRaw(@"
+            CREATE SCHEMA IF NOT EXISTS core;
+            CREATE SCHEMA IF NOT EXISTS auth;
+        ");
+
+        dataContext.Database.ExecuteSqlRaw(@"
+            DO $$
+            DECLARE t TEXT;
+            BEGIN
+                FOREACH t IN ARRAY ARRAY[
+                    'AspNetUsers','AspNetRoles','AspNetUserRoles',
+                    'AspNetUserClaims','AspNetRoleClaims','AspNetUserLogins','AspNetUserTokens'
+                ] LOOP
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.tables
+                        WHERE table_schema = 'public' AND table_name = t
+                    ) THEN
+                        EXECUTE format('ALTER TABLE public.%I SET SCHEMA auth', t);
+                    END IF;
+                END LOOP;
+            END $$;
+        ");
+
+        dataContext.Database.ExecuteSqlRaw(@"
+            DO $$
+            DECLARE t TEXT;
+            BEGIN
+                FOREACH t IN ARRAY ARRAY[
+                    'Token','Todo','TodoItem','Company','FileImage','FileDocument',
+                    'NumberSequence','CustomerGroup','CustomerCategory','VendorGroup',
+                    'VendorCategory','Warehouse','Customer','Vendor','UnitMeasure',
+                    'ProductGroup','Brand','Product','CustomerContact','VendorContact',
+                    'Tax','SalesOrder','SalesOrderItem','PurchaseOrder','PurchaseOrderItem',
+                    'InventoryTransaction','DeliveryOrder','GoodsReceive','SalesReturn',
+                    'PurchaseReturn','TransferIn','TransferOut','StockCount',
+                    'NegativeAdjustment','PositiveAdjustment','Scrapping',
+                    'NavigationMenuSortOrder','AuditLog','UserActivityLog'
+                ] LOOP
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.tables
+                        WHERE table_schema = 'public' AND table_name = t
+                    ) THEN
+                        EXECUTE format('ALTER TABLE public.%I SET SCHEMA core', t);
+                    END IF;
+                END LOOP;
+            END $$;
+        ");
     }
 
     private static void EnsureMissingTables(DataContext dataContext)
@@ -111,34 +168,34 @@ public static class DI
         if (isPostgres)
         {
             dataContext.Database.ExecuteSqlRaw(@"
-                ALTER TABLE ""Company"" ADD COLUMN IF NOT EXISTS ""LogoName"" varchar(500) NULL;
+                ALTER TABLE core.""Company"" ADD COLUMN IF NOT EXISTS ""LogoName"" varchar(500) NULL;
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                ALTER TABLE ""Product"" ADD COLUMN IF NOT EXISTS ""ImageName"" varchar(255) NULL;
+                ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""ImageName"" varchar(255) NULL;
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                ALTER TABLE ""Product"" ADD COLUMN IF NOT EXISTS ""IsWarrantyApplicable"" boolean NULL;
+                ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""IsWarrantyApplicable"" boolean NULL;
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                ALTER TABLE ""Product"" ADD COLUMN IF NOT EXISTS ""Barcode"" varchar(100) NULL;
+                ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""Barcode"" varchar(100) NULL;
                 CREATE INDEX IF NOT EXISTS ""IX_Product_Barcode""
-                    ON ""Product"" (""Barcode"");
+                    ON core.""Product"" (""Barcode"");
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                ALTER TABLE ""ProductGroup"" ADD COLUMN IF NOT EXISTS ""ParentId"" varchar(50) NULL;
+                ALTER TABLE core.""ProductGroup"" ADD COLUMN IF NOT EXISTS ""ParentId"" varchar(50) NULL;
                 CREATE INDEX IF NOT EXISTS ""IX_ProductGroup_ParentId""
-                    ON ""ProductGroup"" (""ParentId"");
-                ALTER TABLE ""ProductGroup"" DROP CONSTRAINT IF EXISTS ""FK_ProductGroup_ProductGroup_ParentId"";
-                ALTER TABLE ""ProductGroup"" ADD CONSTRAINT ""FK_ProductGroup_ProductGroup_ParentId""
-                    FOREIGN KEY (""ParentId"") REFERENCES ""ProductGroup"" (""Id"") ON DELETE RESTRICT;
+                    ON core.""ProductGroup"" (""ParentId"");
+                ALTER TABLE core.""ProductGroup"" DROP CONSTRAINT IF EXISTS ""FK_ProductGroup_ProductGroup_ParentId"";
+                ALTER TABLE core.""ProductGroup"" ADD CONSTRAINT ""FK_ProductGroup_ProductGroup_ParentId""
+                    FOREIGN KEY (""ParentId"") REFERENCES core.""ProductGroup"" (""Id"") ON DELETE RESTRICT;
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                CREATE TABLE IF NOT EXISTS ""Brand"" (
+                CREATE TABLE IF NOT EXISTS core.""Brand"" (
                     ""Id""            varchar(50)   NOT NULL PRIMARY KEY,
                     ""Name""          varchar(255)  NULL,
                     ""Number""        varchar(50)   NULL,
@@ -151,22 +208,22 @@ public static class DI
                     ""UpdatedAtUtc""  timestamp     NULL,
                     ""UpdatedById""   varchar(450)  NULL
                 );
-                CREATE INDEX IF NOT EXISTS ""IX_Brand_IsDeleted"" ON ""Brand"" (""IsDeleted"");
-                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Brand_Name"" ON ""Brand"" (""Name"");
-                CREATE INDEX IF NOT EXISTS ""IX_Brand_Number"" ON ""Brand"" (""Number"");
+                CREATE INDEX IF NOT EXISTS ""IX_Brand_IsDeleted"" ON core.""Brand"" (""IsDeleted"");
+                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Brand_Name"" ON core.""Brand"" (""Name"");
+                CREATE INDEX IF NOT EXISTS ""IX_Brand_Number"" ON core.""Brand"" (""Number"");
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                ALTER TABLE ""Product"" ADD COLUMN IF NOT EXISTS ""BrandId"" varchar(50) NULL;
+                ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""BrandId"" varchar(50) NULL;
                 CREATE INDEX IF NOT EXISTS ""IX_Product_BrandId""
-                    ON ""Product"" (""BrandId"");
-                ALTER TABLE ""Product"" DROP CONSTRAINT IF EXISTS ""FK_Product_Brand_BrandId"";
-                ALTER TABLE ""Product"" ADD CONSTRAINT ""FK_Product_Brand_BrandId""
-                    FOREIGN KEY (""BrandId"") REFERENCES ""Brand"" (""Id"") ON DELETE SET NULL;
+                    ON core.""Product"" (""BrandId"");
+                ALTER TABLE core.""Product"" DROP CONSTRAINT IF EXISTS ""FK_Product_Brand_BrandId"";
+                ALTER TABLE core.""Product"" ADD CONSTRAINT ""FK_Product_Brand_BrandId""
+                    FOREIGN KEY (""BrandId"") REFERENCES core.""Brand"" (""Id"") ON DELETE SET NULL;
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                CREATE TABLE IF NOT EXISTS ""NavigationMenuSortOrder"" (
+                CREATE TABLE IF NOT EXISTS core.""NavigationMenuSortOrder"" (
                     ""Id""            varchar(50)  NOT NULL PRIMARY KEY,
                     ""IsDeleted""     boolean      NOT NULL DEFAULT false,
                     ""CreatedAtUtc""  timestamp    NULL,
@@ -177,11 +234,11 @@ public static class DI
                     ""SortOrderJson"" text         NULL
                 );
                 CREATE INDEX IF NOT EXISTS ""IX_NavigationMenuSortOrder_UserId""
-                    ON ""NavigationMenuSortOrder"" (""UserId"");
+                    ON core.""NavigationMenuSortOrder"" (""UserId"");
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                CREATE TABLE IF NOT EXISTS ""AuditLog"" (
+                CREATE TABLE IF NOT EXISTS core.""AuditLog"" (
                     ""Id""            varchar(50)   NOT NULL PRIMARY KEY,
                     ""EntityType""    varchar(255)  NULL,
                     ""EntityId""      varchar(50)   NULL,
@@ -192,13 +249,13 @@ public static class DI
                     ""IpAddress""     varchar(50)   NULL,
                     ""CreatedAtUtc""  timestamp     NULL
                 );
-                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_EntityType"" ON ""AuditLog"" (""EntityType"");
-                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_UserId""     ON ""AuditLog"" (""UserId"");
-                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_CreatedAtUtc"" ON ""AuditLog"" (""CreatedAtUtc"");
+                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_EntityType"" ON core.""AuditLog"" (""EntityType"");
+                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_UserId""     ON core.""AuditLog"" (""UserId"");
+                CREATE INDEX IF NOT EXISTS ""IX_AuditLog_CreatedAtUtc"" ON core.""AuditLog"" (""CreatedAtUtc"");
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                CREATE TABLE IF NOT EXISTS ""UserActivityLog"" (
+                CREATE TABLE IF NOT EXISTS core.""UserActivityLog"" (
                     ""Id""           varchar(50)   NOT NULL PRIMARY KEY,
                     ""UserId""       varchar(450)  NULL,
                     ""UserEmail""    varchar(255)  NULL,
@@ -209,9 +266,9 @@ public static class DI
                     ""UserAgent""    varchar(500)  NULL,
                     ""CreatedAtUtc"" timestamp     NULL
                 );
-                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_UserId""       ON ""UserActivityLog"" (""UserId"");
-                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_ActivityType""  ON ""UserActivityLog"" (""ActivityType"");
-                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_CreatedAtUtc""  ON ""UserActivityLog"" (""CreatedAtUtc"");
+                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_UserId""       ON core.""UserActivityLog"" (""UserId"");
+                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_ActivityType""  ON core.""UserActivityLog"" (""ActivityType"");
+                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_CreatedAtUtc""  ON core.""UserActivityLog"" (""CreatedAtUtc"");
             ");
         }
         else
