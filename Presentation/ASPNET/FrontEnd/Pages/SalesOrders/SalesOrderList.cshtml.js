@@ -77,6 +77,7 @@ const App = {
         let currentEditAvailableStock = Infinity;
         let currentEditProductPhysical = false;
         let currentEditProductName = '';
+        let saveCancelledByStock = false;
 
         const validateForm = function () {
             state.errors.orderDate = '';
@@ -894,6 +895,18 @@ const App = {
                                                 currentEditProductPhysical = selectedProduct.physical ?? false;
                                                 currentEditProductName = selectedProduct.name;
 
+                                                if (quantityObj) {
+                                                    const qty = quantityObj.value ?? 0;
+                                                    const exceeded = currentEditProductPhysical && currentEditAvailableStock !== Infinity && qty > currentEditAvailableStock;
+                                                    const inputEl = quantityObj.element;
+                                                    if (inputEl) {
+                                                        inputEl.style.border = exceeded ? '2px solid #dc3545' : '';
+                                                        inputEl.title = exceeded
+                                                            ? `Insufficient stock. Available: ${currentEditAvailableStock.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                                            : '';
+                                                    }
+                                                }
+
                                                 args.rowData.productId = selectedProduct.id;
                                                 if (numberObj) {
                                                     numberObj.value = selectedProduct.number;
@@ -986,9 +999,29 @@ const App = {
                                                 const total = e.value * priceObj.value;
                                                 totalObj.value = total;
                                             }
+                                            if (currentEditProductPhysical && currentEditAvailableStock !== Infinity) {
+                                                const exceeded = (e.value ?? 0) > currentEditAvailableStock;
+                                                const inputEl = quantityObj.element;
+                                                if (inputEl) {
+                                                    inputEl.style.border = exceeded ? '2px solid #dc3545' : '';
+                                                    inputEl.title = exceeded
+                                                        ? `Insufficient stock. Available: ${currentEditAvailableStock.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                                        : '';
+                                                }
+                                            }
                                         }
                                     });
                                     quantityObj.appendTo(args.element);
+                                    if (currentEditProductPhysical && currentEditAvailableStock !== Infinity) {
+                                        const initialQty = args.rowData.quantity ?? 0;
+                                        if (initialQty > currentEditAvailableStock) {
+                                            const inputEl = quantityObj.element;
+                                            if (inputEl) {
+                                                inputEl.style.border = '2px solid #dc3545';
+                                                inputEl.title = `Insufficient stock. Available: ${currentEditAvailableStock.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         },
@@ -1086,14 +1119,18 @@ const App = {
                     actionBegin: (args) => {
                         if (args.requestType === 'save') {
                             const data = args.data;
-                            const product = state.productListLookupData.find(p => p.id === data.productId);
+                            // Fall back to the live edit controls when args.data fields are not yet
+                            // populated (Syncfusion reads custom templates AFTER actionBegin in some cases)
+                            const productId = (data.productId) || (typeof productObj !== 'undefined' && productObj?.value);
+                            const product = state.productListLookupData.find(p => p.id === productId);
 
                             if (product && product.physical) {
                                 const available = product.availableStock ?? 0;
-                                const requested = data.quantity ?? 0;
+                                const requested = (data.quantity != null ? data.quantity : (typeof quantityObj !== 'undefined' && quantityObj?.value)) ?? 0;
 
                                 if (requested > available) {
                                     args.cancel = true;
+                                    saveCancelledByStock = true;
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'Insufficient Stock',
@@ -1145,53 +1182,51 @@ const App = {
                         }
                     },
                     actionComplete: async (args) => {
+                        if (saveCancelledByStock) {
+                            saveCancelledByStock = false;
+                            return;
+                        }
                         if (args.requestType === 'save' && args.action === 'add') {
                             const salesOrderId = state.id; 
                             const userId = StorageManager.getUserId();
                             const data = args.data;
 
-                            await services.createSecondaryData(data?.unitPrice, data?.quantity, data?.remark, data?.productId, salesOrderId, userId);
-                            await methods.populateSecondaryData(salesOrderId);
-                            secondaryGrid.refresh();
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Save Successful',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
+                            try {
+                                await services.createSecondaryData(data?.unitPrice, data?.quantity, data?.remark, data?.productId, salesOrderId, userId);
+                                await methods.populateSecondaryData(salesOrderId);
+                                secondaryGrid.refresh();
+                                Swal.fire({ icon: 'success', title: 'Save Successful', timer: 2000, showConfirmButton: false });
+                            } catch (error) {
+                                Swal.fire({ icon: 'error', title: 'Save Failed', text: error.response?.data?.message ?? 'An error occurred.', confirmButtonText: 'OK' });
+                            }
                         }
                         if (args.requestType === 'save' && args.action === 'edit') {
                             const salesOrderId = state.id; 
                             const userId = StorageManager.getUserId();
                             const data = args.data;
 
-                            await services.updateSecondaryData(data?.id, data?.unitPrice, data?.quantity, data?.remark, data?.productId, salesOrderId, userId);
-                            await methods.populateSecondaryData(salesOrderId);
-                            secondaryGrid.refresh();
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Save Successful',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
+                            try {
+                                await services.updateSecondaryData(data?.id, data?.unitPrice, data?.quantity, data?.remark, data?.productId, salesOrderId, userId);
+                                await methods.populateSecondaryData(salesOrderId);
+                                secondaryGrid.refresh();
+                                Swal.fire({ icon: 'success', title: 'Save Successful', timer: 2000, showConfirmButton: false });
+                            } catch (error) {
+                                Swal.fire({ icon: 'error', title: 'Save Failed', text: error.response?.data?.message ?? 'An error occurred.', confirmButtonText: 'OK' });
+                            }
                         }
                         if (args.requestType === 'delete') {
                             const salesOrderId = state.id; 
                             const userId = StorageManager.getUserId();
                             const data = args.data[0];
 
-                            await services.deleteSecondaryData(data?.id, userId);
-                            await methods.populateSecondaryData(salesOrderId);
-                            secondaryGrid.refresh();
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Delete Successful',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
+                            try {
+                                await services.deleteSecondaryData(data?.id, userId);
+                                await methods.populateSecondaryData(salesOrderId);
+                                secondaryGrid.refresh();
+                                Swal.fire({ icon: 'success', title: 'Delete Successful', timer: 2000, showConfirmButton: false });
+                            } catch (error) {
+                                Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.response?.data?.message ?? 'An error occurred.', confirmButtonText: 'OK' });
+                            }
                         }
 
                         await methods.populateMainData();
