@@ -1,14 +1,14 @@
 const GridSearchManager = (() => {
     const timers = new WeakMap();
 
-    function attach(inputEl) {
-        if (inputEl.dataset.liveSearch) return;
-        inputEl.dataset.liveSearch = '1';
-
+    function wire(inputEl) {
         const gridEl = inputEl.closest('.e-grid');
         if (!gridEl) return;
 
-        const grid = ej.base.getComponent(gridEl, 'grid');
+        const instances = gridEl.ej2_instances;
+        if (!instances || !instances.length) return;
+
+        const grid = instances.find(inst => inst && typeof inst.search === 'function');
         if (!grid) return;
 
         inputEl.addEventListener('input', function () {
@@ -16,6 +16,13 @@ const GridSearchManager = (() => {
             const el = this;
             timers.set(el, setTimeout(() => grid.search(el.value), 200));
         });
+    }
+
+    function attach(inputEl) {
+        if (inputEl.dataset.liveSearch) return;
+        inputEl.dataset.liveSearch = '1';
+        // Defer so Syncfusion finishes addInstance() before we read ej2_instances
+        setTimeout(() => wire(inputEl), 100);
     }
 
     function scan(root) {

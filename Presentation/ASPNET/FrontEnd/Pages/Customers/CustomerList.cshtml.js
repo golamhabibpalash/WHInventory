@@ -31,15 +31,7 @@
             tikTok: '',
             errors: {
                 name: '',
-                customerGroupId: '',
-                customerCategoryId: '',
-                street: '',
-                city: '',
-                state: '',
-                zipCode: '',
-                country: '',
                 phoneNumber: '',
-                emailAddress: '',
             },
             isSubmitting: false
         });
@@ -508,7 +500,6 @@
         Vue.watch(
             () => state.customerGroupId,
             (newVal, oldVal) => {
-                state.errors.customerGroupId = '';
                 customerGroupListLookup.refresh();
             }
         );
@@ -516,7 +507,6 @@
         Vue.watch(
             () => state.customerCategoryId,
             (newVal, oldVal) => {
-                state.errors.customerCategoryId = '';
                 customerCategoryListLookup.refresh();
             }
         );
@@ -524,7 +514,6 @@
         Vue.watch(
             () => state.street,
             (newVal, oldVal) => {
-                state.errors.street = '';
                 streetText.refresh();
             }
         );
@@ -532,7 +521,6 @@
         Vue.watch(
             () => state.city,
             (newVal, oldVal) => {
-                state.errors.city = '';
                 cityText.refresh();
             }
         );
@@ -540,7 +528,6 @@
         Vue.watch(
             () => state.state,
             (newVal, oldVal) => {
-                state.errors.state = '';
                 stateText.refresh();
             }
         );
@@ -548,7 +535,6 @@
         Vue.watch(
             () => state.zipCode,
             (newVal, oldVal) => {
-                state.errors.zipCode = '';
                 zipCodeText.refresh();
             }
         );
@@ -556,7 +542,6 @@
         Vue.watch(
             () => state.country,
             (newVal, oldVal) => {
-                state.errors.country = '';
                 countryText.refresh();
             }
         );
@@ -572,7 +557,6 @@
         Vue.watch(
             () => state.emailAddress,
             (newVal, oldVal) => {
-                state.errors.emailAddress = '';
                 emailAddressText.refresh();
             }
         );
@@ -589,40 +573,8 @@
                         state.errors.name = 'Name is required.';
                         isValid = false;
                     }
-                    if (!state.customerGroupId) {
-                        state.errors.customerGroupId = 'Customer Group is required.';
-                        isValid = false;
-                    }
-                    if (!state.customerCategoryId) {
-                        state.errors.customerCategoryId = 'Customer Category is required.';
-                        isValid = false;
-                    }
-                    if (!state.street) {
-                        state.errors.street = 'Street is required.';
-                        isValid = false;
-                    }
-                    if (!state.city) {
-                        state.errors.city = 'City is required.';
-                        isValid = false;
-                    }
-                    if (!state.state) {
-                        state.errors.state = 'State is required.';
-                        isValid = false;
-                    }
-                    if (!state.zipCode) {
-                        state.errors.zipCode = 'Zip Code is required.';
-                        isValid = false;
-                    }
-                    if (!state.country) {
-                        state.errors.country = 'Country is required.';
-                        isValid = false;
-                    }
                     if (!state.phoneNumber) {
                         state.errors.phoneNumber = 'Phone Number is required.';
-                        isValid = false;
-                    }
-                    if (!state.emailAddress) {
-                        state.errors.emailAddress = 'Email Address is required.';
                         isValid = false;
                     }
 
@@ -733,15 +685,7 @@
             state.tikTok = '';
             state.errors = {
                 name: '',
-                customerGroupId: '',
-                customerCategoryId: '',
-                street: '',
-                city: '',
-                state: '',
-                zipCode: '',
-                country: '',
                 phoneNumber: '',
-                emailAddress: '',
             };
         };
 
