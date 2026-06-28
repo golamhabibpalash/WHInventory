@@ -532,6 +532,7 @@ const App = {
                             state.deleteMode = false;
                             state.mainTitle = 'Add Delivery Order';
                             resetFormState();
+                            state.deliveryDate = new Date();
                             state.showComplexDiv = false;
                             mainModal.obj.show();
                         }
