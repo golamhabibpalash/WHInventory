@@ -174,7 +174,7 @@
                     allowPaging: true,
                     allowExcelExport: true,
                     filterSettings: { type: 'CheckBox' },
-                    searchSettings: {},
+                    searchSettings: { keyDelay: 150, searchAsType: true },
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
                     pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
@@ -198,16 +198,6 @@
                         { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
                     ],
-                    created: () => {
-                        setTimeout(() => {
-                            const searchInput = document.querySelector('#MainGrid .e-search-wrapper input.e-input');
-                            if (searchInput) {
-                                searchInput.addEventListener('input', function () {
-                                    mainGrid.obj.search(this.value);
-                                });
-                            }
-                        }, 300);
-                    },
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
