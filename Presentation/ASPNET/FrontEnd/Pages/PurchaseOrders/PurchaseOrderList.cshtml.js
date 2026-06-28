@@ -54,6 +54,14 @@ const App = {
                 phoneNumber: '',
                 emailAddress: '',
             },
+            vendorGroupQuickName: '',
+            vendorGroupQuickDescription: '',
+            vendorGroupQuickIsSubmitting: false,
+            vendorGroupQuickErrors: { name: '' },
+            vendorCategoryQuickName: '',
+            vendorCategoryQuickDescription: '',
+            vendorCategoryQuickIsSubmitting: false,
+            vendorCategoryQuickErrors: { name: '' },
         });
 
         const mainGridRef = Vue.ref(null);
@@ -67,6 +75,8 @@ const App = {
         const vendorQuickModalRef = Vue.ref(null);
         const vendorQuickGroupIdRef = Vue.ref(null);
         const vendorQuickCategoryIdRef = Vue.ref(null);
+        const vendorGroupQuickModalRef = Vue.ref(null);
+        const vendorCategoryQuickModalRef = Vue.ref(null);
 
         const validateForm = function () {
             state.errors.orderDate = '';
@@ -256,6 +266,22 @@ const App = {
                     throw error;
                 }
             },
+            createVendorGroup: async (name, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/VendorGroup/CreateVendorGroup', { name, description, createdById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createVendorCategory: async (name, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/VendorCategory/CreateVendorCategory', { name, description, createdById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
         };
 
         const methods = {
@@ -296,16 +322,18 @@ const App = {
                 state.productListLookupData = response?.data?.content?.data ?? [];
             },
             populateVendorGroupListLookupData: async () => {
-                if (state.vendorGroupListLookupData.length > 0) return;
                 const response = await services.getVendorGroupListLookupData();
                 state.vendorGroupListLookupData = response?.data?.content?.data ?? [];
-                vendorGroupListLookupQuick.obj.dataSource = state.vendorGroupListLookupData;
+                if (vendorGroupListLookupQuick.obj) {
+                    vendorGroupListLookupQuick.obj.setProperties({ dataSource: state.vendorGroupListLookupData });
+                }
             },
             populateVendorCategoryListLookupData: async () => {
-                if (state.vendorCategoryListLookupData.length > 0) return;
                 const response = await services.getVendorCategoryListLookupData();
                 state.vendorCategoryListLookupData = response?.data?.content?.data ?? [];
-                vendorCategoryListLookupQuick.obj.dataSource = state.vendorCategoryListLookupData;
+                if (vendorCategoryListLookupQuick.obj) {
+                    vendorCategoryListLookupQuick.obj.setProperties({ dataSource: state.vendorCategoryListLookupData });
+                }
             },
             refreshPaymentSummary: async (id) => {
                 const record = state.mainData.find(item => item.id === id);
@@ -627,6 +655,26 @@ const App = {
             }
         };
 
+        const vendorGroupQuickModal = {
+            obj: null,
+            create: () => {
+                vendorGroupQuickModal.obj = new bootstrap.Modal(vendorGroupQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
+        const vendorCategoryQuickModal = {
+            obj: null,
+            create: () => {
+                vendorCategoryQuickModal.obj = new bootstrap.Modal(vendorCategoryQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         const vendorQuickHandler = {
             resetForm: () => {
                 state.vendorQuickName = '';
@@ -730,6 +778,92 @@ const App = {
                     });
                 } finally {
                     state.vendorQuickIsSubmitting = false;
+                }
+            }
+        };
+
+        const vendorGroupQuickHandler = {
+            open: () => {
+                state.vendorGroupQuickName = '';
+                state.vendorGroupQuickDescription = '';
+                state.vendorGroupQuickErrors = { name: '' };
+                vendorQuickModal.obj.hide();
+                setTimeout(() => vendorGroupQuickModal.obj.show(), 300);
+            },
+            close: () => {
+                vendorGroupQuickModal.obj.hide();
+                setTimeout(() => vendorQuickModal.obj.show(), 300);
+            },
+            submit: async () => {
+                state.vendorGroupQuickErrors = { name: '' };
+                if (!state.vendorGroupQuickName?.trim()) {
+                    state.vendorGroupQuickErrors.name = 'Name is required.';
+                    return;
+                }
+                try {
+                    state.vendorGroupQuickIsSubmitting = true;
+                    const response = await services.createVendorGroup(
+                        state.vendorGroupQuickName.trim(),
+                        state.vendorGroupQuickDescription,
+                        StorageManager.getUserId()
+                    );
+                    if (response.data.code === 200) {
+                        const newGroup = response.data.content.data;
+                        await methods.populateVendorGroupListLookupData();
+                        vendorGroupListLookupQuick.obj.setProperties({ dataSource: state.vendorGroupListLookupData, value: newGroup.id });
+                        state.vendorQuickVendorGroupId = newGroup.id;
+                        vendorGroupQuickModal.obj.hide();
+                        setTimeout(() => vendorQuickModal.obj.show(), 300);
+                    } else {
+                        state.vendorGroupQuickErrors.name = response.data.message ?? 'Failed to create vendor group.';
+                    }
+                } catch (error) {
+                    state.vendorGroupQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
+                } finally {
+                    state.vendorGroupQuickIsSubmitting = false;
+                }
+            }
+        };
+
+        const vendorCategoryQuickHandler = {
+            open: () => {
+                state.vendorCategoryQuickName = '';
+                state.vendorCategoryQuickDescription = '';
+                state.vendorCategoryQuickErrors = { name: '' };
+                vendorQuickModal.obj.hide();
+                setTimeout(() => vendorCategoryQuickModal.obj.show(), 300);
+            },
+            close: () => {
+                vendorCategoryQuickModal.obj.hide();
+                setTimeout(() => vendorQuickModal.obj.show(), 300);
+            },
+            submit: async () => {
+                state.vendorCategoryQuickErrors = { name: '' };
+                if (!state.vendorCategoryQuickName?.trim()) {
+                    state.vendorCategoryQuickErrors.name = 'Name is required.';
+                    return;
+                }
+                try {
+                    state.vendorCategoryQuickIsSubmitting = true;
+                    const response = await services.createVendorCategory(
+                        state.vendorCategoryQuickName.trim(),
+                        state.vendorCategoryQuickDescription,
+                        StorageManager.getUserId()
+                    );
+                    if (response.data.code === 200) {
+                        const newCategory = response.data.content.data;
+                        await methods.populateVendorCategoryListLookupData();
+                        vendorCategoryListLookupQuick.obj.setProperties({ dataSource: state.vendorCategoryListLookupData, value: newCategory.id });
+                        state.vendorQuickVendorCategoryId = newCategory.id;
+                        vendorCategoryQuickModal.obj.hide();
+                        setTimeout(() => vendorQuickModal.obj.show(), 300);
+                    } else {
+                        state.vendorCategoryQuickErrors.name = response.data.message ?? 'Failed to create vendor category.';
+                    }
+                } catch (error) {
+                    state.vendorCategoryQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
+                } finally {
+                    state.vendorCategoryQuickIsSubmitting = false;
                 }
             }
         };
@@ -1222,6 +1356,8 @@ const App = {
                     methods.populateProductListLookupData(),
                 ]).then(() => {
                     vendorQuickModal.create();
+                    vendorGroupQuickModal.create();
+                    vendorCategoryQuickModal.create();
                     vendorGroupListLookupQuick.create();
                     vendorCategoryListLookupQuick.create();
                     vendorListLookup.create();
@@ -1250,6 +1386,8 @@ const App = {
             vendorQuickModalRef,
             vendorQuickGroupIdRef,
             vendorQuickCategoryIdRef,
+            vendorGroupQuickModalRef,
+            vendorCategoryQuickModalRef,
             state,
             methods,
             handler: {
@@ -1258,6 +1396,12 @@ const App = {
                 openVendorQuickCreate: vendorQuickHandler.open,
                 closeVendorQuickCreate: vendorQuickHandler.close,
                 submitVendorQuickCreate: vendorQuickHandler.submit,
+                openVendorGroupQuickCreate: vendorGroupQuickHandler.open,
+                closeVendorGroupQuickCreate: vendorGroupQuickHandler.close,
+                submitVendorGroupQuickCreate: vendorGroupQuickHandler.submit,
+                openVendorCategoryQuickCreate: vendorCategoryQuickHandler.open,
+                closeVendorCategoryQuickCreate: vendorCategoryQuickHandler.close,
+                submitVendorCategoryQuickCreate: vendorCategoryQuickHandler.submit,
             }
         };
     }
