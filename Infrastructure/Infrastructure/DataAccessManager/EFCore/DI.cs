@@ -270,6 +270,163 @@ public static class DI
                 CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_ActivityType""  ON core.""UserActivityLog"" (""ActivityType"");
                 CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_CreatedAtUtc""  ON core.""UserActivityLog"" (""CreatedAtUtc"");
             ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""WarrantyDays"" int NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""PricePolicy"" (
+                    ""Id""            varchar(50)   NOT NULL PRIMARY KEY,
+                    ""Name""          varchar(255)  NULL,
+                    ""Code""          varchar(50)   NULL,
+                    ""Description""   varchar(4000) NULL,
+                    ""Priority""      int           NOT NULL DEFAULT 0,
+                    ""IsActive""      boolean       NOT NULL DEFAULT TRUE,
+                    ""EffectiveFrom"" timestamp     NULL,
+                    ""EffectiveTo""   timestamp     NULL,
+                    ""IsDeleted""     boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""  timestamp     NULL,
+                    ""CreatedById""   varchar(450)  NULL,
+                    ""UpdatedAtUtc""  timestamp     NULL,
+                    ""UpdatedById""   varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_PricePolicy_IsDeleted"" ON core.""PricePolicy"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_PricePolicy_Name""      ON core.""PricePolicy"" (""Name"");
+                CREATE INDEX IF NOT EXISTS ""IX_PricePolicy_Code""      ON core.""PricePolicy"" (""Code"");
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""ProductPrice"" (
+                    ""Id""                     varchar(50)  NOT NULL PRIMARY KEY,
+                    ""ProductId""              varchar(50)  NULL,
+                    ""PricePolicyId""          varchar(50)  NULL,
+                    ""CalculationMethod""      int          NOT NULL DEFAULT 0,
+                    ""FixedPrice""             float8       NULL,
+                    ""MarkupPercent""          float8       NULL,
+                    ""MarkupAmount""           float8       NULL,
+                    ""MarginPercent""          float8       NULL,
+                    ""FormulaMultiplier""      float8       NULL,
+                    ""MinimumSellingPrice""    float8       NULL,
+                    ""MaximumDiscountPercent"" float8       NULL,
+                    ""EffectiveFrom""          timestamp    NULL,
+                    ""EffectiveTo""            timestamp    NULL,
+                    ""Priority""               int          NOT NULL DEFAULT 0,
+                    ""IsActive""               boolean      NOT NULL DEFAULT TRUE,
+                    ""IsDeleted""              boolean      NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""           timestamp    NULL,
+                    ""CreatedById""            varchar(450) NULL,
+                    ""UpdatedAtUtc""           timestamp    NULL,
+                    ""UpdatedById""            varchar(450) NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_ProductPrice_IsDeleted""    ON core.""ProductPrice"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_ProductPrice_ProductId""    ON core.""ProductPrice"" (""ProductId"");
+                CREATE INDEX IF NOT EXISTS ""IX_ProductPrice_PricePolicyId"" ON core.""ProductPrice"" (""PricePolicyId"");
+                ALTER TABLE core.""ProductPrice""
+                    DROP CONSTRAINT IF EXISTS ""FK_ProductPrice_Product_ProductId"";
+                ALTER TABLE core.""ProductPrice""
+                    ADD CONSTRAINT ""FK_ProductPrice_Product_ProductId""
+                    FOREIGN KEY (""ProductId"") REFERENCES core.""Product"" (""Id"") ON DELETE SET NULL;
+                ALTER TABLE core.""ProductPrice""
+                    DROP CONSTRAINT IF EXISTS ""FK_ProductPrice_PricePolicy_PricePolicyId"";
+                ALTER TABLE core.""ProductPrice""
+                    ADD CONSTRAINT ""FK_ProductPrice_PricePolicy_PricePolicyId""
+                    FOREIGN KEY (""PricePolicyId"") REFERENCES core.""PricePolicy"" (""Id"") ON DELETE SET NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""QuantityBreak"" (
+                    ""Id""             varchar(50)  NOT NULL PRIMARY KEY,
+                    ""ProductPriceId"" varchar(50)  NULL,
+                    ""MinQuantity""    float8       NOT NULL DEFAULT 1,
+                    ""MaxQuantity""    float8       NULL,
+                    ""Price""          float8       NOT NULL DEFAULT 0,
+                    ""IsDeleted""      boolean      NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""   timestamp    NULL,
+                    ""CreatedById""    varchar(450) NULL,
+                    ""UpdatedAtUtc""   timestamp    NULL,
+                    ""UpdatedById""    varchar(450) NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_QuantityBreak_IsDeleted""    ON core.""QuantityBreak"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_QuantityBreak_ProductPriceId"" ON core.""QuantityBreak"" (""ProductPriceId"");
+                ALTER TABLE core.""QuantityBreak""
+                    DROP CONSTRAINT IF EXISTS ""FK_QuantityBreak_ProductPrice_ProductPriceId"";
+                ALTER TABLE core.""QuantityBreak""
+                    ADD CONSTRAINT ""FK_QuantityBreak_ProductPrice_ProductPriceId""
+                    FOREIGN KEY (""ProductPriceId"") REFERENCES core.""ProductPrice"" (""Id"") ON DELETE CASCADE;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""Promotion"" (
+                    ""Id""               varchar(50)   NOT NULL PRIMARY KEY,
+                    ""Name""             varchar(255)  NULL,
+                    ""Code""             varchar(50)   NULL,
+                    ""Description""      varchar(4000) NULL,
+                    ""ProductId""        varchar(50)   NULL,
+                    ""PricePolicyId""    varchar(50)   NULL,
+                    ""PromotionalPrice"" float8        NULL,
+                    ""DiscountPercent""  float8        NULL,
+                    ""StartDate""        timestamp     NULL,
+                    ""EndDate""          timestamp     NULL,
+                    ""Priority""         int           NOT NULL DEFAULT 0,
+                    ""IsActive""         boolean       NOT NULL DEFAULT TRUE,
+                    ""IsDeleted""        boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""     timestamp     NULL,
+                    ""CreatedById""      varchar(450)  NULL,
+                    ""UpdatedAtUtc""     timestamp     NULL,
+                    ""UpdatedById""      varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_Promotion_IsDeleted""   ON core.""Promotion"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_Promotion_Name""         ON core.""Promotion"" (""Name"");
+                CREATE INDEX IF NOT EXISTS ""IX_Promotion_Code""         ON core.""Promotion"" (""Code"");
+                CREATE INDEX IF NOT EXISTS ""IX_Promotion_ProductId""    ON core.""Promotion"" (""ProductId"");
+                ALTER TABLE core.""Promotion""
+                    DROP CONSTRAINT IF EXISTS ""FK_Promotion_Product_ProductId"";
+                ALTER TABLE core.""Promotion""
+                    ADD CONSTRAINT ""FK_Promotion_Product_ProductId""
+                    FOREIGN KEY (""ProductId"") REFERENCES core.""Product"" (""Id"") ON DELETE SET NULL;
+                ALTER TABLE core.""Promotion""
+                    DROP CONSTRAINT IF EXISTS ""FK_Promotion_PricePolicy_PricePolicyId"";
+                ALTER TABLE core.""Promotion""
+                    ADD CONSTRAINT ""FK_Promotion_PricePolicy_PricePolicyId""
+                    FOREIGN KEY (""PricePolicyId"") REFERENCES core.""PricePolicy"" (""Id"") ON DELETE SET NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""PriceHistory"" (
+                    ""Id""             varchar(50)   NOT NULL PRIMARY KEY,
+                    ""ProductPriceId"" varchar(50)   NULL,
+                    ""PreviousPrice""  float8        NULL,
+                    ""NewPrice""       float8        NULL,
+                    ""ChangedById""    varchar(450)  NULL,
+                    ""ChangedDate""    timestamp     NOT NULL DEFAULT NOW(),
+                    ""ChangeReason""   varchar(4000) NULL,
+                    ""IsDeleted""      boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""   timestamp     NULL,
+                    ""CreatedById""    varchar(450)  NULL,
+                    ""UpdatedAtUtc""   timestamp     NULL,
+                    ""UpdatedById""    varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_PriceHistory_IsDeleted""    ON core.""PriceHistory"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_PriceHistory_ProductPriceId"" ON core.""PriceHistory"" (""ProductPriceId"");
+                CREATE INDEX IF NOT EXISTS ""IX_PriceHistory_ChangedDate""   ON core.""PriceHistory"" (""ChangedDate"");
+                ALTER TABLE core.""PriceHistory""
+                    DROP CONSTRAINT IF EXISTS ""FK_PriceHistory_ProductPrice_ProductPriceId"";
+                ALTER TABLE core.""PriceHistory""
+                    ADD CONSTRAINT ""FK_PriceHistory_ProductPrice_ProductPriceId""
+                    FOREIGN KEY (""ProductPriceId"") REFERENCES core.""ProductPrice"" (""Id"") ON DELETE SET NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE core.""CustomerGroup"" ADD COLUMN IF NOT EXISTS ""PricePolicyId"" varchar(50) NULL;
+                CREATE INDEX IF NOT EXISTS ""IX_CustomerGroup_PricePolicyId""
+                    ON core.""CustomerGroup"" (""PricePolicyId"");
+                ALTER TABLE core.""CustomerGroup""
+                    DROP CONSTRAINT IF EXISTS ""FK_CustomerGroup_PricePolicy_PricePolicyId"";
+                ALTER TABLE core.""CustomerGroup""
+                    ADD CONSTRAINT ""FK_CustomerGroup_PricePolicy_PricePolicyId""
+                    FOREIGN KEY (""PricePolicyId"") REFERENCES core.""PricePolicy"" (""Id"") ON DELETE SET NULL;
+            ");
         }
         else
         {
@@ -399,6 +556,162 @@ public static class DI
                     CREATE INDEX [IX_UserActivityLog_UserId]       ON [UserActivityLog] ([UserId]);
                     CREATE INDEX [IX_UserActivityLog_ActivityType]  ON [UserActivityLog] ([ActivityType]);
                     CREATE INDEX [IX_UserActivityLog_CreatedAtUtc]  ON [UserActivityLog] ([CreatedAtUtc]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'WarrantyDays')
+                BEGIN
+                    ALTER TABLE [Product] ADD [WarrantyDays] int NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'PricePolicy')
+                BEGIN
+                    CREATE TABLE [PricePolicy] (
+                        [Id]            nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [Name]          nvarchar(255)  NULL,
+                        [Code]          nvarchar(50)   NULL,
+                        [Description]   nvarchar(4000) NULL,
+                        [Priority]      int            NOT NULL DEFAULT 0,
+                        [IsActive]      bit            NOT NULL DEFAULT 1,
+                        [EffectiveFrom] datetime2      NULL,
+                        [EffectiveTo]   datetime2      NULL,
+                        [IsDeleted]     bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]  datetime2      NULL,
+                        [CreatedById]   nvarchar(450)  NULL,
+                        [UpdatedAtUtc]  datetime2      NULL,
+                        [UpdatedById]   nvarchar(450)  NULL
+                    );
+                    CREATE INDEX [IX_PricePolicy_IsDeleted] ON [PricePolicy] ([IsDeleted]);
+                    CREATE INDEX [IX_PricePolicy_Name]      ON [PricePolicy] ([Name]);
+                    CREATE INDEX [IX_PricePolicy_Code]      ON [PricePolicy] ([Code]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'ProductPrice')
+                BEGIN
+                    CREATE TABLE [ProductPrice] (
+                        [Id]                     nvarchar(50)  NOT NULL PRIMARY KEY,
+                        [ProductId]              nvarchar(50)  NULL,
+                        [PricePolicyId]          nvarchar(50)  NULL,
+                        [CalculationMethod]      int           NOT NULL DEFAULT 0,
+                        [FixedPrice]             float         NULL,
+                        [MarkupPercent]          float         NULL,
+                        [MarkupAmount]           float         NULL,
+                        [MarginPercent]          float         NULL,
+                        [FormulaMultiplier]      float         NULL,
+                        [MinimumSellingPrice]    float         NULL,
+                        [MaximumDiscountPercent] float         NULL,
+                        [EffectiveFrom]          datetime2     NULL,
+                        [EffectiveTo]            datetime2     NULL,
+                        [Priority]               int           NOT NULL DEFAULT 0,
+                        [IsActive]               bit           NOT NULL DEFAULT 1,
+                        [IsDeleted]              bit           NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]           datetime2     NULL,
+                        [CreatedById]            nvarchar(450) NULL,
+                        [UpdatedAtUtc]           datetime2     NULL,
+                        [UpdatedById]            nvarchar(450) NULL,
+                        CONSTRAINT [FK_ProductPrice_Product_ProductId]
+                            FOREIGN KEY ([ProductId]) REFERENCES [Product] ([Id]) ON DELETE SET NULL,
+                        CONSTRAINT [FK_ProductPrice_PricePolicy_PricePolicyId]
+                            FOREIGN KEY ([PricePolicyId]) REFERENCES [PricePolicy] ([Id]) ON DELETE SET NULL
+                    );
+                    CREATE INDEX [IX_ProductPrice_IsDeleted]     ON [ProductPrice] ([IsDeleted]);
+                    CREATE INDEX [IX_ProductPrice_ProductId]     ON [ProductPrice] ([ProductId]);
+                    CREATE INDEX [IX_ProductPrice_PricePolicyId] ON [ProductPrice] ([PricePolicyId]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'QuantityBreak')
+                BEGIN
+                    CREATE TABLE [QuantityBreak] (
+                        [Id]             nvarchar(50)  NOT NULL PRIMARY KEY,
+                        [ProductPriceId] nvarchar(50)  NULL,
+                        [MinQuantity]    float         NOT NULL DEFAULT 1,
+                        [MaxQuantity]    float         NULL,
+                        [Price]          float         NOT NULL DEFAULT 0,
+                        [IsDeleted]      bit           NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]   datetime2     NULL,
+                        [CreatedById]    nvarchar(450) NULL,
+                        [UpdatedAtUtc]   datetime2     NULL,
+                        [UpdatedById]    nvarchar(450) NULL,
+                        CONSTRAINT [FK_QuantityBreak_ProductPrice_ProductPriceId]
+                            FOREIGN KEY ([ProductPriceId]) REFERENCES [ProductPrice] ([Id]) ON DELETE CASCADE
+                    );
+                    CREATE INDEX [IX_QuantityBreak_IsDeleted]      ON [QuantityBreak] ([IsDeleted]);
+                    CREATE INDEX [IX_QuantityBreak_ProductPriceId] ON [QuantityBreak] ([ProductPriceId]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Promotion')
+                BEGIN
+                    CREATE TABLE [Promotion] (
+                        [Id]               nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [Name]             nvarchar(255)  NULL,
+                        [Code]             nvarchar(50)   NULL,
+                        [Description]      nvarchar(4000) NULL,
+                        [ProductId]        nvarchar(50)   NULL,
+                        [PricePolicyId]    nvarchar(50)   NULL,
+                        [PromotionalPrice] float          NULL,
+                        [DiscountPercent]  float          NULL,
+                        [StartDate]        datetime2      NULL,
+                        [EndDate]          datetime2      NULL,
+                        [Priority]         int            NOT NULL DEFAULT 0,
+                        [IsActive]         bit            NOT NULL DEFAULT 1,
+                        [IsDeleted]        bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]     datetime2      NULL,
+                        [CreatedById]      nvarchar(450)  NULL,
+                        [UpdatedAtUtc]     datetime2      NULL,
+                        [UpdatedById]      nvarchar(450)  NULL,
+                        CONSTRAINT [FK_Promotion_Product_ProductId]
+                            FOREIGN KEY ([ProductId]) REFERENCES [Product] ([Id]) ON DELETE SET NULL,
+                        CONSTRAINT [FK_Promotion_PricePolicy_PricePolicyId]
+                            FOREIGN KEY ([PricePolicyId]) REFERENCES [PricePolicy] ([Id]) ON DELETE SET NULL
+                    );
+                    CREATE INDEX [IX_Promotion_IsDeleted]  ON [Promotion] ([IsDeleted]);
+                    CREATE INDEX [IX_Promotion_Name]        ON [Promotion] ([Name]);
+                    CREATE INDEX [IX_Promotion_Code]        ON [Promotion] ([Code]);
+                    CREATE INDEX [IX_Promotion_ProductId]   ON [Promotion] ([ProductId]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'PriceHistory')
+                BEGIN
+                    CREATE TABLE [PriceHistory] (
+                        [Id]             nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [ProductPriceId] nvarchar(50)   NULL,
+                        [PreviousPrice]  float          NULL,
+                        [NewPrice]       float          NULL,
+                        [ChangedById]    nvarchar(450)  NULL,
+                        [ChangedDate]    datetime2      NOT NULL DEFAULT GETUTCDATE(),
+                        [ChangeReason]   nvarchar(4000) NULL,
+                        [IsDeleted]      bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]   datetime2      NULL,
+                        [CreatedById]    nvarchar(450)  NULL,
+                        [UpdatedAtUtc]   datetime2      NULL,
+                        [UpdatedById]    nvarchar(450)  NULL,
+                        CONSTRAINT [FK_PriceHistory_ProductPrice_ProductPriceId]
+                            FOREIGN KEY ([ProductPriceId]) REFERENCES [ProductPrice] ([Id]) ON DELETE SET NULL
+                    );
+                    CREATE INDEX [IX_PriceHistory_IsDeleted]      ON [PriceHistory] ([IsDeleted]);
+                    CREATE INDEX [IX_PriceHistory_ProductPriceId] ON [PriceHistory] ([ProductPriceId]);
+                    CREATE INDEX [IX_PriceHistory_ChangedDate]    ON [PriceHistory] ([ChangedDate]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'CustomerGroup' AND COLUMN_NAME = 'PricePolicyId')
+                BEGIN
+                    ALTER TABLE [CustomerGroup] ADD [PricePolicyId] nvarchar(50) NULL;
+                    CREATE INDEX [IX_CustomerGroup_PricePolicyId] ON [CustomerGroup] ([PricePolicyId]);
+                    ALTER TABLE [CustomerGroup] ADD CONSTRAINT [FK_CustomerGroup_PricePolicy_PricePolicyId]
+                        FOREIGN KEY ([PricePolicyId]) REFERENCES [PricePolicy] ([Id]) ON DELETE SET NULL;
                 END
             ");
         }
