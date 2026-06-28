@@ -912,6 +912,14 @@ const App = {
                         { type: 'Separator' },
                         { text: 'Print PDF', tooltipText: 'Print PDF', id: 'PrintPDFCustom' },
                     ],
+                    created: () => {
+                        const searchBar = document.getElementById('MainGrid_searchbar');
+                        if (searchBar) {
+                            searchBar.addEventListener('input', function () {
+                                mainGrid.obj.search(this.value);
+                            });
+                        }
+                    },
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
@@ -1321,7 +1329,7 @@ const App = {
                 secondaryGrid.obj.appendTo(secondaryGridRef.value);
             },
             refresh: () => {
-                secondaryGrid.obj.setProperties({ dataSource: state.secondaryData });
+                if (secondaryGrid.obj) secondaryGrid.obj.setProperties({ dataSource: state.secondaryData });
             }
         };
 
@@ -1331,6 +1339,13 @@ const App = {
                 mainModal.obj = new bootstrap.Modal(mainModalRef.value, {
                     backdrop: 'static',
                     keyboard: false
+                });
+                mainModalRef.value.addEventListener('shown.bs.modal', async () => {
+                    if (!secondaryGrid.obj) {
+                        await secondaryGrid.create(state.secondaryData);
+                    } else {
+                        secondaryGrid.refresh();
+                    }
                 });
             }
         };
@@ -1347,7 +1362,6 @@ const App = {
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
                 orderDatePicker.create();
                 numberText.create();
-                await secondaryGrid.create(state.secondaryData);
 
                 Promise.all([
                     methods.populateVendorListLookupData(),
