@@ -87,7 +87,6 @@ const App = {
             populateQbData: async (productPriceId) => {
                 const response = await services.getQbData(productPriceId);
                 state.qbData = response?.data?.content?.data ?? [];
-                if (qbGrid.obj) qbGrid.obj.setProperties({ dataSource: state.qbData });
             },
         };
 
@@ -444,6 +443,14 @@ const App = {
             obj: null,
             create: () => {
                 mainModal.obj = new bootstrap.Modal(mainModalRef.value, { backdrop: 'static', keyboard: false });
+                mainModalRef.value.addEventListener('shown.bs.modal', () => {
+                    if (!qbGrid.obj) {
+                        qbGrid.create();
+                    } else {
+                        qbGrid.obj.dataSource = state.qbData;
+                        qbGrid.obj.refresh();
+                    }
+                });
             }
         };
 
@@ -468,7 +475,6 @@ const App = {
                 priorityNumber.create();
                 effectiveFromPicker.create();
                 effectiveToPicker.create();
-                qbGrid.create();
                 mainModal.create();
             } catch (e) {
             } finally {
