@@ -77,6 +77,12 @@ public static class NavigationTreeStructure
                     "Name": "Sales Report",
                     "Icon": "fas fa-chart-bar",
                     "IsModule": false
+                },
+                {
+                    "URL": "/Warranties/WarrantyCheck",
+                    "Name": "Warranty Check",
+                    "Icon": "fas fa-shield-alt",
+                    "IsModule": false
                 }
             ]
         },
@@ -236,6 +242,38 @@ public static class NavigationTreeStructure
                     "URL": "/MovementReports/MovementReportList",
                     "Name": "Movement Reports",
                     "Icon": "fas fa-arrows-alt-h",
+                    "IsModule": false
+                }
+            ]
+        },
+        {
+            "URL": "#",
+            "Name": "Pricing",
+            "Icon": "fas fa-tags",
+            "IsModule": true,
+            "Children": [
+                {
+                    "URL": "/PricePolicies/PricePolicyList",
+                    "Name": "Price Policy",
+                    "Icon": "fas fa-file-invoice-dollar",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/ProductPrices/ProductPriceList",
+                    "Name": "Product Price",
+                    "Icon": "fas fa-dollar-sign",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/Promotions/PromotionList",
+                    "Name": "Promotion",
+                    "Icon": "fas fa-percent",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/PriceReports/PriceReportList",
+                    "Name": "Price Report",
+                    "Icon": "fas fa-chart-bar",
                     "IsModule": false
                 }
             ]

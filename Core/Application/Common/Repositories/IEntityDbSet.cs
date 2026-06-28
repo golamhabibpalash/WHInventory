@@ -46,5 +46,10 @@ public interface IEntityDbSet
     DbSet<NavigationMenuSortOrder> NavigationMenuSortOrder { get; set; }
     DbSet<AuditLog> AuditLog { get; set; }
     DbSet<UserActivityLog> UserActivityLog { get; set; }
+    DbSet<PricePolicy> PricePolicy { get; set; }
+    DbSet<ProductPrice> ProductPrice { get; set; }
+    DbSet<QuantityBreak> QuantityBreak { get; set; }
+    DbSet<Promotion> Promotion { get; set; }
+    DbSet<PriceHistory> PriceHistory { get; set; }
 }
 

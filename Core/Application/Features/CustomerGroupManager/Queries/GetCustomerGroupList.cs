@@ -1,7 +1,5 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
-using AutoMapper;
-using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,15 +10,9 @@ public record GetCustomerGroupListDto
     public string? Id { get; init; }
     public string? Name { get; init; }
     public string? Description { get; init; }
+    public string? PricePolicyId { get; init; }
+    public string? PricePolicyName { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
-}
-
-public class GetCustomerGroupListProfile : Profile
-{
-    public GetCustomerGroupListProfile()
-    {
-        CreateMap<CustomerGroup, GetCustomerGroupListDto>();
-    }
 }
 
 public class GetCustomerGroupListResult
@@ -36,26 +28,31 @@ public class GetCustomerGroupListRequest : IRequest<GetCustomerGroupListResult>
 
 public class GetCustomerGroupListHandler : IRequestHandler<GetCustomerGroupListRequest, GetCustomerGroupListResult>
 {
-    private readonly IMapper _mapper;
     private readonly IQueryContext _context;
 
-    public GetCustomerGroupListHandler(IMapper mapper, IQueryContext context)
+    public GetCustomerGroupListHandler(IQueryContext context)
     {
-        _mapper = mapper;
         _context = context;
     }
 
     public async Task<GetCustomerGroupListResult> Handle(GetCustomerGroupListRequest request, CancellationToken cancellationToken)
     {
-        var query = _context
-            .CustomerGroup
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(request.IsDeleted)
-            .AsQueryable();
+        var query =
+            from cg in _context.CustomerGroup.AsNoTracking().ApplyIsDeletedFilter(request.IsDeleted)
+            join pp in _context.PricePolicy.AsNoTracking().ApplyIsDeletedFilter(false) on cg.PricePolicyId equals pp.Id into ppLeft
+            from pp in ppLeft.DefaultIfEmpty()
+            orderby cg.Name
+            select new GetCustomerGroupListDto
+            {
+                Id = cg.Id,
+                Name = cg.Name,
+                Description = cg.Description,
+                PricePolicyId = cg.PricePolicyId,
+                PricePolicyName = pp.Name,
+                CreatedAtUtc = cg.CreatedAtUtc,
+            };
 
-        var entities = await query.Take(2000).ToListAsync(cancellationToken);
-
-        var dtos = _mapper.Map<List<GetCustomerGroupListDto>>(entities);
+        var dtos = await query.Take(2000).ToListAsync(cancellationToken);
 
         return new GetCustomerGroupListResult
         {

@@ -1,0 +1,151 @@
+@page
+@{
+    ViewData["Title"] = "Product Price List";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="mainModalRef" id="MainModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" v-text="state.mainTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" v-model="state.id" id="Id" name="Id" />
+                    <form id="MainForm">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-dollar-sign me-2 text-primary"></i>Price Info</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-2">
+                                            <div class="col-md-8">
+                                                <label>Product <span class="text-danger">*</span></label>
+                                                <input ref="productIdRef" />
+                                                <label class="text-danger" v-text="state.errors.productId"></label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Price Policy</label>
+                                                <input ref="pricePolicyIdRef" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-6">
+                                                <label>Calculation Method</label>
+                                                <input ref="calculationMethodRef" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label>Priority</label>
+                                                <input ref="priorityRef" v-model="state.priority" />
+                                            </div>
+                                            <div class="col-md-3 d-flex align-items-center mt-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch" id="IsActive"
+                                                           v-model="state.isActive" />
+                                                    <label class="form-check-label" for="IsActive">Active</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2" v-if="state.calculationMethod === 0">
+                                            <div class="col-md-6">
+                                                <label>Fixed Price</label>
+                                                <input ref="fixedPriceRef" v-model="state.fixedPrice" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2" v-if="state.calculationMethod === 1">
+                                            <div class="col-md-6">
+                                                <label>Markup %</label>
+                                                <input ref="markupPercentRef" v-model="state.markupPercent" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2" v-if="state.calculationMethod === 2">
+                                            <div class="col-md-6">
+                                                <label>Markup Amount</label>
+                                                <input ref="markupAmountRef" v-model="state.markupAmount" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2" v-if="state.calculationMethod === 3">
+                                            <div class="col-md-6">
+                                                <label>Gross Margin %</label>
+                                                <input ref="marginPercentRef" v-model="state.marginPercent" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2" v-if="state.calculationMethod === 4">
+                                            <div class="col-md-6">
+                                                <label>Formula Multiplier (× WAC)</label>
+                                                <input ref="formulaMultiplierRef" v-model="state.formulaMultiplier" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-4">
+                                                <label>Min. Selling Price</label>
+                                                <input ref="minimumSellingPriceRef" v-model="state.minimumSellingPrice" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Max. Discount %</label>
+                                                <input ref="maximumDiscountPercentRef" v-model="state.maximumDiscountPercent" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-4">
+                                                <label>Effective From</label>
+                                                <input ref="effectiveFromRef" v-model="state.effectiveFrom" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Effective To</label>
+                                                <input ref="effectiveToRef" v-model="state.effectiveTo" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" v-if="state.id !== ''">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5><i class="fas fa-layer-group me-2 text-success"></i>Quantity Breaks</h5>
+                                        <button type="button" class="btn btn-sm btn-success" v-on:click="handler.addQuantityBreak" v-if="!state.deleteMode">
+                                            <i class="fas fa-plus me-1"></i>Add Break
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div ref="qbGridRef" id="QbGrid"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                    <button type="button"
+                            id="MainSaveButton"
+                            class="btn"
+                            v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
+                            v-on:click="handler.handleSubmit"
+                            v-bind:disabled="state.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
+                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-1' : 'fas fa-save me-1'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
+                        <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/ProductPrices/ProductPriceList.cshtml.js"></script>
+}

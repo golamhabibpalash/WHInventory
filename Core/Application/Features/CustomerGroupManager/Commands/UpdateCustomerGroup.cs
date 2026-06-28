@@ -15,6 +15,7 @@ public class UpdateCustomerGroupRequest : IRequest<UpdateCustomerGroupResult>
     public string? Id { get; init; }
     public string? Name { get; init; }
     public string? Description { get; init; }
+    public string? PricePolicyId { get; init; }
     public string? UpdatedById { get; init; }
 }
 
@@ -55,6 +56,7 @@ public class UpdateCustomerGroupHandler : IRequestHandler<UpdateCustomerGroupReq
 
         entity.Name = request.Name;
         entity.Description = request.Description;
+        entity.PricePolicyId = request.PricePolicyId;
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

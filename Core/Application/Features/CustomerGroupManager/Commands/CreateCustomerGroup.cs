@@ -14,6 +14,7 @@ public class CreateCustomerGroupRequest : IRequest<CreateCustomerGroupResult>
 {
     public string? Name { get; init; }
     public string? Description { get; init; }
+    public string? PricePolicyId { get; init; }
     public string? CreatedById { get; init; }
 }
 
@@ -46,6 +47,7 @@ public class CreateCustomerGroupHandler : IRequestHandler<CreateCustomerGroupReq
 
         entity.Name = request.Name;
         entity.Description = request.Description;
+        entity.PricePolicyId = request.PricePolicyId;
 
         await _repository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);

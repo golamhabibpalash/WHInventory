@@ -1,0 +1,117 @@
+@page
+@{
+    ViewData["Title"] = "Promotion List";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="mainModalRef" id="MainModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" v-text="state.mainTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" v-model="state.id" id="Id" name="Id" />
+                    <form id="MainForm">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-percent me-2 text-warning"></i>Promotion Info</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-2">
+                                            <div class="col-md-8">
+                                                <label>Name <span class="text-danger">*</span></label>
+                                                <input ref="nameRef" v-model="state.name" />
+                                                <label class="text-danger" v-text="state.errors.name"></label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Code</label>
+                                                <input ref="codeRef" v-model="state.code" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-8">
+                                                <label>Product <span class="text-danger">*</span></label>
+                                                <input ref="productIdRef" />
+                                                <label class="text-danger" v-text="state.errors.productId"></label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Price Policy</label>
+                                                <input ref="pricePolicyIdRef" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-4">
+                                                <label>Promotional Price</label>
+                                                <input ref="promotionalPriceRef" v-model="state.promotionalPrice" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Discount %</label>
+                                                <input ref="discountPercentRef" v-model="state.discountPercent" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>Priority</label>
+                                                <input ref="priorityRef" v-model="state.priority" />
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-4">
+                                                <label>Start Date</label>
+                                                <input ref="startDateRef" v-model="state.startDate" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label>End Date</label>
+                                                <input ref="endDateRef" v-model="state.endDate" />
+                                            </div>
+                                            <div class="col-md-4 d-flex align-items-center mt-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch" id="IsActive"
+                                                           v-model="state.isActive" />
+                                                    <label class="form-check-label" for="IsActive">Active</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12">
+                                                <label>Description</label>
+                                                <textarea class="form-control" rows="2" v-model="state.description"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                    <button type="button"
+                            id="MainSaveButton"
+                            class="btn"
+                            v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
+                            v-on:click="handler.handleSubmit"
+                            v-bind:disabled="state.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
+                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-1' : 'fas fa-save me-1'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
+                        <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Promotions/PromotionList.cshtml.js"></script>
+}

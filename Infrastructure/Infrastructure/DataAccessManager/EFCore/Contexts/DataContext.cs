@@ -56,6 +56,11 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<NavigationMenuSortOrder> NavigationMenuSortOrder { get; set; }
     public DbSet<AuditLog> AuditLog { get; set; }
     public DbSet<UserActivityLog> UserActivityLog { get; set; }
+    public DbSet<PricePolicy> PricePolicy { get; set; }
+    public DbSet<ProductPrice> ProductPrice { get; set; }
+    public DbSet<QuantityBreak> QuantityBreak { get; set; }
+    public DbSet<Promotion> Promotion { get; set; }
+    public DbSet<PriceHistory> PriceHistory { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -112,6 +117,11 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new NavigationMenuSortOrderConfiguration());
         modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
         modelBuilder.ApplyConfiguration(new UserActivityLogConfiguration());
+        modelBuilder.ApplyConfiguration(new PricePolicyConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductPriceConfiguration());
+        modelBuilder.ApplyConfiguration(new QuantityBreakConfiguration());
+        modelBuilder.ApplyConfiguration(new PromotionConfiguration());
+        modelBuilder.ApplyConfiguration(new PriceHistoryConfiguration());
 
     }
 

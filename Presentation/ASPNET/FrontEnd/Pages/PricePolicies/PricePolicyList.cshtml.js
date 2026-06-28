@@ -1,14 +1,17 @@
-﻿const App = {
+const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
-            pricePolicyListLookupData: [],
             deleteMode: false,
             mainTitle: null,
             id: '',
             name: '',
+            code: '',
             description: '',
-            pricePolicyId: null,
+            priority: 0,
+            isActive: true,
+            effectiveFrom: null,
+            effectiveTo: null,
             errors: {
                 name: ''
             },
@@ -18,31 +21,34 @@
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
-        const pricePolicyIdRef = Vue.ref(null);
+        const codeRef = Vue.ref(null);
+        const priorityRef = Vue.ref(null);
+        const effectiveFromRef = Vue.ref(null);
+        const effectiveToRef = Vue.ref(null);
 
         const services = {
             getMainData: async () => {
                 try {
-                    const response = await AxiosManager.get('/CustomerGroup/GetCustomerGroupList', {});
+                    const response = await AxiosManager.get('/PricePolicy/GetPricePolicyList', {});
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            createMainData: async (name, description, pricePolicyId, createdById) => {
+            createMainData: async (name, code, description, priority, isActive, effectiveFrom, effectiveTo, createdById) => {
                 try {
-                    const response = await AxiosManager.post('/CustomerGroup/CreateCustomerGroup', {
-                        name, description, pricePolicyId, createdById
+                    const response = await AxiosManager.post('/PricePolicy/CreatePricePolicy', {
+                        name, code, description, priority, isActive, effectiveFrom, effectiveTo, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, description, pricePolicyId, updatedById) => {
+            updateMainData: async (id, name, code, description, priority, isActive, effectiveFrom, effectiveTo, updatedById) => {
                 try {
-                    const response = await AxiosManager.post('/CustomerGroup/UpdateCustomerGroup', {
-                        id, name, description, pricePolicyId, updatedById
+                    const response = await AxiosManager.post('/PricePolicy/UpdatePricePolicy', {
+                        id, name, code, description, priority, isActive, effectiveFrom, effectiveTo, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -51,17 +57,9 @@
             },
             deleteMainData: async (id, deletedById) => {
                 try {
-                    const response = await AxiosManager.post('/CustomerGroup/DeleteCustomerGroup', {
+                    const response = await AxiosManager.post('/PricePolicy/DeletePricePolicy', {
                         id, deletedById
                     });
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
-            },
-            getPricePolicyListLookupData: async () => {
-                try {
-                    const response = await AxiosManager.get('/PricePolicy/GetPricePolicyList', {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -74,66 +72,77 @@
                 const response = await services.getMainData();
                 state.mainData = response?.data?.content?.data.map(item => ({
                     ...item,
-                    createdAtUtc: new Date(item.createdAtUtc)
+                    createdAtUtc: new Date(item.createdAtUtc),
+                    effectiveFrom: item.effectiveFrom ? new Date(item.effectiveFrom) : null,
+                    effectiveTo: item.effectiveTo ? new Date(item.effectiveTo) : null,
                 }));
-            },
-            populatePricePolicyListLookupData: async () => {
-                const response = await services.getPricePolicyListLookupData();
-                state.pricePolicyListLookupData = response?.data?.content?.data ?? [];
-                if (pricePolicyIdLookup.obj) {
-                    pricePolicyIdLookup.obj.setProperties({ dataSource: state.pricePolicyListLookupData });
-                }
-            },
+            }
         };
 
         const nameText = {
             obj: null,
             create: () => {
-                nameText.obj = new ej.inputs.TextBox({
-                    placeholder: 'Enter Name',
-                });
+                nameText.obj = new ej.inputs.TextBox({ placeholder: 'Enter Name' });
                 nameText.obj.appendTo(nameRef.value);
             },
-            refresh: () => {
-                if (nameText.obj) {
-                    nameText.obj.value = state.name;
-                }
-            }
+            refresh: () => { if (nameText.obj) nameText.obj.value = state.name; }
         };
 
-        const pricePolicyIdLookup = {
+        const codeText = {
             obj: null,
             create: () => {
-                pricePolicyIdLookup.obj = new ej.dropdowns.DropDownList({
-                    dataSource: state.pricePolicyListLookupData,
-                    fields: { value: 'id', text: 'name' },
-                    placeholder: 'Select Price Policy (optional)',
-                    showClearButton: true,
-                    change: (e) => {
-                        state.pricePolicyId = e.value ?? null;
-                    }
-                });
-                pricePolicyIdLookup.obj.appendTo(pricePolicyIdRef.value);
+                codeText.obj = new ej.inputs.TextBox({ placeholder: 'Enter Code' });
+                codeText.obj.appendTo(codeRef.value);
             },
-            refresh: () => {
-                if (pricePolicyIdLookup.obj) {
-                    pricePolicyIdLookup.obj.value = state.pricePolicyId;
-                }
-            },
+            refresh: () => { if (codeText.obj) codeText.obj.value = state.code; }
         };
 
-        Vue.watch(
-            () => state.name,
-            (newVal, oldVal) => {
-                state.errors.name = '';
-                nameText.refresh();
-            }
-        );
+        const priorityNumber = {
+            obj: null,
+            create: () => {
+                priorityNumber.obj = new ej.inputs.NumericTextBox({
+                    placeholder: 'Priority',
+                    format: 'n0',
+                    min: 0,
+                    value: 0,
+                    change: (e) => { state.priority = e.value ?? 0; }
+                });
+                priorityNumber.obj.appendTo(priorityRef.value);
+            },
+            refresh: () => { if (priorityNumber.obj) priorityNumber.obj.value = state.priority; }
+        };
 
-        Vue.watch(
-            () => state.pricePolicyId,
-            () => { pricePolicyIdLookup.refresh(); }
-        );
+        const effectiveFromPicker = {
+            obj: null,
+            create: () => {
+                effectiveFromPicker.obj = new ej.calendars.DatePicker({
+                    placeholder: 'Select date',
+                    format: 'yyyy-MM-dd',
+                    change: (e) => { state.effectiveFrom = e.value; }
+                });
+                effectiveFromPicker.obj.appendTo(effectiveFromRef.value);
+            },
+            refresh: () => { if (effectiveFromPicker.obj) effectiveFromPicker.obj.value = state.effectiveFrom ? new Date(state.effectiveFrom) : null; }
+        };
+
+        const effectiveToPicker = {
+            obj: null,
+            create: () => {
+                effectiveToPicker.obj = new ej.calendars.DatePicker({
+                    placeholder: 'Select date',
+                    format: 'yyyy-MM-dd',
+                    change: (e) => { state.effectiveTo = e.value; }
+                });
+                effectiveToPicker.obj.appendTo(effectiveToRef.value);
+            },
+            refresh: () => { if (effectiveToPicker.obj) effectiveToPicker.obj.value = state.effectiveTo ? new Date(state.effectiveTo) : null; }
+        };
+
+        Vue.watch(() => state.name, () => { state.errors.name = ''; nameText.refresh(); });
+        Vue.watch(() => state.code, () => { codeText.refresh(); });
+        Vue.watch(() => state.priority, () => { priorityNumber.refresh(); });
+        Vue.watch(() => state.effectiveFrom, () => { effectiveFromPicker.refresh(); });
+        Vue.watch(() => state.effectiveTo, () => { effectiveToPicker.refresh(); });
 
         const handler = {
             handleSubmit: async function () {
@@ -142,25 +151,18 @@
                     await new Promise(resolve => setTimeout(resolve, 200));
 
                     let isValid = true;
-
-                    // name validation
-                    if (!state.name) {
-                        state.errors.name = 'Name is required.';
-                        isValid = false;
-                    }
-
+                    if (!state.name) { state.errors.name = 'Name is required.'; isValid = false; }
                     if (!isValid) return;
 
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.description, state.pricePolicyId, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.code, state.description, state.priority, state.isActive, state.effectiveFrom, state.effectiveTo, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.description, state.pricePolicyId, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.code, state.description, state.priority, state.isActive, state.effectiveFrom, state.effectiveTo, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
                         mainGrid.refresh();
-
                         Swal.fire({
                             icon: 'success',
                             title: state.deleteMode ? 'Delete Successful' : 'Save Successful',
@@ -168,26 +170,12 @@
                             timer: 2000,
                             showConfirmButton: false
                         });
-                        setTimeout(() => {
-                            mainModal.obj.hide();
-                            resetFormState();
-                        }, 2000);
+                        setTimeout(() => { mainModal.obj.hide(); resetFormState(); }, 2000);
                     } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                            text: response.data.message ?? 'Please check your data.',
-                            confirmButtonText: 'Try Again'
-                        });
+                        Swal.fire({ icon: 'error', title: state.deleteMode ? 'Delete Failed' : 'Save Failed', text: response.data.message ?? 'Please check your data.', confirmButtonText: 'Try Again' });
                     }
-
                 } catch (error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'An Error Occurred',
-                        text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
-                    });
+                    Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
                 } finally {
                     state.isSubmitting = false;
                 }
@@ -197,11 +185,13 @@
         const resetFormState = () => {
             state.id = '';
             state.name = '';
+            state.code = '';
             state.description = '';
-            state.pricePolicyId = null;
-            state.errors = {
-                name: ''
-            };
+            state.priority = 0;
+            state.isActive = true;
+            state.effectiveFrom = null;
+            state.effectiveTo = null;
+            state.errors = { name: '' };
         };
 
         const mainGrid = {
@@ -228,12 +218,14 @@
                     gridLines: 'Horizontal',
                     columns: [
                         { type: 'checkbox', width: 60 },
-                        {
-                            field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
-                        },
+                        { field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false },
                         { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
-                        { field: 'pricePolicyName', headerText: 'Price Policy', width: 160 },
-                        { field: 'description', headerText: 'Description', width: 350, minWidth: 200 },
+                        { field: 'code', headerText: 'Code', width: 120 },
+                        { field: 'priority', headerText: 'Priority', width: 100 },
+                        { field: 'isActive', headerText: 'Active', width: 100, displayAsCheckBox: true },
+                        { field: 'effectiveFrom', headerText: 'From', width: 120, format: 'yyyy-MM-dd' },
+                        { field: 'effectiveTo', headerText: 'To', width: 120, format: 'yyyy-MM-dd' },
+                        { field: 'description', headerText: 'Description', width: 300 },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
                     ],
                     toolbar: [
@@ -247,7 +239,7 @@
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
-                        mainGrid.obj.autoFitColumns(['name', 'description', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['name', 'code', 'priority', 'isActive', 'effectiveFrom', 'effectiveTo', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -264,19 +256,13 @@
                             mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
                         }
                     },
-                    rowSelecting: () => {
-                        if (mainGrid.obj.getSelectedRecords().length) {
-                            mainGrid.obj.clearSelection();
-                        }
-                    },
+                    rowSelecting: () => { if (mainGrid.obj.getSelectedRecords().length) mainGrid.obj.clearSelection(); },
                     toolbarClick: async (args) => {
-                        if (args.item.id === 'MainGrid_excelexport') {
-                            mainGrid.obj.excelExport();
-                        }
+                        if (args.item.id === 'MainGrid_excelexport') { mainGrid.obj.excelExport(); }
 
                         if (args.item.id === 'AddCustom') {
                             state.deleteMode = false;
-                            state.mainTitle = 'Add Customer Group';
+                            state.mainTitle = 'Add Price Policy';
                             resetFormState();
                             mainModal.obj.show();
                         }
@@ -285,11 +271,15 @@
                             state.deleteMode = false;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Edit Customer Group';
+                                state.mainTitle = 'Edit Price Policy';
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
+                                state.code = selectedRecord.code ?? '';
                                 state.description = selectedRecord.description ?? '';
-                                state.pricePolicyId = selectedRecord.pricePolicyId ?? null;
+                                state.priority = selectedRecord.priority ?? 0;
+                                state.isActive = selectedRecord.isActive ?? true;
+                                state.effectiveFrom = selectedRecord.effectiveFrom ?? null;
+                                state.effectiveTo = selectedRecord.effectiveTo ?? null;
                                 mainModal.obj.show();
                             }
                         }
@@ -298,48 +288,46 @@
                             state.deleteMode = true;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Delete Customer Group?';
+                                state.mainTitle = 'Delete Price Policy?';
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
+                                state.code = selectedRecord.code ?? '';
                                 state.description = selectedRecord.description ?? '';
-                                state.pricePolicyId = selectedRecord.pricePolicyId ?? null;
+                                state.priority = selectedRecord.priority ?? 0;
+                                state.isActive = selectedRecord.isActive ?? true;
+                                state.effectiveFrom = selectedRecord.effectiveFrom ?? null;
+                                state.effectiveTo = selectedRecord.effectiveTo ?? null;
                                 mainModal.obj.show();
                             }
                         }
                     }
                 });
-
                 mainGrid.obj.appendTo(mainGridRef.value);
             },
-            refresh: () => {
-                mainGrid.obj.setProperties({ dataSource: state.mainData });
-            }
+            refresh: () => { mainGrid.obj.setProperties({ dataSource: state.mainData }); }
         };
 
         const mainModal = {
             obj: null,
             create: () => {
-                mainModal.obj = new bootstrap.Modal(mainModalRef.value, {
-                    backdrop: 'static',
-                    keyboard: false
-                });
+                mainModal.obj = new bootstrap.Modal(mainModalRef.value, { backdrop: 'static', keyboard: false });
             }
         };
 
         Vue.onMounted(async () => {
             try {
-                await SecurityManager.authorizePage(['CustomerGroups']);
+                await SecurityManager.authorizePage(['PricePolicies']);
                 await SecurityManager.validateToken();
-
-                await methods.populatePricePolicyListLookupData();
                 await methods.populateMainData();
                 await mainGrid.create(state.mainData);
                 nameText.create();
-                pricePolicyIdLookup.create();
+                codeText.create();
+                priorityNumber.create();
+                effectiveFromPicker.create();
+                effectiveToPicker.create();
                 mainModal.create();
             } catch (e) {
             } finally {
-
             }
         });
 
@@ -347,7 +335,10 @@
             mainGridRef,
             mainModalRef,
             nameRef,
-            pricePolicyIdRef,
+            codeRef,
+            priorityRef,
+            effectiveFromRef,
+            effectiveToRef,
             state,
             handler,
         };

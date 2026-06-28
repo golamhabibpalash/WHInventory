@@ -1,0 +1,48 @@
+@page
+@{
+    ViewData["Title"] = "Price Report";
+}
+
+<div id="app" v-cloak>
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-search me-2 text-primary"></i>Filter</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label>Product Group</label>
+                            <input ref="productGroupIdRef" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>Product</label>
+                            <input ref="productIdRef" />
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end gap-2">
+                            <button type="button" class="btn btn-primary" v-on:click="handler.search" v-bind:disabled="state.isLoading">
+                                <span class="spinner-border spinner-border-sm me-2" v-if="state.isLoading"></span>
+                                <i v-if="!state.isLoading" class="fas fa-search me-1"></i>
+                                {{ state.isLoading ? 'Loading...' : 'Search' }}
+                            </button>
+                            <button type="button" class="btn btn-secondary" v-on:click="handler.reset"><i class="fas fa-redo me-1"></i>Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/PriceReports/PriceReportList.cshtml.js"></script>
+}
