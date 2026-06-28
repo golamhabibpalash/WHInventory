@@ -24,6 +24,7 @@ public record GetProductListDto
     public string? ImageName { get; init; }
     public string? Barcode { get; init; }
     public bool? IsWarrantyApplicable { get; init; }
+    public int? WarrantyDays { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
 

@@ -24,6 +24,7 @@ const App = {
             brandId: null,
             physical: false,
             isWarrantyApplicable: false,
+            warrantyDays: null,
             barcode: '',
             showBarcodePreview: false,
             imageName: '',
@@ -71,6 +72,7 @@ const App = {
         const imageUploadRef = Vue.ref(null);
         const docUploadRef = Vue.ref(null);
         const barcodeRef = Vue.ref(null);
+        const warrantyDaysRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
         const unitPriceRef = Vue.ref(null);
@@ -120,6 +122,7 @@ const App = {
             state.brandId = null;
             state.physical = false;
             state.isWarrantyApplicable = false;
+            state.warrantyDays = null;
             state.barcode = '';
             state.showBarcodePreview = false;
             state.imageName = '';
@@ -146,20 +149,20 @@ const App = {
                     throw error;
                 }
             },
-            createMainData: async (name, unitPrice, physical, isWarrantyApplicable, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
+            createMainData: async (name, unitPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Product/CreateProduct', {
-                        name, unitPrice, physical, isWarrantyApplicable, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
+                        name, unitPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, unitPrice, physical, isWarrantyApplicable, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
+            updateMainData: async (id, name, unitPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Product/UpdateProduct', {
-                        id, name, unitPrice, physical, isWarrantyApplicable, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
+                        id, name, unitPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -447,6 +450,38 @@ const App = {
                 }
             }
         };
+
+        const warrantyDaysNumber = {
+            obj: null,
+            create: () => {
+                warrantyDaysNumber.obj = new ej.inputs.NumericTextBox({
+                    format: 'n0',
+                    placeholder: 'e.g. 365',
+                    min: 1,
+                    step: 1,
+                    validateDecimalOnType: true,
+                    change: (e) => {
+                        state.warrantyDays = e.value ?? null;
+                    }
+                });
+                warrantyDaysNumber.obj.appendTo(warrantyDaysRef.value);
+            },
+            refresh: () => {
+                if (warrantyDaysNumber.obj) {
+                    warrantyDaysNumber.obj.value = state.warrantyDays;
+                }
+            }
+        };
+
+        Vue.watch(
+            () => state.warrantyDays,
+            () => { warrantyDaysNumber.refresh(); }
+        );
+
+        Vue.watch(
+            () => state.isWarrantyApplicable,
+            (val) => { if (!val) { state.warrantyDays = null; } }
+        );
 
         Vue.watch(
             () => state.name,
@@ -856,10 +891,10 @@ const App = {
                     const brandId = state.brandId === '' ? null : state.brandId;
 
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.isWarrantyApplicable, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.isWarrantyApplicable, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -877,6 +912,7 @@ const App = {
                             state.brandId = response?.data?.content?.data.brandId ?? '';
                             state.physical = response?.data?.content?.data.physical ?? false;
                             state.isWarrantyApplicable = response?.data?.content?.data.isWarrantyApplicable ?? false;
+                            state.warrantyDays = response?.data?.content?.data.warrantyDays ?? null;
                             state.barcode = response?.data?.content?.data.barcode ?? '';
                             state.imageName = response?.data?.content?.data.imageName ?? '';
                             await methods.loadDocuments(state.id);
@@ -947,6 +983,7 @@ const App = {
                 nameText.create();
                 numberText.create();
                 unitPriceNumber.create();
+                warrantyDaysNumber.create();
 
                 mainModal.create();
                 productGroupQuickModal.create();
@@ -1072,6 +1109,7 @@ const App = {
                                 state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
+                                state.warrantyDays = selectedRecord.warrantyDays ?? null;
                                 state.barcode = selectedRecord.barcode ?? '';
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await Promise.all([
@@ -1104,6 +1142,7 @@ const App = {
                                 state.brandId = selectedRecord.brandId ?? '';
                                 state.physical = selectedRecord.physical ?? false;
                                 state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
+                                state.warrantyDays = selectedRecord.warrantyDays ?? null;
                                 state.barcode = selectedRecord.barcode ?? '';
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await methods.loadImagePreview(state.imageName);
@@ -1155,6 +1194,7 @@ const App = {
             imageUploadRef,
             docUploadRef,
             barcodeRef,
+            warrantyDaysRef,
             nameRef,
             numberRef,
             unitPriceRef,

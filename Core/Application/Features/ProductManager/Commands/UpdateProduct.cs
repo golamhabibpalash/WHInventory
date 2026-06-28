@@ -23,6 +23,7 @@ public class UpdateProductRequest : IRequest<UpdateProductResult>
     public string? ImageName { get; init; }
     public string? Barcode { get; init; }
     public bool? IsWarrantyApplicable { get; init; } = false;
+    public int? WarrantyDays { get; init; }
     public string? UpdatedById { get; init; }
 }
 
@@ -75,6 +76,7 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, Update
         entity.ImageName = string.IsNullOrWhiteSpace(request.ImageName) ? null : request.ImageName;
         entity.Barcode = string.IsNullOrWhiteSpace(request.Barcode) ? null : request.Barcode.Trim();
         entity.IsWarrantyApplicable = request.IsWarrantyApplicable;
+        entity.WarrantyDays = (request.IsWarrantyApplicable == true) ? request.WarrantyDays : null;
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

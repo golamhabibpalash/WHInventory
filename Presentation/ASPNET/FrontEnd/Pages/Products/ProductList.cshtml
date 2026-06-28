@@ -105,6 +105,13 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="row mb-2" v-if="state.isWarrantyApplicable">
+                                            <div class="col-md-6">
+                                                <label for="WarrantyDays">Warranty Duration (Days) <span class="text-danger">*</span></label>
+                                                <input ref="warrantyDaysRef">
+                                                <small class="text-muted">Number of days from delivery date the warranty is valid.</small>
+                                            </div>
+                                        </div>
                                         <div class="row mb-2">
                                             <div class="col-md-8">
                                                 <label for="Barcode">Barcode / SKU</label>

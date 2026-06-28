@@ -24,6 +24,7 @@ public class CreateProductRequest : IRequest<CreateProductResult>
     public string? ImageName { get; init; }
     public string? Barcode { get; init; }
     public bool? IsWarrantyApplicable { get; init; } = false;
+    public int? WarrantyDays { get; init; }
     public string? CreatedById { get; init; }
 }
 
@@ -72,6 +73,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Create
         entity.ImageName = string.IsNullOrWhiteSpace(request.ImageName) ? null : request.ImageName;
         entity.Barcode = string.IsNullOrWhiteSpace(request.Barcode) ? null : request.Barcode.Trim();
         entity.IsWarrantyApplicable = request.IsWarrantyApplicable;
+        entity.WarrantyDays = (request.IsWarrantyApplicable == true) ? request.WarrantyDays : null;
 
         await _repository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);

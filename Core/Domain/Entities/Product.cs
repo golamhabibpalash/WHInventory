@@ -18,4 +18,5 @@ public class Product : BaseEntity
     public string? ImageName { get; set; }
     public string? Barcode { get; set; }
     public bool? IsWarrantyApplicable { get; set; } = false;
+    public int? WarrantyDays { get; set; }
 }
