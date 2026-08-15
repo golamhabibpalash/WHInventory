@@ -36,6 +36,24 @@ public class CommandContext : DataContext, ICommandContext
     }
 
     /// <summary>
+    /// The synchronous path must stamp and audit exactly like the async one. IUnitOfWork.Save()
+    /// routes here — NumberSequenceService uses it on every document number — so leaving it
+    /// unoverridden wrote rows with a null TenantId that the tenant query filter then hid.
+    /// </summary>
+    public override int SaveChanges()
+    {
+        StampTenant();
+        var auditEntries = BuildAuditEntries();
+        var result = base.SaveChanges();
+        if (auditEntries.Count > 0)
+        {
+            AuditLog.AddRange(auditEntries);
+            base.SaveChanges();
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Stamps the ambient tenant onto new rows. Done here rather than in CommandRepository so
     /// that seeders and any direct context.Add call are covered too.
     /// </summary>
@@ -44,14 +62,17 @@ public class CommandContext : DataContext, ICommandContext
         var tenantId = CurrentTenantId;
         if (string.IsNullOrEmpty(tenantId)) return;
 
-        foreach (var entry in ChangeTracker.Entries<IHasTenant>())
-        {
-            if (entry.Entity is Tenant) continue;
+        // Materialised up front so the assignment below cannot disturb the lazy enumeration.
+        var pending = ChangeTracker.Entries<IHasTenant>()
+            .Where(entry =>
+                entry.State == EntityState.Added &&
+                entry.Entity is not Domain.Entities.Tenant &&
+                string.IsNullOrEmpty(entry.Entity.TenantId))
+            .ToList();
 
-            if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.TenantId))
-            {
-                entry.Entity.TenantId = tenantId;
-            }
+        foreach (var entry in pending)
+        {
+            entry.Entity.TenantId = tenantId;
         }
     }
 
