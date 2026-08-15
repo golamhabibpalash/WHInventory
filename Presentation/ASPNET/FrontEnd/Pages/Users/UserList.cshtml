@@ -68,6 +68,22 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="row mb-2" v-if="state.id">
+                                    <div class="col-md-6">
+                                        <label for="SessionTimeoutMinutes">Session Timeout (minutes)</label>
+                                        <input v-model="state.sessionTimeoutMinutes"
+                                               id="SessionTimeoutMinutes"
+                                               name="SessionTimeoutMinutes"
+                                               type="number"
+                                               min="1"
+                                               max="1440"
+                                               class="form-control"
+                                               v-bind:placeholder="'Default (' + state.defaultSessionTimeoutMinutes + ')'">
+                                        <small class="text-muted">Idle time before automatic sign-out. Leave blank to use the system default.</small>
+                                        <label class="text-danger d-block">{{ state.errors.sessionTimeoutMinutes }}</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

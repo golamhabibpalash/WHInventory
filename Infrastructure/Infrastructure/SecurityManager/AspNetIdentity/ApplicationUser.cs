@@ -12,6 +12,12 @@ public class ApplicationUser : IdentityUser
     public string? ProfilePictureName { get; set; }
     public bool? IsBlocked { get; set; }
     public bool? IsDeleted { get; set; }
+
+    /// <summary>
+    /// Minutes of inactivity before this user is signed out. Null means "use the system default"
+    /// from AspNetIdentity:SessionTimeoutMinutes, so existing rows need no backfill.
+    /// </summary>
+    public int? SessionTimeoutMinutes { get; set; }
     public DateTime? CreatedAt { get; set; }
     public string? CreatedById { get; set; }
     public DateTime? UpdatedAt { get; set; }

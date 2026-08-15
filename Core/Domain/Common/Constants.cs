@@ -50,5 +50,14 @@ public static class Constants
     {
         public const int MaxLength = 450;
     }
+    /// <summary>
+    /// Bounds for the per-user idle session timeout, in minutes.
+    /// </summary>
+    public static class SessionTimeoutConsts
+    {
+        public const int Default = 30;
+        public const int Min = 1;
+        public const int Max = 1440;
+    }
 }
 

@@ -1,6 +1,7 @@
 using Application.Common.Services.SecurityManager;
 using FluentValidation;
 using MediatR;
+using static Domain.Common.Constants;
 
 namespace Application.Features.SecurityManager.Commands;
 
@@ -19,6 +20,9 @@ public class UpdateUserRequest : IRequest<UpdateUserResult>
     public bool? IsBlocked { get; init; }
     public bool? IsDeleted { get; init; }
     public string? UpdatedById { get; init; }
+
+    /// <summary>Null clears the override and falls back to the system default.</summary>
+    public int? SessionTimeoutMinutes { get; init; }
 }
 
 public class UpdateUserValidator : AbstractValidator<UpdateUserRequest>
@@ -28,6 +32,10 @@ public class UpdateUserValidator : AbstractValidator<UpdateUserRequest>
         RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.FirstName).NotEmpty();
         RuleFor(x => x.LastName).NotEmpty();
+        RuleFor(x => x.SessionTimeoutMinutes)
+            .InclusiveBetween(SessionTimeoutConsts.Min, SessionTimeoutConsts.Max)
+            .When(x => x.SessionTimeoutMinutes.HasValue)
+            .WithMessage($"Session timeout must be between {SessionTimeoutConsts.Min} and {SessionTimeoutConsts.Max} minutes.");
     }
 }
 
@@ -50,6 +58,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserRequest, UpdateUserRe
             request.IsBlocked ?? false,
             request.IsDeleted ?? false,
             request.UpdatedById ?? "",
+            request.SessionTimeoutMinutes,
             cancellationToken
             );
 

@@ -4,6 +4,9 @@ public record RefreshTokenResultDto
 {
     public string? AccessToken { get; init; }
     public string? RefreshToken { get; init; }
+
+    /// <summary>Effective idle timeout for this user, already resolved against the system default.</summary>
+    public int SessionTimeoutMinutes { get; init; }
     public string? UserId { get; init; }
     public string? Email { get; init; }
     public string? FirstName { get; init; }

@@ -111,6 +111,16 @@ const App = {
         };
 
         Vue.onMounted(() => {
+            // Explain an automatic sign-out rather than dropping the user here silently.
+            if (new URLSearchParams(window.location.search).get('reason') === 'idle') {
+                notify({
+                    variant: 'error',
+                    title: 'Signed out',
+                    text: 'You were signed out due to inactivity. Please sign in again.',
+                    duration: 6000
+                });
+            }
+
             const rememberedEmail = localStorage.getItem('rememberedEmail');
             if (rememberedEmail) {
                 state.email = rememberedEmail;

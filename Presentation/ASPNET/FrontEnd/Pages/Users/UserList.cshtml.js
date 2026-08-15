@@ -14,6 +14,8 @@
             emailConfirmed: false,
             isBlocked: false,
             isDeleted: false,
+            sessionTimeoutMinutes: '',
+            defaultSessionTimeoutMinutes: 30,
             password: '',
             confirmPassword: '',
             newPassword: '',
@@ -25,6 +27,7 @@
                 password: '',
                 confirmPassword: '',
                 newPassword: '',
+                sessionTimeoutMinutes: '',
             },
             isSubmitting: false,
             isChangePasswordSubmitting: false,
@@ -114,6 +117,7 @@
             state.errors.email = '';
             state.errors.password = '';
             state.errors.confirmPassword = '';
+            state.errors.sessionTimeoutMinutes = '';
 
             let isValid = true;
 
@@ -132,6 +136,14 @@
                 state.errors.email = 'Please enter a valid email address.';
                 isValid = false;
             }
+            if (state.sessionTimeoutMinutes !== '' && state.sessionTimeoutMinutes !== null) {
+                const minutes = Number(state.sessionTimeoutMinutes);
+                if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+                    state.errors.sessionTimeoutMinutes = 'Session timeout must be a whole number between 1 and 1440 minutes.';
+                    isValid = false;
+                }
+            }
+
             if (state.id === '') {
                 if (!state.password) {
                     state.errors.password = 'Password is required.';
@@ -174,6 +186,7 @@
             state.emailConfirmed = false;
             state.isBlocked = false;
             state.isDeleted = false;
+            state.sessionTimeoutMinutes = '';
             state.password = '';
             state.confirmPassword = '';
             state.errors = {
@@ -211,10 +224,10 @@
                     throw error;
                 }
             },
-            updateMainData: async (userId, firstName, lastName, emailConfirmed, isBlocked, isDeleted, updatedById) => {
+            updateMainData: async (userId, firstName, lastName, emailConfirmed, isBlocked, isDeleted, updatedById, sessionTimeoutMinutes) => {
                 try {
                     const response = await AxiosManager.post('/Security/UpdateUser', {
-                        userId, firstName, lastName, emailConfirmed, isBlocked, isDeleted, updatedById
+                        userId, firstName, lastName, emailConfirmed, isBlocked, isDeleted, updatedById, sessionTimeoutMinutes
                     });
                     return response;
                 } catch (error) {
@@ -324,7 +337,8 @@
                         ? await services.createMainData(state.firstName, state.lastName, state.email, state.emailConfirmed, state.isBlocked, state.isDeleted, state.password, state.confirmPassword, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.firstName, state.lastName, state.emailConfirmed, state.isBlocked, state.isDeleted, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.firstName, state.lastName, state.emailConfirmed, state.isBlocked, state.isDeleted, StorageManager.getUserId(),
+                                state.sessionTimeoutMinutes === '' || state.sessionTimeoutMinutes === null ? null : Number(state.sessionTimeoutMinutes));
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -553,6 +567,7 @@
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
                                 state.mainTitle = 'Edit User';
                                 state.id = selectedRecord.id ?? '';
+                                state.sessionTimeoutMinutes = selectedRecord.sessionTimeoutMinutes ?? '';
                                 state.firstName = selectedRecord.firstName ?? '';
                                 state.lastName = selectedRecord.lastName ?? '';
                                 state.email = selectedRecord.email ?? '';

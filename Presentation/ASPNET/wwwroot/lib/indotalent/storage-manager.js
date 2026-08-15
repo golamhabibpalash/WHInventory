@@ -11,6 +11,7 @@
     AVATAR: 'avatar',
     COMPANY: 'company',
     NAV_SORT_ORDER: 'navSortOrder',
+    SESSION_TIMEOUT_MINUTES: 'sessionTimeoutMinutes',
 };
 
 const StorageManager = {
@@ -96,6 +97,10 @@ const StorageManager = {
     getNavSortOrder: () => StorageManager.get(STORAGE_KEYS.NAV_SORT_ORDER),
     removeNavSortOrder: () => StorageManager.remove(STORAGE_KEYS.NAV_SORT_ORDER),
 
+    saveSessionTimeoutMinutes: (data) => StorageManager.save(STORAGE_KEYS.SESSION_TIMEOUT_MINUTES, data),
+    getSessionTimeoutMinutes: () => StorageManager.get(STORAGE_KEYS.SESSION_TIMEOUT_MINUTES),
+    removeSessionTimeoutMinutes: () => StorageManager.remove(STORAGE_KEYS.SESSION_TIMEOUT_MINUTES),
+
     saveLoginResult: (data) => {
         StorageManager.saveAccessToken(data?.content?.data?.accessToken);
         StorageManager.saveRefreshToken(data?.content?.data?.refreshToken);
@@ -108,5 +113,11 @@ const StorageManager = {
         StorageManager.saveIsAuthenticated(StorageManager.getUserId() != null);
         StorageManager.saveAvatar(data?.content?.data?.avatar);
         StorageManager.saveNavSortOrder(data?.content?.data?.navSortOrderJson);
+        StorageManager.saveSessionTimeoutMinutes(data?.content?.data?.sessionTimeoutMinutes);
+    },
+
+    // Clears everything this app owns; used by the idle timeout and by logout.
+    clearSession: () => {
+        Object.values(STORAGE_KEYS).forEach((key) => StorageManager.remove(key));
     }
 };

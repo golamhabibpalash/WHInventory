@@ -27,6 +27,9 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
         builder.Property(u => u.IsDeleted)
             .IsRequired(false);
 
+        builder.Property(u => u.SessionTimeoutMinutes)
+            .IsRequired(false);
+
         builder.Property(u => u.CreatedAt)
             .IsRequired(false);
 

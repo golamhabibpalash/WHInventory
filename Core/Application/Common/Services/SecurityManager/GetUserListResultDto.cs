@@ -10,5 +10,8 @@ public record GetUserListResultDto
     public bool? IsBlocked { get; init; }
     public bool? IsDeleted { get; init; }
     public DateTime? CreatedAt { get; init; }
+
+    /// <summary>Null means the user falls back to the system default.</summary>
+    public int? SessionTimeoutMinutes { get; init; }
 }
 

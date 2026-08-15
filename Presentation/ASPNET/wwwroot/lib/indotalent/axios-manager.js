@@ -37,6 +37,10 @@
 
                         if (response?.data?.code === 200) {
                             StorageManager.saveLoginResult(response?.data);
+                            // Picks up an admin's change to this user's session timeout.
+                            if (typeof IdleTimeoutManager !== 'undefined') {
+                                IdleTimeoutManager.refreshSettings();
+                            }
                             isRefreshing = false;
                             retryQueue.forEach((cb) => cb());
                             retryQueue = [];

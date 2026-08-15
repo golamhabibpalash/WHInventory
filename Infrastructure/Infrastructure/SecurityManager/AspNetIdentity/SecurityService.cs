@@ -156,7 +156,8 @@ public class SecurityService : ISecurityService
             MenuNavigation = NavigationTreeStructure.GetCompleteMenuNavigationTreeNode(),
             Roles = roles.ToList(),
             Avatar = user.ProfilePictureName,
-            NavSortOrderJson = navSortOrderJson
+            NavSortOrderJson = navSortOrderJson,
+            SessionTimeoutMinutes = ResolveSessionTimeoutMinutes(user)
         };
     }
 
@@ -366,6 +367,7 @@ public class SecurityService : ISecurityService
 
         return new RefreshTokenResultDto
         {
+            SessionTimeoutMinutes = ResolveSessionTimeoutMinutes(user),
             UserId = user.Id,
             Email = user.Email,
             FirstName = user.FirstName,
@@ -468,6 +470,21 @@ public class SecurityService : ISecurityService
         return roles;
     }
 
+    /// <summary>
+    /// Per-user override when set and in range, otherwise the configured system default.
+    /// Clamped so a bad stored value can never disable the idle timeout entirely.
+    /// </summary>
+    private int ResolveSessionTimeoutMinutes(ApplicationUser user)
+    {
+        var fallback = _identitySettings.SessionTimeoutMinutes > 0
+            ? _identitySettings.SessionTimeoutMinutes
+            : SessionTimeoutConsts.Default;
+
+        var minutes = user.SessionTimeoutMinutes ?? fallback;
+
+        return Math.Clamp(minutes, SessionTimeoutConsts.Min, SessionTimeoutConsts.Max);
+    }
+
     public async Task<List<GetUserListResultDto>> GetUserListAsync(
         CancellationToken cancellationToken
         )
@@ -486,7 +503,8 @@ public class SecurityService : ISecurityService
                 IsBlocked = x.IsBlocked,
                 IsDeleted = x.IsDeleted,
                 EmailConfirmed = x.EmailConfirmed,
-                CreatedAt = x.CreatedAt
+                CreatedAt = x.CreatedAt,
+                SessionTimeoutMinutes = x.SessionTimeoutMinutes
             })
             .ToListAsync(cancellationToken);
 
@@ -555,6 +573,7 @@ public class SecurityService : ISecurityService
         bool isBlocked = false,
         bool isDeleted = false,
         string updatedById = "",
+        int? sessionTimeoutMinutes = null,
         CancellationToken cancellationToken = default
         )
     {
@@ -578,6 +597,8 @@ public class SecurityService : ISecurityService
         user.IsBlocked = isBlocked;
         user.IsDeleted = isDeleted;
         user.UpdatedById = updatedById;
+        // Null clears the override so the user falls back to the system default.
+        user.SessionTimeoutMinutes = sessionTimeoutMinutes;
 
         var result = await _userManager.UpdateAsync(user);
 

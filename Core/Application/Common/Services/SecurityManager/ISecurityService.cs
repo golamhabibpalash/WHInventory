@@ -96,6 +96,7 @@ public interface ISecurityService
         bool isBlocked = false,
         bool isDeleted = false,
         string updatedById = "",
+        int? sessionTimeoutMinutes = null,
         CancellationToken cancellationToken = default
         );
 

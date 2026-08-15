@@ -1,3 +1,5 @@
+using static Domain.Common.Constants;
+
 namespace Infrastructure.SecurityManager.AspNetIdentity;
 
 public class IdentitySettings
@@ -7,6 +9,11 @@ public class IdentitySettings
     public UserOptions User { get; init; } = null!;
     public SignInOptions SignIn { get; init; } = null!;
     public DefaultAdminOptions DefaultAdmin { get; init; } = null!;
+
+    /// <summary>
+    /// Fallback idle timeout, in minutes, for users with no per-user override.
+    /// </summary>
+    public int SessionTimeoutMinutes { get; init; } = SessionTimeoutConsts.Default;
 
     public class PasswordOptions
     {
