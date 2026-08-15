@@ -5,21 +5,30 @@
 
 <div id="app" v-cloak>
 
+    <div class="auth-card-mark">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2 3 6.5 12 11l9-4.5L12 2Z" fill="#fff" opacity=".95"/>
+            <path d="M3 12 12 16.5 21 12" fill="none" stroke="#fff" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+            <path d="M3 17.5 12 22l9-4.5" fill="none" stroke="#fff" stroke-width="1.9"
+                  stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+        </svg>
+    </div>
+
     <div class="auth-form-title">
-        <h2>Welcome back</h2>
-        <p>Sign in to your uStock account to continue</p>
+        <h2>Welcome Back! <span aria-hidden="true">&#128075;</span></h2>
+        <p>Sign in to continue</p>
     </div>
 
     <form v-on:submit.prevent="handleSubmit" novalidate>
 
         <div class="auth-field">
-            <label for="Email">Email Address</label>
             <div class="auth-input-group">
-                <i class="fas fa-envelope a-icon"></i>
+                <i class="fas fa-user a-icon"></i>
                 <input id="Email"
                        name="Email"
                        type="email"
-                       placeholder="name@company.com"
+                       placeholder="Email address"
                        v-model="state.email"
                        v-on:input="state.errors.email = ''"
                        autocomplete="email">
@@ -28,13 +37,12 @@
         </div>
 
         <div class="auth-field">
-            <label for="Password">Password</label>
             <div class="auth-input-group">
                 <i class="fas fa-lock a-icon"></i>
                 <input id="Password"
                        name="Password"
-                       :type="state.showPassword ? 'text' : 'password'"
-                       placeholder="Enter your password"
+                       v-bind:type="state.showPassword ? 'text' : 'password'"
+                       placeholder="Password"
                        v-model="state.password"
                        v-on:input="state.errors.password = ''"
                        autocomplete="current-password">
@@ -43,18 +51,23 @@
                         v-on:click="state.showPassword = !state.showPassword"
                         tabindex="-1"
                         aria-label="Toggle password visibility">
-                    <i :class="state.showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    <i v-bind:class="state.showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                 </button>
             </div>
             <span v-if="state.errors.password" class="auth-field-error">{{ state.errors.password }}</span>
         </div>
 
         <div class="auth-options-row">
-            <label class="auth-remember">
+            <label class="auth-check">
                 <input type="checkbox" v-model="state.rememberMe">
-                Remember me
+                <span class="auth-check-box">
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <polyline points="3.5,8.5 6.5,11.5 12.5,4.5"></polyline>
+                    </svg>
+                </span>
+                <span>Remember me</span>
             </label>
-            <a asp-page="/Accounts/ForgotPassword" class="auth-link">Forgot password?</a>
+            <a asp-page="/Accounts/ForgotPassword" class="auth-link">Forgot Password?</a>
         </div>
 
         <button type="submit" class="auth-btn" v-bind:disabled="state.isSubmitting">
@@ -62,8 +75,8 @@
                   v-if="state.isSubmitting"
                   role="status"
                   aria-hidden="true"></span>
-            <i v-if="!state.isSubmitting" class="fas fa-sign-in-alt"></i>
-            {{ state.isSubmitting ? 'Signing in...' : 'Sign In' }}
+            <span>{{ state.isSubmitting ? 'Signing in...' : 'Sign In' }}</span>
+            <i class="fas fa-arrow-right auth-btn-arrow" v-if="!state.isSubmitting"></i>
         </button>
 
     </form>

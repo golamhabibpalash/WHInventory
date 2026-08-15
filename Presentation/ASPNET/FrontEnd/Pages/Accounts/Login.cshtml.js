@@ -1,4 +1,25 @@
-﻿const App = {
+﻿// Turns "jane.doe@acme.com" into "Jane Doe" for the greeting.
+const displayName = (email) => {
+    const local = (email || '').split('@')[0].replace(/[._-]+/g, ' ').trim();
+    return local.replace(/\b\w/g, (c) => c.toUpperCase()) || email;
+};
+
+// Prefer the auth layout's slide-in toast; fall back to SweetAlert elsewhere.
+const notify = ({ variant, title, text, duration }) => {
+    if (typeof window.showAuthToast === 'function') {
+        window.showAuthToast({ variant, title, text, duration });
+        return;
+    }
+    Swal.fire({
+        icon: variant === 'error' ? 'error' : 'success',
+        title,
+        text,
+        timer: variant === 'error' ? undefined : (duration || 2000),
+        showConfirmButton: variant === 'error'
+    });
+};
+
+const App = {
     setup() {
         const state = Vue.reactive({
             email: '',
@@ -57,32 +78,32 @@
                     } else {
                         localStorage.removeItem('rememberedEmail');
                     }
+                    // Drives the "Last login" line on the sign-in screen's branding panel.
+                    localStorage.setItem('lastLoginAt', new Date().toISOString());
                     StorageManager.saveLoginResult(response.data);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Login Successful',
-                        text: 'You are being redirected...',
-                        timer: 2000,
-                        showConfirmButton: false
+
+                    notify({
+                        variant: 'success',
+                        title: 'Login Successful!',
+                        text: `Welcome back, ${displayName(state.email)}`,
+                        duration: 2000
                     });
 
                     setTimeout(() => {
                         window.location.href = '/Dashboards/DefaultDashboard';
-                    }, 2000);
+                    }, 1600);
                 } else {
-                    Swal.fire({
-                        icon: 'error',
+                    notify({
+                        variant: 'error',
                         title: 'Login Failed',
-                        text: response.data.message || 'Please check your credentials.',
-                        confirmButtonText: 'Try Again'
+                        text: response.data.message || 'Please check your credentials.'
                     });
                 }
             } catch (error) {
-                Swal.fire({
-                    icon: 'error',
+                notify({
+                    variant: 'error',
                     title: 'An Error Occurred',
-                    text: error.response?.data?.message || 'Please try again.',
-                    confirmButtonText: 'OK'
+                    text: error.response?.data?.message || 'Please try again.'
                 });
             } finally {
                 state.isSubmitting = false;
