@@ -1,8 +1,10 @@
 using Application.Common.CQS.Commands;
 using Application.Common.CQS.Queries;
 using Application.Common.Repositories;
+using Application.Common.Tenancy;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Infrastructure.DataAccessManager.EFCore.Repositories;
+using Infrastructure.DataAccessManager.EFCore.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -82,6 +84,8 @@ public static class DI
 
 
         services.AddHttpContextAccessor();
+        services.AddMemoryCache();
+        services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<ICommandContext, CommandContext>();
         services.AddScoped<IQueryContext, QueryContext>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -105,7 +109,112 @@ public static class DI
 
         EnsureMissingTables(dataContext);
 
+        EnsureTenantSchema(dataContext);
+
         return host;
+    }
+
+    // Adds the tenant discriminator to every pre-existing table and adopts all legacy rows into
+    // the default tenant. Idempotent, and a no-op on a database EnsureCreated just built.
+    private static void EnsureTenantSchema(DataContext dataContext)
+    {
+        if (!dataContext.Database.IsNpgsql())
+        {
+            Log.Warning(
+                "Tenant schema bootstrap only supports PostgreSQL. " +
+                "On SQL Server the TenantId columns must be added manually before running multi-tenant.");
+            return;
+        }
+
+        dataContext.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS core.""Tenant"" (
+                ""Id""           varchar(50)  NOT NULL PRIMARY KEY,
+                ""Name""         varchar(255) NULL,
+                ""Slug""         varchar(50)  NOT NULL,
+                ""IsActive""     boolean      NOT NULL DEFAULT TRUE,
+                ""IsDeleted""    boolean      NOT NULL DEFAULT FALSE,
+                ""CreatedAtUtc"" timestamp    NULL,
+                ""CreatedById""  varchar(450) NULL,
+                ""UpdatedAtUtc"" timestamp    NULL,
+                ""UpdatedById""  varchar(450) NULL
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Tenant_Slug"" ON core.""Tenant"" (""Slug"");
+            CREATE INDEX IF NOT EXISTS ""IX_Tenant_IsDeleted"" ON core.""Tenant"" (""IsDeleted"");
+        ");
+
+        // Every core table except the tenant registry itself gets the discriminator.
+        dataContext.Database.ExecuteSqlRaw(@"
+            DO $$
+            DECLARE t record;
+            BEGIN
+                FOR t IN
+                    SELECT table_name FROM information_schema.tables
+                    WHERE table_schema = 'core'
+                      AND table_type = 'BASE TABLE'
+                      AND table_name <> 'Tenant'
+                LOOP
+                    EXECUTE format(
+                        'ALTER TABLE core.%I ADD COLUMN IF NOT EXISTS ""TenantId"" varchar(50) NULL',
+                        t.table_name);
+                    EXECUTE format(
+                        'CREATE INDEX IF NOT EXISTS %I ON core.%I (""TenantId"")',
+                        'IX_' || t.table_name || '_TenantId', t.table_name);
+                END LOOP;
+            END $$;
+        ");
+
+        dataContext.Database.ExecuteSqlRaw(@"
+            ALTER TABLE auth.""AspNetUsers"" ADD COLUMN IF NOT EXISTS ""TenantId"" varchar(50) NULL;
+            CREATE INDEX IF NOT EXISTS ""IX_AspNetUsers_TenantId"" ON auth.""AspNetUsers"" (""TenantId"");
+        ");
+
+        // Name uniqueness is per tenant, not global.
+        dataContext.Database.ExecuteSqlRaw(@"
+            DROP INDEX IF EXISTS core.""IX_Brand_Name"";
+            DROP INDEX IF EXISTS core.""IX_UnitMeasure_Name"";
+            CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Brand_TenantId_Name""
+                ON core.""Brand"" (""TenantId"", ""Name"");
+            CREATE UNIQUE INDEX IF NOT EXISTS ""IX_UnitMeasure_TenantId_Name""
+                ON core.""UnitMeasure"" (""TenantId"", ""Name"");
+            CREATE UNIQUE INDEX IF NOT EXISTS ""IX_NumberSequence_TenantId_EntityName_Prefix_Suffix""
+                ON core.""NumberSequence"" (""TenantId"", ""EntityName"", ""Prefix"", ""Suffix"");
+        ");
+
+        BackfillDefaultTenant(dataContext);
+    }
+
+    // Adopts rows written before multi-tenancy. Runs only while un-tenanted rows exist, so it
+    // costs one cheap check per startup once the upgrade has happened.
+    private static void BackfillDefaultTenant(DataContext dataContext)
+    {
+        dataContext.Database.ExecuteSqlRaw(@"
+            INSERT INTO core.""Tenant"" (""Id"", ""Name"", ""Slug"", ""IsActive"", ""IsDeleted"", ""CreatedAtUtc"")
+            VALUES ({0}, {1}, {2}, TRUE, FALSE, NOW() AT TIME ZONE 'utc')
+            ON CONFLICT (""Id"") DO NOTHING;
+        ", TenantDefaults.DefaultTenantId, TenantDefaults.DefaultTenantName, TenantDefaults.DefaultTenantSlug);
+
+        // A DO block is an opaque string literal to the server, so query parameters cannot reach
+        // inside it. The value interpolated here is a compile-time constant, never user input.
+        dataContext.Database.ExecuteSqlRaw($@"
+            DO $$
+            DECLARE t record;
+            BEGIN
+                FOR t IN
+                    SELECT table_name FROM information_schema.tables
+                    WHERE table_schema = 'core'
+                      AND table_type = 'BASE TABLE'
+                      AND table_name <> 'Tenant'
+                LOOP
+                    EXECUTE format(
+                        'UPDATE core.%I SET ""TenantId"" = %L WHERE ""TenantId"" IS NULL',
+                        t.table_name, '{TenantDefaults.DefaultTenantId}');
+                END LOOP;
+            END $$;
+        ");
+
+        dataContext.Database.ExecuteSqlRaw(@"
+            UPDATE auth.""AspNetUsers"" SET ""TenantId"" = {0} WHERE ""TenantId"" IS NULL;
+        ", TenantDefaults.DefaultTenantId);
     }
 
     // Runs before EnsureCreated so databases created before the core/auth schema split

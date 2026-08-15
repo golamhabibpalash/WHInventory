@@ -1,4 +1,6 @@
 using Application.Common.CQS.Commands;
+using Application.Common.Tenancy;
+using Domain.Common;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +13,18 @@ public class CommandContext : DataContext, ICommandContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CommandContext(DbContextOptions<DataContext> options, IHttpContextAccessor httpContextAccessor)
-        : base(options)
+    public CommandContext(
+        DbContextOptions<DataContext> options,
+        IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext)
+        : base(options, tenantContext)
     {
         _httpContextAccessor = httpContextAccessor;
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        StampTenant();
         var auditEntries = BuildAuditEntries();
         var result = await base.SaveChangesAsync(cancellationToken);
         if (auditEntries.Count > 0)
@@ -27,6 +33,26 @@ public class CommandContext : DataContext, ICommandContext
             await base.SaveChangesAsync(cancellationToken);
         }
         return result;
+    }
+
+    /// <summary>
+    /// Stamps the ambient tenant onto new rows. Done here rather than in CommandRepository so
+    /// that seeders and any direct context.Add call are covered too.
+    /// </summary>
+    private void StampTenant()
+    {
+        var tenantId = CurrentTenantId;
+        if (string.IsNullOrEmpty(tenantId)) return;
+
+        foreach (var entry in ChangeTracker.Entries<IHasTenant>())
+        {
+            if (entry.Entity is Tenant) continue;
+
+            if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.TenantId))
+            {
+                entry.Entity.TenantId = tenantId;
+            }
+        }
     }
 
     private List<AuditLog> BuildAuditEntries()
@@ -93,6 +119,7 @@ public class CommandContext : DataContext, ICommandContext
             entries.Add(new AuditLog
             {
                 Id = Guid.NewGuid().ToString(),
+                TenantId = CurrentTenantId,
                 EntityType = entityType,
                 EntityId = entityId,
                 OperationType = operationType,

@@ -1,20 +1,36 @@
 using Application.Common.Repositories;
+using Application.Common.Tenancy;
+using Domain.Common;
 using Domain.Entities;
 using Infrastructure.DataAccessManager.EFCore.Configurations;
 using Infrastructure.SecurityManager.AspNetIdentity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Infrastructure.DataAccessManager.EFCore.Contexts;
 
 
 public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
 {
-    public DataContext(DbContextOptions<DataContext> options) : base(options)
+    private readonly ITenantContext _tenantContext;
+
+    public DataContext(DbContextOptions<DataContext> options, ITenantContext tenantContext) : base(options)
     {
+        _tenantContext = tenantContext;
     }
 
+    /// <summary>
+    /// Referenced by the global query filters below. EF Core turns DbContext member accesses
+    /// inside a filter into query parameters, so this is re-read on every query rather than
+    /// baked into the cached model.
+    /// </summary>
+    public string? CurrentTenantId => _tenantContext.TenantId;
+
+    public bool IsRootScope => _tenantContext.IsRoot;
+
+    public DbSet<Tenant> Tenant { get; set; }
     public DbSet<Token> Token { get; set; }
     public DbSet<Todo> Todo { get; set; }
     public DbSet<TodoItem> TodoItem { get; set; }
@@ -76,6 +92,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.Entity<IdentityUserToken<string>>().ToTable("AspNetUserTokens", "auth");
 
         modelBuilder.ApplyConfiguration(new ApplicationUserConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantConfiguration());
         modelBuilder.ApplyConfiguration(new TokenConfiguration());
         modelBuilder.ApplyConfiguration(new TodoConfiguration());
         modelBuilder.ApplyConfiguration(new TodoItemConfiguration());
@@ -123,6 +140,32 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new PromotionConfiguration());
         modelBuilder.ApplyConfiguration(new PriceHistoryConfiguration());
 
+        ApplyTenantFilters(modelBuilder);
+    }
+
+    private static readonly MethodInfo _tenantFilterMethod = typeof(DataContext)
+        .GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private void ApplyTenantFilters(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (entityType.BaseType != null) continue;
+            if (entityType.ClrType == typeof(Tenant)) continue;
+            if (!typeof(IHasTenant).IsAssignableFrom(entityType.ClrType)) continue;
+
+            _tenantFilterMethod
+                .MakeGenericMethod(entityType.ClrType)
+                .Invoke(this, new object[] { modelBuilder });
+        }
+    }
+
+    private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class, IHasTenant
+    {
+        // The CurrentTenantId != null test matters: without it an unresolved request compiles to
+        // "TenantId IS NULL" and would expose every un-stamped row instead of nothing.
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(e => IsRootScope || (CurrentTenantId != null && e.TenantId == CurrentTenantId));
     }
 
 }
