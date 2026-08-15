@@ -92,13 +92,28 @@ const App = {
                     popupHeight: '200px',
                     allowFiltering: true,
                     showClearButton: true,
-                    itemTemplate: (data) => `
-                        <div style="display:flex; align-items:center; gap:.6rem; padding:.35rem 0;">
-                            <span style="font-size:.7rem; font-weight:700; color:#3b82f6; background:#eef4ff; border:1px solid #dbe6ff; border-radius:5px; padding:.1rem .4rem; white-space:nowrap;">
-                                ${data.id ?? ''}
-                            </span>
-                            <span style="white-space:nowrap;">${data.name ?? ''}</span>
-                        </div>`,
+                    // Must be a string template: EJ2 runs it through its own template engine, and
+                    // handing it a JS function instead stops the popup from rendering at all.
+                    // "number" is the human-readable product code; "id" is an internal GUID.
+                    itemTemplate: '<div class="wc-product-item">' +
+                                      '<span class="wc-product-code">${number}</span>' +
+                                      '<span class="wc-product-name">${name}</span>' +
+                                  '</div>',
+                    // Filtering defaults to the text field only, so match the code as well.
+                    filtering: (e) => {
+                        const term = (e.text ?? '').trim();
+                        const query = new ej.data.Query();
+
+                        if (!term) {
+                            e.updateData(state.productListLookupData, query);
+                            return;
+                        }
+
+                        const predicate = new ej.data.Predicate('name', 'contains', term, true)
+                            .or('number', 'contains', term, true);
+
+                        e.updateData(state.productListLookupData, query.where(predicate));
+                    },
                     change: (e) => {
                         state.productId = e.value ?? null;
                     }

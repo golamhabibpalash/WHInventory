@@ -3,6 +3,34 @@
     ViewData["Title"] = "Warranty Check";
 }
 
+@section styles {
+<style>
+    /* Product dropdown rows: code badge alongside the product name */
+    .wc-product-item {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        min-width: 0;
+    }
+    .wc-product-code {
+        flex-shrink: 0;
+        font-size: .7rem;
+        font-weight: 700;
+        color: #3b82f6;
+        background: #eef4ff;
+        border: 1px solid #dbe6ff;
+        border-radius: 5px;
+        padding: .1rem .4rem;
+        white-space: nowrap;
+    }
+    .wc-product-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+}
+
 <div id="app" v-cloak>
     <div class="row mb-3">
         <div class="col-12">
