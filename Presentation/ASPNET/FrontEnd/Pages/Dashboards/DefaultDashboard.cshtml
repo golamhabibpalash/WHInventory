@@ -5,651 +5,668 @@
 
 @section styles {
 <style>
-    /* ── Strip form-card border on this page ─────────────── */
+    /* ── Page canvas ─────────────────────────────────────── */
     #formcard { border: none; background: transparent; }
+    .content-wrapper { background: #f4f6fb; }
+
+    .db-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
 
     /* ── Page header ─────────────────────────────────────── */
     .db-header {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
-        padding: 1.35rem 1.75rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
+        flex-wrap: wrap;
     }
     .db-header-title {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1.6rem;
+        font-weight: 800;
         color: #0f172a;
-        margin: 0 0 .18rem;
+        letter-spacing: -.02em;
+        margin: 0 0 .2rem;
     }
     .db-header-sub {
-        font-size: .8rem;
+        font-size: .85rem;
         color: #64748b;
         margin: 0;
     }
     .db-header-date {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: .5rem;
-        font-size: .8rem;
-        font-weight: 500;
-        color: #475569;
-        background: #f8fafc;
+        gap: .55rem;
+        font-size: .82rem;
+        font-weight: 600;
+        color: #334155;
+        background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: .5rem 1rem;
+        border-radius: 10px;
+        padding: .6rem 1.1rem;
         white-space: nowrap;
-        flex-shrink: 0;
+        box-shadow: 0 1px 2px rgba(15,23,42,.04);
     }
-    .db-header-date i { color: #1b84ff; font-size: .78rem; }
+    .db-header-date i { color: #1b84ff; font-size: .8rem; }
 
-    /* ── Section labels ──────────────────────────────────── */
-    .db-section {
+    /* ── Gradient document tiles ─────────────────────────── */
+    .gtile-link { display: block; height: 100%; text-decoration: none; }
+    .gtile-link:hover, .gtile-link:focus { text-decoration: none; }
+
+    .gtile {
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        min-height: 128px;
+        border-radius: 14px;
+        padding: 1.05rem 1.15rem 1rem;
+        color: #fff;
+        background: linear-gradient(135deg, var(--g1) 0%, var(--g2) 100%);
+        box-shadow: 0 6px 18px -6px var(--g2);
+        transition: transform .22s ease, box-shadow .22s ease;
         display: flex;
-        align-items: center;
-        gap: .6rem;
+        flex-direction: column;
+        justify-content: space-between;
     }
-    .db-section-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 7px;
-        background: #f1f5f9;
+    /* Soft wave sheen across the lower half of the tile. */
+    .gtile::after {
+        content: '';
+        position: absolute;
+        left: -18%;
+        right: -18%;
+        bottom: -58%;
+        height: 116%;
+        border-radius: 50%;
+        background: rgba(255,255,255,.11);
+        pointer-events: none;
+    }
+    .gtile:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 30px -8px var(--g2);
+    }
+    .gtile-top {
+        position: relative;
+        z-index: 1;
         display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #64748b;
-        font-size: .72rem;
-        flex-shrink: 0;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: .75rem;
     }
-    .db-section-text {
-        font-size: .72rem;
+    .gtile-label {
+        font-size: .68rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .1em;
-        color: #64748b;
-        white-space: nowrap;
+        opacity: .92;
     }
-    .db-section-line {
-        flex: 1;
-        height: 1px;
-        background: #e2e8f0;
-    }
-
-    /* ── KPI card link wrapper ───────────────────────────── */
-    .kpi-link {
-        display: block;
-        height: 100%;
-        text-decoration: none;
-        color: inherit;
-    }
-    .kpi-link:hover, .kpi-link:focus { text-decoration: none; color: inherit; }
-
-    /* ── KPI card ────────────────────────────────────────── */
-    .kpi-card {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
-        overflow: hidden;
-        height: 100%;
-        position: relative;
-        transition: box-shadow .22s ease, transform .22s ease;
-        cursor: pointer;
-    }
-    .kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--kc, #1b84ff) 0%, var(--kc-lite, rgba(27,132,255,.3)) 100%);
-        border-radius: 14px 14px 0 0;
-    }
-    .kpi-card:hover {
-        box-shadow: 0 10px 32px rgba(0,0,0,.12);
-        transform: translateY(-3px);
-    }
-    .kpi-card:active { transform: translateY(-1px); }
-
-    /* ── KPI card body ───────────────────────────────────── */
-    .kpi-body {
-        padding: 1.35rem 1.4rem 1.2rem;
-        display: flex;
-        flex-direction: column;
-        gap: .75rem;
-    }
-    .kpi-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: .5rem;
-    }
-    .kpi-label {
-        font-size: .67rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .09em;
-        color: #64748b;
-    }
-    .kpi-tag {
-        font-size: .62rem;
-        font-weight: 600;
-        letter-spacing: .04em;
-        padding: .18rem .55rem;
-        border-radius: 20px;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .kpi-mid {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: .75rem;
-    }
-    .kpi-value {
-        font-size: 2.35rem;
+    .gtile-value {
+        font-size: 1.9rem;
         font-weight: 800;
-        color: #0f172a;
-        line-height: 1;
-        letter-spacing: -.04em;
+        line-height: 1.1;
+        letter-spacing: -.03em;
+        margin-top: .45rem;
     }
-    .kpi-icon {
-        width: 64px;
-        height: 64px;
-        border-radius: 16px;
+    .gtile-icon {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        border-radius: 11px;
+        background: rgba(255,255,255,.2);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.75rem;
-        flex-shrink: 0;
-        transition: transform .22s ease, box-shadow .22s ease;
+        font-size: 1.1rem;
+        transition: transform .22s ease;
     }
-    .kpi-card:hover .kpi-icon {
-        transform: scale(1.1) rotate(-4deg);
-        box-shadow: 0 6px 18px rgba(0,0,0,.13);
-    }
-    .kpi-foot {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-top: .7rem;
-        border-top: 1px solid #f1f5f9;
-    }
-    .kpi-desc {
-        font-size: .71rem;
-        color: #94a3b8;
-    }
-    .kpi-arrow {
+    .gtile:hover .gtile-icon { transform: scale(1.08) rotate(-5deg); }
+    .gtile-desc {
+        position: relative;
+        z-index: 1;
         font-size: .72rem;
-        color: var(--kc, #1b84ff);
-        opacity: 0;
-        transform: translateX(-6px);
-        transition: opacity .2s ease, transform .2s ease;
-    }
-    .kpi-card:hover .kpi-arrow {
-        opacity: 1;
-        transform: translateX(0);
+        opacity: .9;
+        margin-top: .55rem;
     }
 
-    /* ── Dashboard panels (charts / grids) ──────────────── */
-    .dash-panel {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
-        padding: 1.4rem 1.5rem 1.25rem;
+    /* ── KPI tiles ───────────────────────────────────────── */
+    .kpi-tile {
         height: 100%;
+        background: #fff;
+        border: 1px solid #eef2f7;
+        border-radius: 14px;
+        padding: 1.1rem 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(15,23,42,.05);
+        transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .kpi-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px -10px rgba(15,23,42,.22);
+    }
+    .kpi-tile-icon {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        background: var(--kt-bg);
+        color: var(--kt-fg);
+    }
+    .kpi-tile-label {
+        font-size: .78rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: .15rem;
+    }
+    .kpi-tile-value {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+        letter-spacing: -.03em;
+    }
+    .kpi-tile-foot {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        margin-top: .3rem;
+        font-size: .7rem;
+        color: #94a3b8;
+        flex-wrap: wrap;
+    }
+    .kpi-delta { font-weight: 700; }
+    .kpi-delta.up { color: #16a34a; }
+    .kpi-delta.down { color: #dc2626; }
+    .kpi-delta.flat { color: #94a3b8; }
+
+    /* ── Panels ──────────────────────────────────────────── */
+    .dash-panel {
+        height: 100%;
+        background: #fff;
+        border: 1px solid #eef2f7;
+        border-radius: 14px;
+        padding: 1.25rem 1.35rem 1.35rem;
+        box-shadow: 0 1px 3px rgba(15,23,42,.05);
+        /* column flex lets the doughnut centre itself when the neighbouring panel is taller */
+        display: flex;
+        flex-direction: column;
     }
     .dash-ph {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #f1f5f9;
-        margin-bottom: 1.25rem;
-    }
-    .dash-ph-left {
-        display: flex;
-        align-items: center;
-        gap: .55rem;
-    }
-    .dash-ph-bar {
-        width: 3px;
-        height: 16px;
-        border-radius: 3px;
-        background: var(--ph-color, #1b84ff);
-        flex-shrink: 0;
+        margin-bottom: 1rem;
     }
     .dash-ph-title {
-        font-size: .875rem;
+        font-size: .95rem;
         font-weight: 700;
         color: #0f172a;
         margin: 0;
     }
     .dash-ph-link {
-        display: inline-flex;
-        align-items: center;
-        gap: .3rem;
-        font-size: .75rem;
+        font-size: .78rem;
+        font-weight: 600;
         color: #1b84ff;
-        font-weight: 500;
         text-decoration: none;
         white-space: nowrap;
-        border: 1px solid rgba(27,132,255,.2);
-        border-radius: 6px;
-        padding: .25rem .65rem;
-        transition: background .15s;
     }
-    .dash-ph-link:hover {
-        background: rgba(27,132,255,.06);
-        color: #1b84ff;
-        text-decoration: none;
+    .dash-ph-link:hover { color: #0b6ad6; text-decoration: none; }
+    .dash-ph-pill {
+        font-size: .74rem;
+        font-weight: 600;
+        color: #475569;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: .32rem .75rem;
+        white-space: nowrap;
+    }
+
+    /* ── Doughnut + legend ───────────────────────────────── */
+    .donut-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        flex: 1;
+    }
+    /* 200 + 16 gap + 155 must stay under the panel's inner width (~417px at xl). */
+    .donut-holder {
+        position: relative;
+        flex: 0 0 200px;
+        width: 200px;
+        max-width: 100%;
+    }
+    .donut-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+    }
+    .donut-center-value {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+        letter-spacing: -.03em;
+    }
+    .donut-center-label {
+        font-size: .68rem;
+        color: #94a3b8;
+    }
+    .donut-legend {
+        flex: 1 1 155px;
+        min-width: 155px;
+        display: flex;
+        flex-direction: column;
+        gap: .7rem;
+    }
+    .donut-legend-row {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        font-size: .82rem;
+    }
+    .donut-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .donut-legend-name { color: #334155; flex: 1; }
+    .donut-legend-value { font-weight: 700; color: #0f172a; }
+    .donut-legend-pct { color: #94a3b8; font-size: .74rem; }
+
+    /* ── Top categories ──────────────────────────────────── */
+    .cat-list { display: flex; flex-direction: column; gap: 1.05rem; }
+    .cat-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .75rem;
+        font-size: .82rem;
+        margin-bottom: .4rem;
+    }
+    .cat-name { color: #334155; font-weight: 600; }
+    .cat-value { font-weight: 700; color: #0f172a; }
+    .cat-pct { color: #94a3b8; font-size: .74rem; font-weight: 500; }
+    .cat-track {
+        height: 7px;
+        border-radius: 99px;
+        background: #f1f5f9;
+        overflow: hidden;
+    }
+    .cat-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #6366f1 0%, #3b82f6 100%);
+        transition: width .6s ease;
+    }
+
+    /* ── Recent activity ─────────────────────────────────── */
+    .act-list { display: flex; flex-direction: column; }
+    .act-row {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding: .68rem 0;
+        border-bottom: 1px solid #f4f6fb;
+        font-size: .82rem;
+    }
+    .act-row:last-child { border-bottom: none; }
+    .act-icon {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .68rem;
+    }
+    .act-icon.in { background: rgba(16,185,129,.12); color: #10b981; }
+    .act-icon.out { background: rgba(59,130,246,.12); color: #3b82f6; }
+    .act-title { flex: 1; color: #334155; min-width: 0; }
+    .act-title span { display: block; }
+    .act-qty { font-size: .7rem; color: #94a3b8; }
+    .act-number {
+        color: #64748b;
+        font-size: .76rem;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+    .act-time {
+        color: #94a3b8;
+        font-size: .76rem;
+        white-space: nowrap;
+        min-width: 62px;
+        text-align: right;
+    }
+
+    .db-empty {
+        padding: 1.75rem 0;
+        text-align: center;
+        color: #94a3b8;
+        font-size: .82rem;
     }
 </style>
 }
 
 <div id="app" v-cloak>
 <div class="form-card" id="formcard">
+<div class="container-fluid py-4 px-4">
+<div class="db-wrap">
 
     <!-- ── Page header ──────────────────────────────────────── -->
-    <div class="container-fluid pt-4 px-4">
-        <div class="db-header">
-            <div>
-                <h5 class="db-header-title">Dashboard Overview</h5>
-                <p class="db-header-sub">Real-time summary of your warehouse &amp; inventory operations</p>
-            </div>
-            <div class="db-header-date">
-                <i class="fas fa-calendar-alt"></i>
-                <span id="dbDate"></span>
-            </div>
+    <div class="db-header">
+        <div>
+            <h1 class="db-header-title">Dashboard Overview</h1>
+            <p class="db-header-sub">Real-time summary of your warehouse &amp; inventory operations</p>
+        </div>
+        <div class="db-header-date">
+            <i class="fas fa-calendar-alt"></i>
+            <span>{{ state.todayLabel }}</span>
         </div>
     </div>
 
-    <!-- ── Section: Order Documents ─────────────────────────── -->
-    <div class="container-fluid pt-4 px-4 pb-0">
-        <div class="db-section">
-            <div class="db-section-icon"><i class="fas fa-file-invoice"></i></div>
-            <span class="db-section-text">Order Documents</span>
-            <div class="db-section-line"></div>
+    <!-- ── Order documents ──────────────────────────────────── -->
+    <div class="row g-3">
+        <div class="col-sm-6 col-xl-3">
+            <a href="/SalesOrders/SalesOrderList" class="gtile-link">
+                <div class="gtile" style="--g1:#a855f7; --g2:#7c6ef5;">
+                    <div class="gtile-top">
+                        <div>
+                            <div class="gtile-label">Sales</div>
+                            <div class="gtile-value"><span ref="cardSalesQtyRef">&mdash;</span></div>
+                        </div>
+                        <div class="gtile-icon"><i class="fas fa-chart-line"></i></div>
+                    </div>
+                    <div class="gtile-desc">total sales orders</div>
+                </div>
+            </a>
         </div>
-    </div>
-    <div class="container-fluid pt-3 px-4">
-        <div class="row g-3">
-
-            <div class="col-sm-6 col-xl-3">
-                <a href="/SalesOrders/SalesOrderList" class="kpi-link">
-                    <div class="kpi-card" style="--kc:#1b84ff; --kc-lite:rgba(27,132,255,.3);">
-                        <div class="kpi-body">
-                            <div class="kpi-top">
-                                <span class="kpi-label">Sales</span>
-                                <span class="kpi-tag" style="background:rgba(27,132,255,.1);color:#1b84ff;">Orders</span>
-                            </div>
-                            <div class="kpi-mid">
-                                <div class="kpi-value"><span ref="cardSalesQtyRef">—</span></div>
-                                <div class="kpi-icon" style="background:rgba(27,132,255,.1);color:#1b84ff;">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                            </div>
-                            <div class="kpi-foot">
-                                <span class="kpi-desc">total sales orders</span>
-                                <i class="fas fa-arrow-right kpi-arrow"></i>
-                            </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/SalesReturns/SalesReturnList" class="gtile-link">
+                <div class="gtile" style="--g1:#fbbf24; --g2:#f97316;">
+                    <div class="gtile-top">
+                        <div>
+                            <div class="gtile-label">Sales Return</div>
+                            <div class="gtile-value"><span ref="cardSalesReturnQtyRef">&mdash;</span></div>
                         </div>
+                        <div class="gtile-icon"><i class="fas fa-undo-alt"></i></div>
                     </div>
-                </a>
-            </div>
-
-            <div class="col-sm-6 col-xl-3">
-                <a href="/SalesReturns/SalesReturnList" class="kpi-link">
-                    <div class="kpi-card" style="--kc:#f59e0b; --kc-lite:rgba(245,158,11,.3);">
-                        <div class="kpi-body">
-                            <div class="kpi-top">
-                                <span class="kpi-label">Sales Return</span>
-                                <span class="kpi-tag" style="background:rgba(245,158,11,.1);color:#f59e0b;">Returns</span>
-                            </div>
-                            <div class="kpi-mid">
-                                <div class="kpi-value"><span ref="cardSalesReturnQtyRef">—</span></div>
-                                <div class="kpi-icon" style="background:rgba(245,158,11,.1);color:#f59e0b;">
-                                    <i class="fas fa-undo-alt"></i>
-                                </div>
-                            </div>
-                            <div class="kpi-foot">
-                                <span class="kpi-desc">total return orders</span>
-                                <i class="fas fa-arrow-right kpi-arrow"></i>
-                            </div>
+                    <div class="gtile-desc">total return orders</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/PurchaseOrders/PurchaseOrderList" class="gtile-link">
+                <div class="gtile" style="--g1:#22c55e; --g2:#10b981;">
+                    <div class="gtile-top">
+                        <div>
+                            <div class="gtile-label">Purchase</div>
+                            <div class="gtile-value"><span ref="cardPurchaseQtyRef">&mdash;</span></div>
                         </div>
+                        <div class="gtile-icon"><i class="fas fa-shopping-cart"></i></div>
                     </div>
-                </a>
-            </div>
-
-            <div class="col-sm-6 col-xl-3">
-                <a href="/PurchaseOrders/PurchaseOrderList" class="kpi-link">
-                    <div class="kpi-card" style="--kc:#10b981; --kc-lite:rgba(16,185,129,.3);">
-                        <div class="kpi-body">
-                            <div class="kpi-top">
-                                <span class="kpi-label">Purchase</span>
-                                <span class="kpi-tag" style="background:rgba(16,185,129,.1);color:#10b981;">Orders</span>
-                            </div>
-                            <div class="kpi-mid">
-                                <div class="kpi-value"><span ref="cardPurchaseQtyRef">—</span></div>
-                                <div class="kpi-icon" style="background:rgba(16,185,129,.1);color:#10b981;">
-                                    <i class="fas fa-shopping-cart"></i>
-                                </div>
-                            </div>
-                            <div class="kpi-foot">
-                                <span class="kpi-desc">total purchase orders</span>
-                                <i class="fas fa-arrow-right kpi-arrow"></i>
-                            </div>
+                    <div class="gtile-desc">total purchase orders</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/PurchaseReturns/PurchaseReturnList" class="gtile-link">
+                <div class="gtile" style="--g1:#8b5cf6; --g2:#a78bfa;">
+                    <div class="gtile-top">
+                        <div>
+                            <div class="gtile-label">Purchase Return</div>
+                            <div class="gtile-value"><span ref="cardPurchaseReturnQtyRef">&mdash;</span></div>
                         </div>
+                        <div class="gtile-icon"><i class="fas fa-undo"></i></div>
                     </div>
-                </a>
-            </div>
-
-            <div class="col-sm-6 col-xl-3">
-                <a href="/PurchaseReturns/PurchaseReturnList" class="kpi-link">
-                    <div class="kpi-card" style="--kc:#8b5cf6; --kc-lite:rgba(139,92,246,.3);">
-                        <div class="kpi-body">
-                            <div class="kpi-top">
-                                <span class="kpi-label">Purchase Return</span>
-                                <span class="kpi-tag" style="background:rgba(139,92,246,.1);color:#8b5cf6;">Returns</span>
-                            </div>
-                            <div class="kpi-mid">
-                                <div class="kpi-value"><span ref="cardPurchaseReturnQtyRef">—</span></div>
-                                <div class="kpi-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6;">
-                                    <i class="fas fa-undo"></i>
-                                </div>
-                            </div>
-                            <div class="kpi-foot">
-                                <span class="kpi-desc">total return orders</span>
-                                <i class="fas fa-arrow-right kpi-arrow"></i>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
+                    <div class="gtile-desc">total return orders</div>
+                </div>
+            </a>
         </div>
     </div>
 
-    <!-- ── Section: Warehouse Movements ─────────────────────── -->
-    <div class="container-fluid pt-4 px-4 pb-0">
-        <div class="db-section">
-            <div class="db-section-icon"><i class="fas fa-warehouse"></i></div>
-            <span class="db-section-text">Warehouse Movements</span>
-            <div class="db-section-line"></div>
+    <!-- ── Warehouse movements ──────────────────────────────── -->
+    <div class="row g-3">
+        <div class="col-sm-6 col-xl-3">
+            <a href="/DeliveryOrders/DeliveryOrderList" class="gtile-link">
+                <div class="gtile" style="--g1:#2563eb; --g2:#3b82f6;">
+                    <div class="gtile-top">
+                        <div>
+                            <div class="gtile-label">Delivery Order</div>
+                            <div class="gtile-value"><span ref="cardDeliveryOrderQtyRef">&mdash;</span></div>
+                        </div>
+                        <div class="gtile-icon"><i class="fas fa-truck"></i></div>
+                    </div>
+                    <div class="gtile-desc">deliveries dispatched</div>
+                </div>
+            </a>
         </div>
-    </div>
-    <div class="container-fluid pt-3 px-4">
-        <div class="row g-3">
-
-            <div class="col-sm-6 col-xl-3">
-                <a href="/DeliveryOrders/DeliveryOrderList" class="kpi-link">
-                    <div class="kpi-card" style="--kc:#06b6d4; --kc-lite:rgba(6,182,212,.3);">
-                        <div class="kpi-body">
-                            <div class="kpi-top">
-                                <span class="kpi-label">Delivery Order</span>
-                                <span class="kpi-tag" style="background:rgba(6,182,212,.1);color:#06b6d4;">Outbound</span>
-                            </div>
-                            <div class="kpi-mid">
-                                <div class="kpi-value"><span ref="cardDeliveryOrderQtyRef">—</span></div>
-                                <div class="kpi-icon" style="background:rgba(6,182,212,.1);color:#06b6d4;">
-                                    <i class="fas fa-truck"></i>
-                                </div>
-                            </div>
-                            <div class="kpi-foot">
-                                <span class="kpi-desc">deliveries dispatched</span>
-                                <i class="fas fa-arrow-right kpi-arrow"></i>
-                            </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/GoodsReceives/GoodsReceiveList" class="gtile-link">
+                <div class="gtile" style="--g1:#0ea5e9; --g2:#38bdf8;">
+                    <div class="gtile-top">
+                        <div>
+                            <div class="gtile-label">Goods Receive</div>
+                            <div class="gtile-value"><span ref="cardGoodsReceiveQtyRef">&mdash;</span></div>
                         </div>
+                        <div class="gtile-icon"><i class="fas fa-boxes"></i></div>
                     </div>
-                </a>
-            </div>
-
-            <div class="col-sm-6 col-xl-3">
-                <a href="/GoodsReceives/GoodsReceiveList" class="kpi-link">
-                    <div class="kpi-card" style="--kc:#3b82f6; --kc-lite:rgba(59,130,246,.3);">
-                        <div class="kpi-body">
-                            <div class="kpi-top">
-                                <span class="kpi-label">Goods Receive</span>
-                                <span class="kpi-tag" style="background:rgba(59,130,246,.1);color:#3b82f6;">Inbound</span>
-                            </div>
-                            <div class="kpi-mid">
-                                <div class="kpi-value"><span ref="cardGoodsReceiveQtyRef">—</span></div>
-                                <div class="kpi-icon" style="background:rgba(59,130,246,.1);color:#3b82f6;">
-                                    <i class="fas fa-boxes"></i>
-                                </div>
-                            </div>
-                            <div class="kpi-foot">
-                                <span class="kpi-desc">receipts processed</span>
-                                <i class="fas fa-arrow-right kpi-arrow"></i>
-                            </div>
+                    <div class="gtile-desc">receipts processed</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TransferOuts/TransferOutList" class="gtile-link">
+                <div class="gtile" style="--g1:#ef4444; --g2:#f87171;">
+                    <div class="gtile-top">
+                        <div>
+                            <div class="gtile-label">Transfer Out</div>
+                            <div class="gtile-value"><span ref="cardTransferOutQtyRef">&mdash;</span></div>
                         </div>
+                        <div class="gtile-icon"><i class="fas fa-sign-out-alt"></i></div>
                     </div>
-                </a>
-            </div>
-
-            <div class="col-sm-6 col-xl-3">
-                <a href="/TransferOuts/TransferOutList" class="kpi-link">
-                    <div class="kpi-card" style="--kc:#f97316; --kc-lite:rgba(249,115,22,.3);">
-                        <div class="kpi-body">
-                            <div class="kpi-top">
-                                <span class="kpi-label">Transfer Out</span>
-                                <span class="kpi-tag" style="background:rgba(249,115,22,.1);color:#f97316;">Transfer</span>
-                            </div>
-                            <div class="kpi-mid">
-                                <div class="kpi-value"><span ref="cardTransferOutQtyRef">—</span></div>
-                                <div class="kpi-icon" style="background:rgba(249,115,22,.1);color:#f97316;">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                </div>
-                            </div>
-                            <div class="kpi-foot">
-                                <span class="kpi-desc">outbound transfers</span>
-                                <i class="fas fa-arrow-right kpi-arrow"></i>
-                            </div>
+                    <div class="gtile-desc">outbound transfers</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TransferIns/TransferInList" class="gtile-link">
+                <div class="gtile" style="--g1:#14b8a6; --g2:#34d399;">
+                    <div class="gtile-top">
+                        <div>
+                            <div class="gtile-label">Transfer In</div>
+                            <div class="gtile-value"><span ref="cardTransferInQtyRef">&mdash;</span></div>
                         </div>
+                        <div class="gtile-icon"><i class="fas fa-sign-in-alt"></i></div>
                     </div>
-                </a>
-            </div>
-
-            <div class="col-sm-6 col-xl-3">
-                <a href="/TransferIns/TransferInList" class="kpi-link">
-                    <div class="kpi-card" style="--kc:#22c55e; --kc-lite:rgba(34,197,94,.3);">
-                        <div class="kpi-body">
-                            <div class="kpi-top">
-                                <span class="kpi-label">Transfer In</span>
-                                <span class="kpi-tag" style="background:rgba(34,197,94,.1);color:#22c55e;">Transfer</span>
-                            </div>
-                            <div class="kpi-mid">
-                                <div class="kpi-value"><span ref="cardTransferInQtyRef">—</span></div>
-                                <div class="kpi-icon" style="background:rgba(34,197,94,.1);color:#22c55e;">
-                                    <i class="fas fa-sign-in-alt"></i>
-                                </div>
-                            </div>
-                            <div class="kpi-foot">
-                                <span class="kpi-desc">inbound transfers</span>
-                                <i class="fas fa-arrow-right kpi-arrow"></i>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
+                    <div class="gtile-desc">inbound transfers</div>
+                </div>
+            </a>
         </div>
     </div>
 
-    <!-- ── Section: Analytics ───────────────────────────────── -->
-    <div class="container-fluid pt-4 px-4 pb-0">
-        <div class="db-section">
-            <div class="db-section-icon"><i class="fas fa-chart-bar"></i></div>
-            <span class="db-section-text">Sales &amp; Purchase Analytics</span>
-            <div class="db-section-line"></div>
-        </div>
-    </div>
-
-    <div class="container-fluid pt-3 px-4">
-        <div class="row g-3">
-            <div class="col-sm-12 col-xl-6">
-                <div class="dash-panel" style="--ph-color:#1b84ff;">
-                    <div class="dash-ph">
-                        <div class="dash-ph-left">
-                            <div class="dash-ph-bar"></div>
-                            <h6 class="dash-ph-title">Sales by Customer Group</h6>
-                        </div>
-                        <a href="/SalesReports/SalesReportList" class="dash-ph-link">
-                            <i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> View Report
-                        </a>
+    <!-- ── KPI tiles ────────────────────────────────────────── -->
+    <div class="row g-3">
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-tile">
+                <div class="kpi-tile-icon" style="--kt-bg:rgba(99,102,241,.12); --kt-fg:#6366f1;">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <div>
+                    <div class="kpi-tile-label">Total Inventory</div>
+                    <div class="kpi-tile-value">{{ methods.formatQty(state.kpi.totalInventory) }}</div>
+                    <div class="kpi-tile-foot">
+                        <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.totalInventoryDeltaPct)]">
+                            <i v-bind:class="methods.deltaIcon(state.kpi.totalInventoryDeltaPct)"></i>
+                            {{ methods.formatDelta(state.kpi.totalInventoryDeltaPct) }}
+                        </span>
+                        <span>vs last month</span>
                     </div>
-                    <div ref="customerGroupChartRef"></div>
                 </div>
             </div>
-            <div class="col-sm-12 col-xl-6">
-                <div class="dash-panel" style="--ph-color:#10b981;">
-                    <div class="dash-ph">
-                        <div class="dash-ph-left">
-                            <div class="dash-ph-bar"></div>
-                            <h6 class="dash-ph-title">Purchase by Vendor Group</h6>
-                        </div>
-                        <a href="/PurchaseReports/PurchaseReportList" class="dash-ph-link">
-                            <i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> View Report
-                        </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-tile">
+                <div class="kpi-tile-icon" style="--kt-bg:rgba(16,185,129,.12); --kt-fg:#10b981;">
+                    <i class="fas fa-arrow-down"></i>
+                </div>
+                <div>
+                    <div class="kpi-tile-label">Inbound Today</div>
+                    <div class="kpi-tile-value">{{ methods.formatQty(state.kpi.inboundToday) }}</div>
+                    <div class="kpi-tile-foot">
+                        <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.inboundDeltaPct)]">
+                            <i v-bind:class="methods.deltaIcon(state.kpi.inboundDeltaPct)"></i>
+                            {{ methods.formatDelta(state.kpi.inboundDeltaPct) }}
+                        </span>
+                        <span>vs daily average</span>
                     </div>
-                    <div ref="vendorGroupChartRef"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-tile">
+                <div class="kpi-tile-icon" style="--kt-bg:rgba(249,115,22,.12); --kt-fg:#f97316;">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+                <div>
+                    <div class="kpi-tile-label">Outbound Today</div>
+                    <div class="kpi-tile-value">{{ methods.formatQty(state.kpi.outboundToday) }}</div>
+                    <div class="kpi-tile-foot">
+                        <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.outboundDeltaPct)]">
+                            <i v-bind:class="methods.deltaIcon(state.kpi.outboundDeltaPct)"></i>
+                            {{ methods.formatDelta(state.kpi.outboundDeltaPct) }}
+                        </span>
+                        <span>vs daily average</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-tile">
+                <div class="kpi-tile-icon" style="--kt-bg:rgba(239,68,68,.12); --kt-fg:#ef4444;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="kpi-tile-label">Low Stock Items</div>
+                    <div class="kpi-tile-value">{{ methods.formatQty(state.kpi.lowStockCount) }}</div>
+                    <div class="kpi-tile-foot">
+                        <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.lowStockDeltaPct, true)]">
+                            <i v-bind:class="methods.deltaIcon(state.kpi.lowStockDeltaPct)"></i>
+                            {{ methods.formatDelta(state.kpi.lowStockDeltaPct) }}
+                        </span>
+                        <span>at or below {{ methods.formatQty(state.kpi.lowStockThreshold) }} units</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container-fluid pt-3 px-4">
-        <div class="row g-3">
-            <div class="col-sm-12 col-xl-6">
-                <div class="dash-panel" style="--ph-color:#1b84ff;">
-                    <div class="dash-ph">
-                        <div class="dash-ph-left">
-                            <div class="dash-ph-bar"></div>
-                            <h6 class="dash-ph-title">Sales by Customer Category</h6>
-                        </div>
-                        <a href="/SalesReports/SalesReportList" class="dash-ph-link">
-                            <i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> View Report
-                        </a>
-                    </div>
-                    <div ref="customerCategoryChartRef"></div>
+    <!-- ── Inventory status + movement trend ────────────────── -->
+    <div class="row g-3">
+        <div class="col-12 col-xl-5">
+            <div class="dash-panel">
+                <div class="dash-ph">
+                    <h2 class="dash-ph-title">Inventory Status</h2>
+                    <a href="/StockReports/StockReportList" class="dash-ph-link">View Report</a>
                 </div>
-            </div>
-            <div class="col-sm-12 col-xl-6">
-                <div class="dash-panel" style="--ph-color:#10b981;">
-                    <div class="dash-ph">
-                        <div class="dash-ph-left">
-                            <div class="dash-ph-bar"></div>
-                            <h6 class="dash-ph-title">Purchase by Vendor Category</h6>
+                <div class="donut-row">
+                    <div class="donut-holder">
+                        <div ref="statusChartRef"></div>
+                        <div class="donut-center">
+                            <div class="donut-center-value">{{ methods.formatQty(state.statusTotal) }}</div>
+                            <div class="donut-center-label">Total Units</div>
                         </div>
-                        <a href="/PurchaseReports/PurchaseReportList" class="dash-ph-link">
-                            <i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> View Report
-                        </a>
                     </div>
-                    <div ref="vendorCategoryChartRef"></div>
+                    <div class="donut-legend">
+                        <div class="donut-legend-row" v-for="slice in state.inventoryStatus" v-bind:key="slice.label">
+                            <span class="donut-dot" v-bind:style="{ background: slice.color }"></span>
+                            <span class="donut-legend-name">{{ slice.label }}</span>
+                            <span class="donut-legend-value">{{ methods.formatQty(slice.value) }}</span>
+                            <span class="donut-legend-pct">({{ slice.percentage }}%)</span>
+                        </div>
+                        <div class="db-empty" v-if="state.inventoryStatus.length === 0">No inventory recorded yet.</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- ── Section: Recent Activity ─────────────────────────── -->
-    <div class="container-fluid pt-4 px-4 pb-0">
-        <div class="db-section">
-            <div class="db-section-icon"><i class="fas fa-clock"></i></div>
-            <span class="db-section-text">Recent Activity</span>
-            <div class="db-section-line"></div>
-        </div>
-    </div>
-
-    <div class="container-fluid pt-3 px-4">
-        <div class="row g-3">
-            <div class="col-sm-12 col-xl-6">
-                <div class="dash-panel" style="--ph-color:#1b84ff;">
-                    <div class="dash-ph">
-                        <div class="dash-ph-left">
-                            <div class="dash-ph-bar"></div>
-                            <h6 class="dash-ph-title">Latest Sales Orders</h6>
-                        </div>
-                        <a href="/SalesOrders/SalesOrderList" class="dash-ph-link">
-                            <i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> View All
-                        </a>
-                    </div>
-                    <div ref="salesOrderGridRef"></div>
+        <div class="col-12 col-xl-7">
+            <div class="dash-panel">
+                <div class="dash-ph">
+                    <h2 class="dash-ph-title">Inbound vs Outbound</h2>
+                    <span class="dash-ph-pill">Last 7 Days</span>
                 </div>
-            </div>
-            <div class="col-sm-12 col-xl-6">
-                <div class="dash-panel" style="--ph-color:#10b981;">
-                    <div class="dash-ph">
-                        <div class="dash-ph-left">
-                            <div class="dash-ph-bar"></div>
-                            <h6 class="dash-ph-title">Latest Purchase Orders</h6>
-                        </div>
-                        <a href="/PurchaseOrders/PurchaseOrderList" class="dash-ph-link">
-                            <i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> View All
-                        </a>
-                    </div>
-                    <div ref="purchaseOrderGridRef"></div>
-                </div>
+                <div ref="trendChartRef"></div>
             </div>
         </div>
     </div>
 
-    <!-- ── Section: Inventory ────────────────────────────────── -->
-    <div class="container-fluid pt-4 px-4 pb-0">
-        <div class="db-section">
-            <div class="db-section-icon"><i class="fas fa-boxes"></i></div>
-            <span class="db-section-text">Inventory</span>
-            <div class="db-section-line"></div>
-        </div>
-    </div>
-
-    <div class="container-fluid pt-3 px-4">
-        <div class="row g-3">
-            <div class="col-12">
-                <div class="dash-panel" style="--ph-color:#06b6d4;">
-                    <div class="dash-ph">
-                        <div class="dash-ph-left">
-                            <div class="dash-ph-bar"></div>
-                            <h6 class="dash-ph-title">Inventory Stock by Warehouse</h6>
+    <!-- ── Top categories + recent activity ─────────────────── -->
+    <div class="row g-3">
+        <div class="col-12 col-xl-5">
+            <div class="dash-panel">
+                <div class="dash-ph">
+                    <h2 class="dash-ph-title">Top Categories</h2>
+                    <a href="/ProductGroups/ProductGroupList" class="dash-ph-link">View All</a>
+                </div>
+                <div class="cat-list">
+                    <div v-for="category in state.topCategories" v-bind:key="category.name">
+                        <div class="cat-head">
+                            <span class="cat-name">{{ category.name }}</span>
+                            <span>
+                                <span class="cat-value">{{ methods.formatQty(category.quantity) }}</span>
+                                <span class="cat-pct">({{ category.percentage }}%)</span>
+                            </span>
                         </div>
-                        <a href="/StockReports/StockReportList" class="dash-ph-link">
-                            <i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> View Report
-                        </a>
+                        <div class="cat-track">
+                            <div class="cat-fill" v-bind:style="{ width: category.percentage + '%' }"></div>
+                        </div>
                     </div>
-                    <div ref="stockChartRef"></div>
+                    <div class="db-empty" v-if="state.topCategories.length === 0">No stock on hand yet.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-7">
+            <div class="dash-panel">
+                <div class="dash-ph">
+                    <h2 class="dash-ph-title">Recent Activities</h2>
+                    <a href="/TransactionReports/TransactionReportList" class="dash-ph-link">View All</a>
+                </div>
+                <div class="act-list">
+                    <div class="act-row" v-for="activity in state.recentActivities" v-bind:key="activity.key">
+                        <span v-bind:class="['act-icon', activity.direction === 'In' ? 'in' : 'out']">
+                            <i v-bind:class="activity.direction === 'In' ? 'fas fa-arrow-down' : 'fas fa-arrow-up'"></i>
+                        </span>
+                        <span class="act-title">
+                            <span>{{ activity.title }}</span>
+                            <span class="act-qty">{{ methods.formatQty(activity.quantity) }} units</span>
+                        </span>
+                        <span class="act-number">{{ activity.number }}</span>
+                        <span class="act-time">{{ activity.timeLabel }}</span>
+                    </div>
+                    <div class="db-empty" v-if="state.recentActivities.length === 0">No recent movements.</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container-fluid pt-3 px-4 pb-4">
-        <div class="row g-3">
-            <div class="col-12">
-                <div class="dash-panel" style="--ph-color:#8b5cf6;">
-                    <div class="dash-ph">
-                        <div class="dash-ph-left">
-                            <div class="dash-ph-bar"></div>
-                            <h6 class="dash-ph-title">Inventory Transactions</h6>
-                        </div>
-                        <a href="/TransactionReports/TransactionReportList" class="dash-ph-link">
-                            <i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> View All
-                        </a>
-                    </div>
-                    <div ref="inventoryTransactionGridRef"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+</div>
+</div>
 </div>
 </div>
 
 @section scripts {
-    <script>
-        document.getElementById('dbDate').textContent = new Date().toLocaleDateString('en-US', {
-            weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-        });
-    </script>
     <script src="~/FrontEnd/Pages/Dashboards/DefaultDashboard.cshtml.js"></script>
 }

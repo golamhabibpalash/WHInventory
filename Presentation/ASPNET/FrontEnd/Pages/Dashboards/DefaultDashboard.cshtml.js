@@ -1,10 +1,31 @@
-﻿const App = {
+const App = {
     setup() {
+        const STATUS_COLORS = {
+            'In Stock': '#3b82f6',
+            'Reserved': '#8b5cf6',
+            'In Transit': '#f59e0b',
+            'On Order': '#10b981'
+        };
+        const FALLBACK_COLOR = '#94a3b8';
+
         const state = Vue.reactive({
-            cardsData: {},
-            salesData: {},
-            purchaseData: {},
-            inventoryData: {}
+            todayLabel: '',
+            kpi: {
+                totalInventory: 0,
+                totalInventoryDeltaPct: null,
+                inboundToday: 0,
+                inboundDeltaPct: null,
+                outboundToday: 0,
+                outboundDeltaPct: null,
+                lowStockCount: 0,
+                lowStockDeltaPct: null,
+                lowStockThreshold: 0
+            },
+            inventoryStatus: [],
+            statusTotal: 0,
+            movementTrend: [],
+            topCategories: [],
+            recentActivities: []
         });
 
         const cardSalesQtyRef = Vue.ref(null);
@@ -16,14 +37,8 @@
         const cardTransferOutQtyRef = Vue.ref(null);
         const cardTransferInQtyRef = Vue.ref(null);
 
-        const salesOrderGridRef = Vue.ref(null);
-        const inventoryTransactionGridRef = Vue.ref(null);
-        const purchaseOrderGridRef = Vue.ref(null);
-        const customerGroupChartRef = Vue.ref(null);
-        const vendorGroupChartRef = Vue.ref(null);
-        const customerCategoryChartRef = Vue.ref(null);
-        const vendorCategoryChartRef = Vue.ref(null);
-        const stockChartRef = Vue.ref(null);
+        const statusChartRef = Vue.ref(null);
+        const trendChartRef = Vue.ref(null);
 
         const services = {
             getCardsData: async () => {
@@ -34,25 +49,9 @@
                     throw error;
                 }
             },
-            getSalesData: async () => {
+            getOverviewData: async () => {
                 try {
-                    const response = await AxiosManager.get('/Dashboard/GetSalesDashboard', {});
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
-            },
-            getPurchaseData: async () => {
-                try {
-                    const response = await AxiosManager.get('/Dashboard/GetPurchaseDashboard', {});
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
-            },
-            getInventoryData: async () => {
-                try {
-                    const response = await AxiosManager.get('/Dashboard/GetInventoryDashboard', {});
+                    const response = await AxiosManager.get('/Dashboard/GetOverviewDashboard', {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -61,39 +60,41 @@
         };
 
         const methods = {
+            formatQty: (value) => {
+                const number = Number(value) || 0;
+                return number.toLocaleString(undefined, { maximumFractionDigits: 0 });
+            },
+            formatDelta: (value) => {
+                if (value === null || value === undefined) return 'n/a';
+                const sign = value > 0 ? '+' : '';
+                return `${sign}${Number(value).toFixed(1)}%`;
+            },
+            // A rise is good by default; pass invert for metrics where a rise is bad (low stock).
+            deltaClass: (value, invert) => {
+                if (value === null || value === undefined || value === 0) return 'flat';
+                const positive = invert ? value < 0 : value > 0;
+                return positive ? 'up' : 'down';
+            },
+            deltaIcon: (value) => {
+                if (value === null || value === undefined || value === 0) return 'fas fa-minus';
+                return value > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down';
+            },
+            formatTime: (value) => {
+                if (!value) return '';
+                const date = new Date(value);
+                if (isNaN(date.getTime())) return '';
+                return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            },
             populateCardsData: async () => {
                 const response = await services.getCardsData();
-                state.cardsData = response?.data?.content?.data;
-                methods.populateCards();
-            },
-            populateSalesData: async () => {
-                const response = await services.getSalesData();
-                state.salesData = response?.data?.content?.data;
-                methods.populateSalesOrderGrid();
-                methods.populateSalesByCustomerGroupChart();
-                methods.populateSalesByCustomerCategoryChart();
-            },
-            populatePurchaseData: async () => {
-                const response = await services.getPurchaseData();
-                state.purchaseData = response?.data?.content?.data;
-                methods.populatePurchaseOrderGrid();
-                methods.populatePurchaseByVendorGroupChart();
-                methods.populatePurchaseByVendorCategoryChart();
-            },
-            populateInventoryData: async () => {
-                const response = await services.getInventoryData();
-                state.inventoryData = response?.data?.content?.data;
-                methods.populateInventoryTransactionGrid();
-                methods.populateInventoryStockChart();
-            },
-            populateCards: () => {
-                const cardsDashboard = state.cardsData?.cardsDashboard;
+                const cardsDashboard = response?.data?.content?.data?.cardsDashboard;
 
                 if (!cardsDashboard) {
                     return;
                 }
 
                 const countUp = (el, end) => {
+                    if (!el) return;
                     const target = parseInt(end) || 0;
                     const duration = 1000;
                     const t0 = performance.now();
@@ -115,195 +116,127 @@
                 countUp(cardTransferOutQtyRef.value, cardsDashboard.transferOutTotal);
                 countUp(cardTransferInQtyRef.value, cardsDashboard.transferInTotal);
             },
-            populateSalesOrderGrid: () => {
-                const salesOrderDashboard = state.salesData?.salesOrderDashboard ?? [];
-                new ej.grids.Grid({
-                    dataSource: salesOrderDashboard,
-                    allowFiltering: false,
-                    allowSorting: true,
-                    allowSelection: false,
-                    allowGrouping: false,
-                    allowTextWrap: false,
-                    allowResizing: false,
-                    allowPaging: true,
-                    allowExcelExport: false,
-                    sortSettings: { columns: [{ field: 'orderDate', direction: 'Descending' }] },
-                    pageSettings: { currentPage: 1, pageSize: 10 },
-                    autoFit: false,
-                    showColumnMenu: false,
-                    gridLines: 'Horizontal',
-                    columns: [
+            populateOverviewData: async () => {
+                const response = await services.getOverviewData();
+                const data = response?.data?.content?.data;
+
+                if (!data) {
+                    return;
+                }
+
+                state.kpi = data.kpiDashboard ?? state.kpi;
+                state.movementTrend = data.movementTrendDashboard ?? [];
+                state.topCategories = data.topCategoryDashboard ?? [];
+
+                const slices = (data.inventoryStatusDashboard ?? []).filter(x => (x.value ?? 0) > 0);
+                const total = slices.reduce((sum, x) => sum + (x.value ?? 0), 0);
+                state.statusTotal = total;
+                state.inventoryStatus = slices.map(x => ({
+                    label: x.label,
+                    value: x.value,
+                    color: STATUS_COLORS[x.label] ?? FALLBACK_COLOR,
+                    percentage: total > 0 ? Math.round((x.value / total) * 1000) / 10 : 0
+                }));
+
+                state.recentActivities = (data.recentActivityDashboard ?? []).map((x, index) => ({
+                    key: `${x.number}-${index}`,
+                    title: x.title,
+                    number: x.number,
+                    direction: x.direction,
+                    quantity: x.quantity,
+                    timeLabel: methods.formatTime(x.occurredAtUtc)
+                }));
+
+                methods.populateStatusChart();
+                methods.populateTrendChart();
+            },
+            populateStatusChart: () => {
+                if (!statusChartRef.value) return;
+
+                new ej.charts.AccumulationChart({
+                    series: [{
+                        // Syncfusion mutates its data source, so hand it a plain array not a Vue proxy.
+                        dataSource: Vue.toRaw(state.inventoryStatus).map(x => ({ ...x })),
+                        xName: 'label',
+                        yName: 'value',
+                        pointColorMapping: 'color',
+                        innerRadius: '70%',
+                        radius: '92%',
+                        border: { width: 3, color: '#ffffff' },
+                        dataLabel: { visible: false }
+                    }],
+                    legendSettings: { visible: false },
+                    tooltip: { enable: true, format: '${point.x}: <b>${point.y}</b>' },
+                    enableAnimation: true,
+                    background: 'transparent',
+                    height: '200px',
+                    width: '200px'
+                }, statusChartRef.value);
+            },
+            populateTrendChart: () => {
+                if (!trendChartRef.value) return;
+
+                const axisLabelStyle = { color: '#94a3b8', size: '11px' };
+                const trendPoints = Vue.toRaw(state.movementTrend).map(x => ({ ...x }));
+                const marker = (color) => ({
+                    visible: true,
+                    width: 7,
+                    height: 7,
+                    fill: color,
+                    border: { width: 2, color: '#ffffff' }
+                });
+
+                new ej.charts.Chart({
+                    primaryXAxis: {
+                        valueType: 'Category',
+                        interval: 1,
+                        majorGridLines: { width: 0 },
+                        majorTickLines: { width: 0 },
+                        lineStyle: { width: 1, color: '#e2e8f0' },
+                        labelStyle: axisLabelStyle,
+                        labelIntersectAction: 'Rotate45'
+                    },
+                    primaryYAxis: {
+                        majorTickLines: { width: 0 },
+                        lineStyle: { width: 0 },
+                        majorGridLines: { width: 1, color: '#f1f5f9' },
+                        labelStyle: axisLabelStyle
+                    },
+                    chartArea: { border: { width: 0 } },
+                    series: [
                         {
-                            field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
+                            type: 'SplineArea',
+                            dataSource: trendPoints,
+                            xName: 'label',
+                            yName: 'inbound',
+                            name: 'Inbound',
+                            fill: 'rgba(16,185,129,.10)',
+                            border: { width: 2.5, color: '#10b981' },
+                            marker: marker('#10b981')
                         },
-                        { field: 'salesOrder.orderDate', headerText: 'Order Date', width: 70, type: 'dateTime', format: 'yyyy-MM-dd', textAlign: 'Left' },
-                        { field: 'salesOrder.number', headerText: '#Number', width: 90 },
-                        { field: 'product.name', headerText: 'Product', width: 150 },
-                        { field: 'total', headerText: 'Total', width: 70, type: 'number', format: 'N2', textAlign: 'Right' },
-                    ],
-                }, salesOrderGridRef.value);
-            },
-            populateInventoryTransactionGrid: () => {
-                const inventoryTransactionDashboard = state.inventoryData?.inventoryTransactionDashboard ?? [];
-                new ej.grids.Grid({
-                    dataSource: inventoryTransactionDashboard,
-                    allowFiltering: false,
-                    allowSorting: true,
-                    allowSelection: false,
-                    allowGrouping: false,
-                    allowTextWrap: false,
-                    allowResizing: false,
-                    allowPaging: true,
-                    allowExcelExport: false,
-                    sortSettings: { columns: [{ field: 'movementDate', direction: 'Descending' }] },
-                    pageSettings: { currentPage: 1, pageSize: 10 },
-                    autoFit: false,
-                    showColumnMenu: false,
-                    gridLines: 'Horizontal',
-                    columns: [
                         {
-                            field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
-                        },
-                        { field: 'movementDate', headerText: 'Date', width: 150, format: 'yyyy-MM-dd', textAlign: 'Left', type: 'dateTime' },
-                        { field: 'warehouse.name', headerText: 'Warehouse', width: 150 },
-                        { field: 'product.name', headerText: 'Product', width: 150 },
-                        { field: 'number', headerText: 'Number', width: 150 },
-                        { field: 'stock', headerText: 'Movement', width: 100, type: 'number', format: '+0.00;-0.00;0.00', textAlign: 'Right' },
-                        { field: 'moduleName', headerText: 'Module Name', width: 150 },
-                        { field: 'moduleCode', headerText: 'Module Code', width: 150 },
-                        { field: 'moduleNumber', headerText: 'Module Number', width: 150 },
-                        { field: 'warehouseFrom.name', headerText: 'Warehouse From', width: 150 },
-                        { field: 'warehouseTo.name', headerText: 'Warehouse To', width: 150 },
+                            type: 'SplineArea',
+                            dataSource: trendPoints,
+                            xName: 'label',
+                            yName: 'outbound',
+                            name: 'Outbound',
+                            fill: 'rgba(249,115,22,.10)',
+                            border: { width: 2.5, color: '#f97316' },
+                            marker: marker('#f97316')
+                        }
                     ],
-                }, inventoryTransactionGridRef.value);
-            },
-            populatePurchaseOrderGrid: () => {
-                const purchaseOrderDashboard = state.purchaseData?.purchaseOrderDashboard ?? [];
-                new ej.grids.Grid({
-                    dataSource: purchaseOrderDashboard,
-                    allowFiltering: false,
-                    allowSorting: true,
-                    allowSelection: false,
-                    allowGrouping: false,
-                    allowTextWrap: false,
-                    allowResizing: false,
-                    allowPaging: true,
-                    allowExcelExport: false,
-                    sortSettings: { columns: [{ field: 'orderDate', direction: 'Descending' }] },
-                    pageSettings: { currentPage: 1, pageSize: 10 },
-                    autoFit: false,
-                    showColumnMenu: false,
-                    gridLines: 'Horizontal',
-                    columns: [
-                        {
-                            field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
-                        },
-                        { field: 'purchaseOrder.orderDate', headerText: 'Order Date', width: 70, type: 'dateTime', format: 'yyyy-MM-dd', textAlign: 'Left' },
-                        { field: 'purchaseOrder.number', headerText: '#Number', width: 90 },
-                        { field: 'product.name', headerText: 'Product', width: 150 },
-                        { field: 'total', headerText: 'Total', width: 70, type: 'number', format: 'N2', textAlign: 'Right' },
-                    ],
-                }, purchaseOrderGridRef.value);
-            },
-            populateSalesByCustomerGroupChart: () => {
-                const salesByCustomerGroupDashboard = state.salesData?.salesByCustomerGroupDashboard ?? [];
-                new ej.charts.Chart(
-                    {
-                        primaryXAxis: {
-                            valueType: 'Category', interval: 1, majorGridLines: { width: 0 }, majorTickLines: { width: 0 }, labelIntersectAction: 'None', labelRotation: ej.base.Browser.isDevice ? -45 : 0, minorTickLines: { width: 0 }
-                        },
-                        chartArea: { border: { width: 0 } },
-                        primaryYAxis: {
-                            title: 'Quantity',
-                            majorTickLines: { width: 0 }, lineStyle: { width: 0 },
-                        },
-                        series: salesByCustomerGroupDashboard,
-                        title: 'Sales by Customer Group',
-                        tooltip: { enable: true, header: "<b>${point.tooltip}</b>", shared: true },
-                        legendSettings: { enableHighlight: true },
-                        palettes: ["#E94649", "#F6B53F", "#009CFF", "#C4C24A"],
+                    legendSettings: {
+                        visible: true,
+                        position: 'Top',
+                        alignment: 'Near',
+                        shapeHeight: 9,
+                        shapeWidth: 9,
+                        textStyle: { color: '#475569', size: '12px' }
                     },
-                    customerGroupChartRef.value);
-            },
-            populatePurchaseByVendorGroupChart: () => {
-                const purchaseByVendorGroupDashboard = state.purchaseData?.purchaseByVendorGroupDashboard ?? [];
-                new ej.charts.Chart(
-                    {
-                        primaryXAxis: {
-                            valueType: 'Category', interval: 1, majorGridLines: { width: 0 }, majorTickLines: { width: 0 }, labelIntersectAction: 'None', labelRotation: ej.base.Browser.isDevice ? -45 : 0, minorTickLines: { width: 0 }
-                        },
-                        chartArea: { border: { width: 0 } },
-                        primaryYAxis: {
-                            title: 'Quantity',
-                            majorTickLines: { width: 0 }, lineStyle: { width: 0 },
-                        },
-                        series: purchaseByVendorGroupDashboard,
-                        title: 'Purchase by Vendor Group',
-                        tooltip: { enable: true, header: "<b>${point.tooltip}</b>", shared: true },
-                        legendSettings: { enableHighlight: true },
-                        palettes: ["#E94649", "#F6B53F", "#009CFF", "#C4C24A"],
-                    },
-                    vendorGroupChartRef.value);
-            },
-            populateSalesByCustomerCategoryChart: () => {
-                const salesByCustomerCategoryDashboard = state.salesData?.salesByCustomerCategoryDashboard ?? [];
-                new ej.charts.Chart(
-                    {
-                        primaryXAxis: {
-                            valueType: 'Category', interval: 1, majorGridLines: { width: 0 }, majorTickLines: { width: 0 }, labelIntersectAction: 'None', labelRotation: ej.base.Browser.isDevice ? -45 : 0, minorTickLines: { width: 0 }
-                        },
-                        chartArea: { border: { width: 0 } },
-                        primaryYAxis: {
-                            title: 'Quantity',
-                            majorTickLines: { width: 0 }, lineStyle: { width: 0 },
-                        },
-                        series: salesByCustomerCategoryDashboard,
-                        title: 'Sales by Customer Category',
-                        tooltip: { enable: true, header: "<b>${point.tooltip}</b>", shared: true },
-                        legendSettings: { enableHighlight: true },
-                        palettes: ["#E94649", "#F6B53F", "#009CFF", "#C4C24A"],
-                    },
-                    customerCategoryChartRef.value);
-            },
-            populatePurchaseByVendorCategoryChart: () => {
-                const purchaseByVendorCategoryDashboard = state.purchaseData?.purchaseByVendorCategoryDashboard ?? [];
-                new ej.charts.Chart(
-                    {
-                        primaryXAxis: {
-                            valueType: 'Category', interval: 1, majorGridLines: { width: 0 }, majorTickLines: { width: 0 }, labelIntersectAction: 'None', labelRotation: ej.base.Browser.isDevice ? -45 : 0, minorTickLines: { width: 0 }
-                        },
-                        chartArea: { border: { width: 0 } },
-                        primaryYAxis: {
-                            title: 'Quantity',
-                            majorTickLines: { width: 0 }, lineStyle: { width: 0 },
-                        },
-                        series: purchaseByVendorCategoryDashboard,
-                        title: 'Purchase by Vendor Category',
-                        tooltip: { enable: true, header: "<b>${point.tooltip}</b>", shared: true },
-                        legendSettings: { enableHighlight: true },
-                        palettes: ["#E94649", "#F6B53F", "#009CFF", "#C4C24A"],
-                    },
-                    vendorCategoryChartRef.value);
-            },
-            populateInventoryStockChart: () => {
-                const inventoryStockDashboard = state.inventoryData?.inventoryStockDashboard ?? [];
-                new ej.charts.Chart(
-                    {
-                        primaryXAxis: {
-                            valueType: 'Category', interval: 1, majorGridLines: { width: 0 }, majorTickLines: { width: 0 }, labelIntersectAction: 'None', labelRotation: -15, minorTickLines: { width: 0 }
-                        },
-                        chartArea: { border: { width: 0 } },
-                        primaryYAxis: {
-                            title: 'Quantity',
-                            majorTickLines: { width: 0 }, lineStyle: { width: 0 },
-                        },
-                        series: inventoryStockDashboard,
-                        title: 'Stock by Warehouse',
-                        tooltip: { enable: true, header: "<b>${point.tooltip}</b>", shared: true },
-                        legendSettings: { visible: true },
-                        palettes: ["#E94649", "#F6B53F", "#009CFF", "#C4C24A"],
-                    },
-                    stockChartRef.value);
+                    tooltip: { enable: true, shared: true },
+                    background: 'transparent',
+                    height: '270px'
+                }, trendChartRef.value);
             },
         };
 
@@ -312,14 +245,14 @@
                 await SecurityManager.authorizePage(['Dashboards']);
                 await SecurityManager.validateToken();
 
+                state.todayLabel = new Date().toLocaleDateString('en-US', {
+                    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+                });
+
                 await Promise.all([
                     methods.populateCardsData(),
-                    methods.populateSalesData(),
-                    methods.populatePurchaseData(),
-                    methods.populateInventoryData(),
+                    methods.populateOverviewData(),
                 ]);
-
-                
 
             } catch (e) {
             }
@@ -334,14 +267,8 @@
             cardGoodsReceiveQtyRef,
             cardTransferOutQtyRef,
             cardTransferInQtyRef,
-            salesOrderGridRef,
-            inventoryTransactionGridRef,
-            purchaseOrderGridRef,
-            customerGroupChartRef,
-            vendorGroupChartRef,
-            customerCategoryChartRef,
-            vendorCategoryChartRef,
-            stockChartRef,
+            statusChartRef,
+            trendChartRef,
             state,
             methods
         };
