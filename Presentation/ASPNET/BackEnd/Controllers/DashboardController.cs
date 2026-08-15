@@ -34,6 +34,24 @@ public class DashboardController : BaseApiController
 
 
     [Authorize]
+    [HttpGet("GetOverviewDashboard")]
+    public async Task<ActionResult<ApiSuccessResult<GetOverviewDashboardResult>>> GetOverviewDashboardAsync(
+        CancellationToken cancellationToken
+        )
+    {
+        var request = new GetOverviewDashboardRequest { };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetOverviewDashboardResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetOverviewDashboardAsync)}",
+            Content = response
+        });
+    }
+
+
+    [Authorize]
     [HttpGet("GetSalesDashboard")]
     public async Task<ActionResult<ApiSuccessResult<GetSalesDashboardResult>>> GetSalesDashboardAsync(
         CancellationToken cancellationToken
