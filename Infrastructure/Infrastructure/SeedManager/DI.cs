@@ -1,3 +1,4 @@
+using Application.Common.Tenancy;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Infrastructure.SeedManager.Demos;
 using Infrastructure.SeedManager.Systems;
@@ -14,6 +15,7 @@ public static class DI
     public static IServiceCollection RegisterSystemSeedManager(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<RoleSeeder>();
+        services.AddScoped<TenantSeeder>();
         services.AddScoped<UserAdminSeeder>();
         services.AddScoped<CompanySeeder>();
         services.AddScoped<SystemWarehouseSeeder>();
@@ -27,11 +29,20 @@ public static class DI
         using var scope = host.Services.CreateScope();
         var serviceProvider = scope.ServiceProvider;
 
+        var tenantContext = serviceProvider.GetRequiredService<ITenantContext>();
         var context = serviceProvider.GetRequiredService<DataContext>();
 
-        // Always run role/admin seeders — both are idempotent and handle new roles on upgrades
+        // Roles are platform-wide and the tenant registry is unfiltered, so both run at root scope.
+        tenantContext.SetRootScope();
+
         var roleSeeder = serviceProvider.GetRequiredService<RoleSeeder>();
         roleSeeder.GenerateDataAsync().Wait();
+
+        var tenantSeeder = serviceProvider.GetRequiredService<TenantSeeder>();
+        var defaultTenantId = tenantSeeder.GenerateDataAsync().GetAwaiter().GetResult();
+
+        // Everything below is tenant-owned data — scope it so queries filter and writes stamp.
+        tenantContext.SetTenant(defaultTenantId);
 
         var userAdminSeeder = serviceProvider.GetRequiredService<UserAdminSeeder>();
         userAdminSeeder.GenerateDataAsync().Wait();
@@ -86,6 +97,9 @@ public static class DI
     {
         using var scope = host.Services.CreateScope();
         var serviceProvider = scope.ServiceProvider;
+
+        var tenantContext = serviceProvider.GetRequiredService<ITenantContext>();
+        tenantContext.SetTenant(TenantDefaults.DefaultTenantId);
 
         var context = serviceProvider.GetRequiredService<DataContext>();
         if (!context.Tax.Any()) //if empty, thats mean never been seeded before

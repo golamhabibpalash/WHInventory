@@ -30,6 +30,7 @@ app.UseRouting();
 app.UseCors();
 app.UseMiddleware<GlobalApiExceptionHandlerMiddleware>();
 app.UseAuthentication();
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 app.MapStaticAssets();
 

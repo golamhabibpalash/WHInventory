@@ -1,3 +1,4 @@
+using Application.Common.Tenancy;
 using Infrastructure.SecurityManager.AspNetIdentity;
 using Infrastructure.SecurityManager.Roles;
 using Microsoft.AspNetCore.Identity;
@@ -9,13 +10,16 @@ public class UserAdminSeeder
 {
     private readonly IdentitySettings _identitySettings;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ITenantContext _tenantContext;
     public UserAdminSeeder(
         IOptions<IdentitySettings> identitySettings,
-        UserManager<ApplicationUser> userManager
+        UserManager<ApplicationUser> userManager,
+        ITenantContext tenantContext
         )
     {
         _identitySettings = identitySettings.Value;
         _userManager = userManager;
+        _tenantContext = tenantContext;
     }
 
     public async Task GenerateDataAsync()
@@ -30,7 +34,13 @@ public class UserAdminSeeder
         {
             applicationUser = new ApplicationUser(adminEmail, "Root", "Admin");
             applicationUser.EmailConfirmed = true;
+            applicationUser.TenantId = _tenantContext.TenantId;
             await _userManager.CreateAsync(applicationUser, adminPassword);
+        }
+        else if (string.IsNullOrEmpty(applicationUser.TenantId))
+        {
+            applicationUser.TenantId = _tenantContext.TenantId;
+            await _userManager.UpdateAsync(applicationUser);
         }
 
         foreach (var role in roles)
