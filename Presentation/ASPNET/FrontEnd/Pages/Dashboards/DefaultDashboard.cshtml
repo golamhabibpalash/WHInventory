@@ -35,7 +35,13 @@
         color: #64748b;
         margin: 0;
     }
-    .db-header-date {
+    .db-header-meta {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        flex-wrap: wrap;
+    }
+    .db-chip {
         display: inline-flex;
         align-items: center;
         gap: .55rem;
@@ -48,8 +54,33 @@
         padding: .6rem 1.1rem;
         white-space: nowrap;
         box-shadow: 0 1px 2px rgba(15,23,42,.04);
+        margin: 0;
     }
-    .db-header-date i { color: #1b84ff; font-size: .8rem; }
+    .db-chip i { color: #1b84ff; font-size: .8rem; }
+    .db-chip--brand { background: #eef4ff; border-color: #dbe6ff; color: #1e40af; }
+    .db-chip--brand i { color: #3b82f6; }
+    .db-chip--select { padding-right: .75rem; cursor: pointer; }
+    .db-chip--select select {
+        border: none;
+        background: transparent;
+        font-size: .82rem;
+        font-weight: 600;
+        color: #334155;
+        outline: none;
+        cursor: pointer;
+        max-width: 190px;
+    }
+    .db-chip--select select:disabled { opacity: .6; cursor: progress; }
+
+    .sr-only {
+        position: absolute;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden;
+        clip: rect(0,0,0,0);
+        white-space: nowrap;
+        border: 0;
+    }
 
     /* ── Gradient document tiles ─────────────────────────── */
     .gtile-link { display: block; height: 100%; text-decoration: none; }
@@ -352,6 +383,18 @@
         text-align: right;
     }
 
+    .db-alert {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .85rem 1.1rem;
+        border-radius: 12px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        font-size: .84rem;
+    }
+
     .db-empty {
         padding: 1.75rem 0;
         text-align: center;
@@ -372,10 +415,35 @@
             <h1 class="db-header-title">Dashboard Overview</h1>
             <p class="db-header-sub">Real-time summary of your warehouse &amp; inventory operations</p>
         </div>
-        <div class="db-header-date">
-            <i class="fas fa-calendar-alt"></i>
-            <span>{{ state.todayLabel }}</span>
+        <div class="db-header-meta">
+            <div class="db-chip db-chip--brand" v-if="state.companyName">
+                <i class="fas fa-building"></i>
+                <span>{{ state.companyName }}</span>
+            </div>
+
+            <label class="db-chip db-chip--select">
+                <i class="fas fa-warehouse"></i>
+                <span class="sr-only">Warehouse</span>
+                <select v-model="state.selectedWarehouseId"
+                        v-on:change="methods.changeWarehouse"
+                        v-bind:disabled="state.isReloading">
+                    <option value="">All Warehouses</option>
+                    <option v-for="warehouse in state.warehouses"
+                            v-bind:key="warehouse.id"
+                            v-bind:value="warehouse.id">{{ warehouse.name }}</option>
+                </select>
+            </label>
+
+            <div class="db-chip">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ state.todayLabel }}</span>
+            </div>
         </div>
+    </div>
+
+    <div class="db-alert" v-if="state.loadError">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>{{ state.loadError }}</span>
     </div>
 
     <!-- ── Order documents ──────────────────────────────────── -->

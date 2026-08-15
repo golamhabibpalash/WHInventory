@@ -24,6 +24,8 @@ public class GetOverviewDashboardResult
 
 public class GetOverviewDashboardRequest : IRequest<GetOverviewDashboardResult>
 {
+    /// <summary>Optional warehouse (branch) to scope the figures to. Null means all warehouses.</summary>
+    public string? WarehouseId { get; init; }
 }
 
 public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardRequest, GetOverviewDashboardResult>
@@ -56,6 +58,8 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
 
         // Every ledger row is booked against a real warehouse; the system warehouses only ever appear
         // as the virtual WarehouseFrom/WarehouseTo, so this is the full on-hand picture.
+        var scopedToWarehouse = !string.IsNullOrWhiteSpace(request.WarehouseId);
+
         var ledger = _context.InventoryTransaction
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
@@ -63,6 +67,11 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
                 x.Status == InventoryTransactionStatus.Confirmed &&
                 x.Warehouse!.SystemWarehouse == false &&
                 x.Product!.Physical == true);
+
+        if (scopedToWarehouse)
+        {
+            ledger = ledger.Where(x => x.WarehouseId == request.WarehouseId);
+        }
 
         var stockNow = await ledger
             .GroupBy(x => x.ProductId)
@@ -103,38 +112,16 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             .SumAsync(x => (double?)x.Movement, cancellationToken) ?? 0.0;
 
         // Confirmed sales orders with no confirmed delivery yet are committed but still on the shelf.
-        // The null guard matters: a NULL inside a SQL NOT IN list makes the whole predicate NULL,
-        // which would silently zero out the result.
-        var deliveredSalesOrderIds = _context.DeliveryOrder
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.Status == DeliveryOrderStatus.Confirmed && x.SalesOrderId != null)
-            .Select(x => x.SalesOrderId!);
+        // Sales and purchase orders carry no warehouse, so Reserved and On Order cannot be
+        // attributed to one branch. Under a warehouse filter they are left out rather than
+        // repeated unchanged, which would overstate that branch's pipeline.
+        var reserved = 0.0;
+        var onOrder = 0.0;
 
-        var reserved = await _context.SalesOrderItem
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x =>
-                x.SalesOrder!.OrderStatus == SalesOrderStatus.Confirmed &&
-                x.SalesOrderId != null &&
-                !deliveredSalesOrderIds.Contains(x.SalesOrderId))
-            .SumAsync(x => (double?)x.Quantity, cancellationToken) ?? 0.0;
-
-        // Mirror of the above on the buy side: confirmed but not yet received.
-        var receivedPurchaseOrderIds = _context.GoodsReceive
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.Status == GoodsReceiveStatus.Confirmed && x.PurchaseOrderId != null)
-            .Select(x => x.PurchaseOrderId!);
-
-        var onOrder = await _context.PurchaseOrderItem
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x =>
-                x.PurchaseOrder!.OrderStatus == PurchaseOrderStatus.Confirmed &&
-                x.PurchaseOrderId != null &&
-                !receivedPurchaseOrderIds.Contains(x.PurchaseOrderId))
-            .SumAsync(x => (double?)x.Quantity, cancellationToken) ?? 0.0;
+        if (!scopedToWarehouse)
+        {
+            (reserved, onOrder) = await GetPipelineTotalsAsync(cancellationToken);
+        }
 
         // Pull a generous slice of lines so the roll-up below still yields enough distinct documents.
         var activityRows = await ledger
@@ -297,6 +284,47 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
                 RecentActivityDashboard = recentActivities
             }
         };
+    }
+
+    /// <summary>
+    /// Company-wide committed quantities: confirmed sales orders not yet delivered (Reserved) and
+    /// confirmed purchase orders not yet received (On Order).
+    /// </summary>
+    private async Task<(double Reserved, double OnOrder)> GetPipelineTotalsAsync(CancellationToken cancellationToken)
+    {
+        // The null guard matters: a NULL inside a SQL NOT IN list makes the whole predicate NULL,
+        // which would silently zero out the result.
+        var deliveredSalesOrderIds = _context.DeliveryOrder
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(x => x.Status == DeliveryOrderStatus.Confirmed && x.SalesOrderId != null)
+            .Select(x => x.SalesOrderId!);
+
+        var reserved = await _context.SalesOrderItem
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(x =>
+                x.SalesOrder!.OrderStatus == SalesOrderStatus.Confirmed &&
+                x.SalesOrderId != null &&
+                !deliveredSalesOrderIds.Contains(x.SalesOrderId))
+            .SumAsync(x => (double?)x.Quantity, cancellationToken) ?? 0.0;
+
+        var receivedPurchaseOrderIds = _context.GoodsReceive
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(x => x.Status == GoodsReceiveStatus.Confirmed && x.PurchaseOrderId != null)
+            .Select(x => x.PurchaseOrderId!);
+
+        var onOrder = await _context.PurchaseOrderItem
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(x =>
+                x.PurchaseOrder!.OrderStatus == PurchaseOrderStatus.Confirmed &&
+                x.PurchaseOrderId != null &&
+                !receivedPurchaseOrderIds.Contains(x.PurchaseOrderId))
+            .SumAsync(x => (double?)x.Quantity, cancellationToken) ?? 0.0;
+
+        return (reserved, onOrder);
     }
 
     private static double? CalculateDeltaPct(double current, double baseline)

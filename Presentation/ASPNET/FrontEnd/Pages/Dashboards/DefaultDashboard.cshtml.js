@@ -8,8 +8,18 @@ const App = {
         };
         const FALLBACK_COLOR = '#94a3b8';
 
+        // Syncfusion instances are kept so a warehouse change can dispose and rebuild them
+        // rather than stacking a second chart onto the same container.
+        let statusChart = null;
+        let trendChart = null;
+
         const state = Vue.reactive({
             todayLabel: '',
+            loadError: '',
+            companyName: '',
+            warehouses: [],
+            selectedWarehouseId: '',
+            isReloading: false,
             kpi: {
                 totalInventory: 0,
                 totalInventoryDeltaPct: null,
@@ -41,17 +51,33 @@ const App = {
         const trendChartRef = Vue.ref(null);
 
         const services = {
-            getCardsData: async () => {
+            getCardsData: async (warehouseId) => {
                 try {
-                    const response = await AxiosManager.get('/Dashboard/GetCardsDashboard', {});
+                    const response = await AxiosManager.get(`/Dashboard/GetCardsDashboard${methods.warehouseQuery(warehouseId)}`, {});
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            getOverviewData: async () => {
+            getOverviewData: async (warehouseId) => {
                 try {
-                    const response = await AxiosManager.get('/Dashboard/GetOverviewDashboard', {});
+                    const response = await AxiosManager.get(`/Dashboard/GetOverviewDashboard${methods.warehouseQuery(warehouseId)}`, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getWarehouseList: async () => {
+                try {
+                    const response = await AxiosManager.get('/Warehouse/GetWarehouseList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getCompanyList: async () => {
+                try {
+                    const response = await AxiosManager.get('/Company/GetCompanyList', {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -60,6 +86,53 @@ const App = {
         };
 
         const methods = {
+            warehouseQuery: (warehouseId) =>
+                warehouseId ? `?warehouseId=${encodeURIComponent(warehouseId)}` : '',
+            populateCompanyName: async () => {
+                // The admin layout caches this, but it fetches asynchronously and may not have
+                // landed yet on a fresh load, so fall back to the API.
+                const cached = StorageManager.getCompany()?.name;
+                if (cached) {
+                    state.companyName = cached;
+                    return;
+                }
+
+                const response = await services.getCompanyList();
+                state.companyName = response?.data?.content?.data?.[0]?.name ?? '';
+            },
+            populateWarehouseList: async () => {
+                const response = await services.getWarehouseList();
+                const list = response?.data?.content?.data ?? [];
+                // System warehouses are virtual counterparties, never a real branch to report on.
+                state.warehouses = list
+                    .filter(x => x.systemWarehouse !== true)
+                    .map(x => ({ id: x.id, name: x.name }));
+            },
+            changeWarehouse: async () => {
+                state.isReloading = true;
+                state.loadError = '';
+                try {
+                    await methods.loadDashboard(state.selectedWarehouseId);
+                } finally {
+                    state.isReloading = false;
+                }
+            },
+            loadDashboard: async (warehouseId) => {
+                const results = await Promise.allSettled([
+                    methods.populateCardsData(warehouseId),
+                    methods.populateOverviewData(warehouseId),
+                ]);
+
+                // Surface load failures instead of leaving the widgets stuck on placeholders.
+                const failed = results.filter(r => r.status === 'rejected');
+                if (failed.length > 0) {
+                    const reason = failed[0].reason;
+                    console.error('Dashboard data failed to load:', reason);
+                    state.loadError = reason?.response?.data?.message
+                        || reason?.message
+                        || 'Unable to load dashboard data.';
+                }
+            },
             formatQty: (value) => {
                 const number = Number(value) || 0;
                 return number.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -85,8 +158,8 @@ const App = {
                 if (isNaN(date.getTime())) return '';
                 return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
             },
-            populateCardsData: async () => {
-                const response = await services.getCardsData();
+            populateCardsData: async (warehouseId) => {
+                const response = await services.getCardsData(warehouseId);
                 const cardsDashboard = response?.data?.content?.data?.cardsDashboard;
 
                 if (!cardsDashboard) {
@@ -116,8 +189,8 @@ const App = {
                 countUp(cardTransferOutQtyRef.value, cardsDashboard.transferOutTotal);
                 countUp(cardTransferInQtyRef.value, cardsDashboard.transferInTotal);
             },
-            populateOverviewData: async () => {
-                const response = await services.getOverviewData();
+            populateOverviewData: async (warehouseId) => {
+                const response = await services.getOverviewData(warehouseId);
                 const data = response?.data?.content?.data;
 
                 if (!data) {
@@ -153,7 +226,10 @@ const App = {
             populateStatusChart: () => {
                 if (!statusChartRef.value) return;
 
-                new ej.charts.AccumulationChart({
+                if (statusChart) { statusChart.destroy(); statusChart = null; }
+                statusChartRef.value.innerHTML = '';
+
+                statusChart = new ej.charts.AccumulationChart({
                     series: [{
                         // Syncfusion mutates its data source, so hand it a plain array not a Vue proxy.
                         dataSource: Vue.toRaw(state.inventoryStatus).map(x => ({ ...x })),
@@ -176,6 +252,9 @@ const App = {
             populateTrendChart: () => {
                 if (!trendChartRef.value) return;
 
+                if (trendChart) { trendChart.destroy(); trendChart = null; }
+                trendChartRef.value.innerHTML = '';
+
                 const axisLabelStyle = { color: '#94a3b8', size: '11px' };
                 const trendPoints = Vue.toRaw(state.movementTrend).map(x => ({ ...x }));
                 const marker = (color) => ({
@@ -186,7 +265,7 @@ const App = {
                     border: { width: 2, color: '#ffffff' }
                 });
 
-                new ej.charts.Chart({
+                trendChart = new ej.charts.Chart({
                     primaryXAxis: {
                         valueType: 'Category',
                         interval: 1,
@@ -250,11 +329,18 @@ const App = {
                 });
 
                 await Promise.all([
-                    methods.populateCardsData(),
-                    methods.populateOverviewData(),
+                    methods.populateCompanyName().catch(e => {
+                        console.error('Company name failed to load:', e);
+                    }),
+                    methods.populateWarehouseList().catch(e => {
+                        console.error('Warehouse list failed to load:', e);
+                    }),
                 ]);
 
+                await methods.loadDashboard(state.selectedWarehouseId);
             } catch (e) {
+                console.error('Dashboard initialisation failed:', e);
+                state.loadError = e?.response?.data?.message || e?.message || 'Unable to load dashboard data.';
             }
         });
 

@@ -18,10 +18,11 @@ public class DashboardController : BaseApiController
     [Authorize]
     [HttpGet("GetCardsDashboard")]
     public async Task<ActionResult<ApiSuccessResult<GetCardsDashboardResult>>> GetCardsDashboardAsync(
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        [FromQuery] string? warehouseId = null
         )
     {
-        var request = new GetCardsDashboardRequest { };
+        var request = new GetCardsDashboardRequest { WarehouseId = warehouseId };
         var response = await _sender.Send(request, cancellationToken);
 
         return Ok(new ApiSuccessResult<GetCardsDashboardResult>
@@ -36,10 +37,11 @@ public class DashboardController : BaseApiController
     [Authorize]
     [HttpGet("GetOverviewDashboard")]
     public async Task<ActionResult<ApiSuccessResult<GetOverviewDashboardResult>>> GetOverviewDashboardAsync(
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        [FromQuery] string? warehouseId = null
         )
     {
-        var request = new GetOverviewDashboardRequest { };
+        var request = new GetOverviewDashboardRequest { WarehouseId = warehouseId };
         var response = await _sender.Send(request, cancellationToken);
 
         return Ok(new ApiSuccessResult<GetOverviewDashboardResult>

@@ -20,6 +20,8 @@ public class GetCardsDashboardResult
 
 public class GetCardsDashboardRequest : IRequest<GetCardsDashboardResult>
 {
+    /// <summary>Optional warehouse (branch) scope for the ledger-derived totals.</summary>
+    public string? WarehouseId { get; init; }
 }
 
 public class GetCardsDashboardHandler : IRequestHandler<GetCardsDashboardRequest, GetCardsDashboardResult>
@@ -33,65 +35,52 @@ public class GetCardsDashboardHandler : IRequestHandler<GetCardsDashboardRequest
 
     public async Task<GetCardsDashboardResult> Handle(GetCardsDashboardRequest request, CancellationToken cancellationToken)
     {
-        var salesTotalTask = _context.SalesOrderItem
+        // These must run one at a time: EF Core rejects concurrent operations on a single
+        // DbContext instance, and IQueryContext is scoped to the request.
+        var salesTotal = await _context.SalesOrderItem
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
             .SumAsync(x => (double?)x.Quantity, cancellationToken);
 
-        var salesReturnTotalTask = _context.InventoryTransaction
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.ModuleName == nameof(SalesReturn) && x.Status == InventoryTransactionStatus.Confirmed && x.Warehouse!.SystemWarehouse == false)
-            .SumAsync(x => (double?)x.Movement, cancellationToken);
-
-        var purchaseTotalTask = _context.PurchaseOrderItem
+        var purchaseTotal = await _context.PurchaseOrderItem
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
             .SumAsync(x => (double?)x.Quantity, cancellationToken);
 
-        var purchaseReturnTotalTask = _context.InventoryTransaction
+        // One grouped pass over the ledger replaces six separate per-module sums.
+        var ledger = _context.InventoryTransaction
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
-            .Where(x => x.ModuleName == nameof(PurchaseReturn) && x.Status == InventoryTransactionStatus.Confirmed && x.Warehouse!.SystemWarehouse == false)
-            .SumAsync(x => (double?)x.Movement, cancellationToken);
+            .Where(x =>
+                x.Status == InventoryTransactionStatus.Confirmed &&
+                x.Warehouse!.SystemWarehouse == false);
 
-        var deliveryOrderTotalTask = _context.InventoryTransaction
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.ModuleName == nameof(DeliveryOrder) && x.Status == InventoryTransactionStatus.Confirmed && x.Warehouse!.SystemWarehouse == false)
-            .SumAsync(x => (double?)x.Movement, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(request.WarehouseId))
+        {
+            ledger = ledger.Where(x => x.WarehouseId == request.WarehouseId);
+        }
 
-        var goodsReceiveTotalTask = _context.InventoryTransaction
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.ModuleName == nameof(GoodsReceive) && x.Status == InventoryTransactionStatus.Confirmed && x.Warehouse!.SystemWarehouse == false)
-            .SumAsync(x => (double?)x.Movement, cancellationToken);
+        var movementByModule = await ledger
+            .GroupBy(x => x.ModuleName)
+            .Select(g => new { ModuleName = g.Key, Total = g.Sum(x => x.Movement ?? 0.0) })
+            .ToListAsync(cancellationToken);
 
-        var transferOutTotalTask = _context.InventoryTransaction
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.ModuleName == nameof(TransferOut) && x.Status == InventoryTransactionStatus.Confirmed && x.Warehouse!.SystemWarehouse == false)
-            .SumAsync(x => (double?)x.Movement, cancellationToken);
+        var totalsByModule = movementByModule
+            .Where(x => x.ModuleName != null)
+            .ToDictionary(x => x.ModuleName!, x => x.Total);
 
-        var transferInTotalTask = _context.InventoryTransaction
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.ModuleName == nameof(TransferIn) && x.Status == InventoryTransactionStatus.Confirmed && x.Warehouse!.SystemWarehouse == false)
-            .SumAsync(x => (double?)x.Movement, cancellationToken);
-
-        await Task.WhenAll(salesTotalTask, salesReturnTotalTask, purchaseTotalTask, purchaseReturnTotalTask,
-            deliveryOrderTotalTask, goodsReceiveTotalTask, transferOutTotalTask, transferInTotalTask);
+        double MovementFor(string moduleName) => totalsByModule.GetValueOrDefault(moduleName, 0.0);
 
         var cardsDashboardData = new CardsItem
         {
-            SalesTotal = salesTotalTask.Result,
-            SalesReturnTotal = salesReturnTotalTask.Result,
-            PurchaseTotal = purchaseTotalTask.Result,
-            PurchaseReturnTotal = purchaseReturnTotalTask.Result,
-            DeliveryOrderTotal = deliveryOrderTotalTask.Result,
-            GoodsReceiveTotal = goodsReceiveTotalTask.Result,
-            TransferOutTotal = transferOutTotalTask.Result,
-            TransferInTotal = transferInTotalTask.Result
+            SalesTotal = salesTotal,
+            SalesReturnTotal = MovementFor(nameof(SalesReturn)),
+            PurchaseTotal = purchaseTotal,
+            PurchaseReturnTotal = MovementFor(nameof(PurchaseReturn)),
+            DeliveryOrderTotal = MovementFor(nameof(DeliveryOrder)),
+            GoodsReceiveTotal = MovementFor(nameof(GoodsReceive)),
+            TransferOutTotal = MovementFor(nameof(TransferOut)),
+            TransferInTotal = MovementFor(nameof(TransferIn))
         };
 
 
