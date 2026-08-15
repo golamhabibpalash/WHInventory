@@ -14,7 +14,7 @@ public class UnitMeasureConfiguration : BaseEntityConfiguration<UnitMeasure>
         builder.Property(x => x.Name).HasMaxLength(NameConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.Description).HasMaxLength(DescriptionConsts.MaxLength).IsRequired(false);
 
-        builder.HasIndex(e => e.Name).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.Name }).IsUnique();
     }
 }
 

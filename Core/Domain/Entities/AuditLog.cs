@@ -1,8 +1,11 @@
+using Domain.Common;
+
 namespace Domain.Entities;
 
-public class AuditLog
+public class AuditLog : IHasTenant
 {
     public string Id { get; set; } = null!;
+    public string? TenantId { get; set; }
     public string? EntityType { get; set; }
     public string? EntityId { get; set; }
     public string? OperationType { get; set; }

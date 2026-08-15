@@ -16,5 +16,6 @@ public class NumberSequenceConfiguration : BaseEntityConfiguration<NumberSequenc
         builder.Property(x => x.Suffix).HasMaxLength(CodeConsts.MaxLength).IsRequired(false);
 
         builder.HasIndex(e => e.EntityName);
+        builder.HasIndex(e => new { e.TenantId, e.EntityName, e.Prefix, e.Suffix }).IsUnique();
     }
 }

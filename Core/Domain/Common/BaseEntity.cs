@@ -1,8 +1,9 @@
 namespace Domain.Common;
 
-public class BaseEntity : IHasSequentialId, IHasIsDeleted, IHasAudit
+public class BaseEntity : IHasSequentialId, IHasIsDeleted, IHasAudit, IHasTenant
 {
     public string Id { get; set; } = null!;
+    public string? TenantId { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? CreatedAtUtc { get; set; }
     public string? CreatedById { get; set; }

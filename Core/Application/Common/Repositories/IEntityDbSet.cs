@@ -6,6 +6,7 @@ namespace Application.Common.Repositories;
 
 public interface IEntityDbSet
 {
+    DbSet<Tenant> Tenant { get; set; }
     DbSet<Token> Token { get; set; }
     DbSet<Todo> Todo { get; set; }
     DbSet<TodoItem> TodoItem { get; set; }

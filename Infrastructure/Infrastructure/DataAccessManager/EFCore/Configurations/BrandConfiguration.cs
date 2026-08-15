@@ -17,7 +17,7 @@ public class BrandConfiguration : BaseEntityConfiguration<Brand>
         builder.Property(x => x.ImageName).HasMaxLength(PathConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.Status).HasMaxLength(CodeConsts.MaxLength).IsRequired(false);
 
-        builder.HasIndex(e => e.Name).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.Name }).IsUnique();
         builder.HasIndex(e => e.Number);
     }
 }

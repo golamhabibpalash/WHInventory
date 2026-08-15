@@ -14,6 +14,9 @@ public abstract class BaseEntityConfiguration<T> : IEntityTypeConfiguration<T> w
         builder.Property(e => e.Id)
             .HasMaxLength(IdConsts.MaxLength)
             .IsRequired(true);
+        builder.Property(e => e.TenantId)
+            .HasMaxLength(IdConsts.MaxLength)
+            .IsRequired(false);
         builder.Property(e => e.IsDeleted)
             .HasDefaultValue(false)
             .IsRequired(true);
@@ -28,5 +31,6 @@ public abstract class BaseEntityConfiguration<T> : IEntityTypeConfiguration<T> w
             .HasMaxLength(UserIdConsts.MaxLength)
             .IsRequired(false);
         builder.HasIndex(e => e.IsDeleted);
+        builder.HasIndex(e => e.TenantId);
     }
 }
