@@ -380,8 +380,12 @@ const App = {
                     return;
                 }
 
+                // Captured before the response overwrites state.id, so we can tell a freshly
+                // created header (step 1 -> step 2) from an edit of an existing one.
+                const isNewOrder = state.id === '';
+
                 try {
-                    const response = state.id === ''
+                    const response = isNewOrder
                         ? await services.createMainData(state.orderDate, state.description, state.orderStatus, state.taxId, state.customerId, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
@@ -401,17 +405,38 @@ const App = {
                             state.taxId = response?.data?.content?.data.taxId ?? '';
                             taxListLookup.trackingChange = true;
                             state.orderStatus = String(response?.data?.content?.data.orderStatus ?? '');
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Save Successful',
-                                text: 'Form will be closed...',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
-                            setTimeout(() => {
-                                mainModal.obj.hide();
-                                resetFormState();
-                            }, 2000);
+
+                            if (isNewOrder) {
+                                // Step 2: stay in the same workflow and open the product section
+                                // against the order we just created, rather than closing and
+                                // making the user reopen it from the list to add items.
+                                state.mainTitle = `Sales Order ${state.number} - Add Products`;
+                                state.showComplexDiv = true;
+
+                                await methods.populateSecondaryData(state.id);
+                                secondaryGrid.refresh();
+                                await methods.refreshPaymentSummary(state.id);
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Sales Order Created',
+                                    text: `${state.number} saved. Now add products to this order.`,
+                                    timer: 2200,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Save Successful',
+                                    text: 'Form will be closed...',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                setTimeout(() => {
+                                    mainModal.obj.hide();
+                                    resetFormState();
+                                }, 2000);
+                            }
                         } else {
                             Swal.fire({
                                 icon: 'success',
