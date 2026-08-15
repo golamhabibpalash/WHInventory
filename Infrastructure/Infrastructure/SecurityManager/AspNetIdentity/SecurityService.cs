@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using Application.Common.Services.EmailManager;
 using Application.Common.Services.SecurityManager;
+using Application.Common.Tenancy;
 using Domain.Entities;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Infrastructure.SecurityManager.NavigationMenu;
@@ -30,6 +31,7 @@ public class SecurityService : ISecurityService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
+    private readonly ITenantContext _tenantContext;
 
     public SecurityService(
         UserManager<ApplicationUser> userManager,
@@ -40,7 +42,8 @@ public class SecurityService : ISecurityService
         IEmailService emailService,
         IHttpContextAccessor httpContextAccessor,
         RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration
+        IConfiguration configuration,
+        ITenantContext tenantContext
         )
     {
         _userManager = userManager;
@@ -52,6 +55,23 @@ public class SecurityService : ISecurityService
         _httpContextAccessor = httpContextAccessor;
         _roleManager = roleManager;
         _configuration = configuration;
+        _tenantContext = tenantContext;
+    }
+
+    /// <summary>
+    /// ApplicationUser is deliberately not covered by the global tenant query filter (login has to
+    /// find a user before its tenant is known), so every user-administration path guards here.
+    /// Throws the same message as "not found" so a caller cannot probe other tenants for valid ids.
+    /// </summary>
+    private void EnsureTenantAccess(ApplicationUser user)
+    {
+        if (_tenantContext.IsRoot) return;
+
+        var tenantId = _tenantContext.TenantId;
+        if (string.IsNullOrEmpty(tenantId) || user.TenantId != tenantId)
+        {
+            throw new Exception($"Unable to load user with id: {user.Id}");
+        }
     }
 
     public async Task<LoginResultDto> LoginAsync(
@@ -75,6 +95,14 @@ public class SecurityService : ISecurityService
         if (user.IsDeleted == true)
         {
             throw new Exception($"User already deleted. {email}");
+        }
+
+        // The host resolved a tenant (e.g. acme.ustock.app); the account must belong to it.
+        // Same message as a bad password so the form cannot be used to enumerate accounts.
+        var hostTenantId = _tenantContext.TenantId;
+        if (!string.IsNullOrEmpty(hostTenantId) && user.TenantId != hostTenantId)
+        {
+            throw new Exception("Invalid login credentials.");
         }
 
         var result = await _signInManager.PasswordSignInAsync(user, password, true, lockoutOnFailure: true);
@@ -183,6 +211,12 @@ public class SecurityService : ISecurityService
             companyName
         );
 
+        if (string.IsNullOrEmpty(_tenantContext.TenantId))
+        {
+            throw new Exception("Unable to determine the tenant for this registration.");
+        }
+
+        user.TenantId = _tenantContext.TenantId;
         user.EmailConfirmed = !_identitySettings.SignIn.RequireConfirmedEmail;
         var result = await _userManager.CreateAsync(user, password);
 
@@ -438,7 +472,11 @@ public class SecurityService : ISecurityService
         CancellationToken cancellationToken
         )
     {
+        var isRoot = _tenantContext.IsRoot;
+        var tenantId = _tenantContext.TenantId;
+
         var users = await _userManager.Users
+            .Where(x => isRoot || x.TenantId == tenantId)
             .Select(x => new GetUserListResultDto
             {
                 Id = x.Id,
@@ -483,6 +521,7 @@ public class SecurityService : ISecurityService
         user.IsBlocked = isBlocked;
         user.IsDeleted = isDeleted;
         user.CreatedById = createdById;
+        user.TenantId = _tenantContext.TenantId;
 
         var result = await _userManager.CreateAsync(user, password);
 
@@ -531,6 +570,8 @@ public class SecurityService : ISecurityService
             throw new Exception($"Update default admin is not allowed.");
         }
 
+        EnsureTenantAccess(user);
+
         user.FirstName = firstName;
         user.LastName = lastName;
         user.EmailConfirmed = emailConfirmed;
@@ -575,6 +616,8 @@ public class SecurityService : ISecurityService
             throw new Exception($"Update default admin is not allowed.");
         }
 
+        EnsureTenantAccess(user);
+
         user.IsDeleted = true;
         user.UpdatedById = deletedById;
 
@@ -616,6 +659,8 @@ public class SecurityService : ISecurityService
             throw new Exception($"Update default admin password is not allowed in demo version.");
         }
 
+        EnsureTenantAccess(user);
+
         var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
 
         var result = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
@@ -639,6 +684,8 @@ public class SecurityService : ISecurityService
             throw new Exception($"Unable to load user with id: {userId}");
         }
 
+        EnsureTenantAccess(user);
+
         var roles = await _userManager.GetRolesAsync(user);
         return roles.ToList();
     }
@@ -660,6 +707,8 @@ public class SecurityService : ISecurityService
         {
             throw new Exception($"Update default admin is not allowed.");
         }
+
+        EnsureTenantAccess(user);
 
         var currentRoles = await _userManager.GetRolesAsync(user);
         if (accessGranted)
@@ -701,6 +750,8 @@ public class SecurityService : ISecurityService
 
         if (user.Email == _identitySettings.DefaultAdmin.Email)
             throw new Exception($"Update default admin is not allowed.");
+
+        EnsureTenantAccess(user);
 
         var allRoles = _roleManager.Roles.Select(r => r.Name!).ToList();
         var currentRoles = await _userManager.GetRolesAsync(user);

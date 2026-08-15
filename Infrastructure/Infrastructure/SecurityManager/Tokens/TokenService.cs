@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Application.Common.Tenancy;
 using Infrastructure.SecurityManager.AspNetIdentity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -41,6 +42,7 @@ public class TokenService : ITokenService
             new Claim("FirstName", user.FirstName ?? ""),
             new Claim("LastName", user.LastName ?? ""),
             new Claim("CompanyName", user.CompanyName ?? ""),
+            new Claim(TenantClaimTypes.TenantId, user.TenantId ?? ""),
         };
 
         if (userClaims != null)

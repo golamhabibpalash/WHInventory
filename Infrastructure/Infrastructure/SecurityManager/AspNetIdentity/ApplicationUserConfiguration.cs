@@ -8,6 +8,10 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
 {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
     {
+        builder.Property(u => u.TenantId)
+            .HasMaxLength(IdConsts.MaxLength)
+            .IsRequired(false);
+
         builder.Property(u => u.FirstName)
             .HasMaxLength(NameConsts.MaxLength)
             .IsRequired(false);
@@ -37,6 +41,7 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
             .HasMaxLength(UserIdConsts.MaxLength)
             .IsRequired(false);
 
+        builder.HasIndex(u => u.TenantId);
         builder.HasIndex(u => u.UserName);
         builder.HasIndex(u => u.Email);
         builder.HasIndex(u => u.FirstName);
