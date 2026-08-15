@@ -574,6 +574,7 @@ const App = {
                 });
 
                 mainGrid.obj.appendTo(mainGridRef.value);
+                GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
             },
             refresh: () => {
                 mainGrid.obj.setProperties({ dataSource: state.mainData });
@@ -803,6 +804,7 @@ const App = {
                     }
                 });
                 secondaryGrid.obj.appendTo(secondaryGridRef.value);
+                GridHeightManager.apply(secondaryGrid.obj, secondaryGridRef.value);
             },
             refresh: () => {
                 secondaryGrid.obj.setProperties({ dataSource: state.secondaryData });

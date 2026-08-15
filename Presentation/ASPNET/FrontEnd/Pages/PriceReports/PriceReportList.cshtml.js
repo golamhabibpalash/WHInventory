@@ -136,6 +136,7 @@ const App = {
                     }
                 });
                 mainGrid.obj.appendTo(mainGridRef.value);
+                GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
             },
         };
 
