@@ -599,6 +599,11 @@ const App = {
                 if (orderDatePicker.obj) {
                     orderDatePicker.obj.value = state.orderDate ? new Date(state.orderDate) : null;
                 }
+            },
+            focus: () => {
+                if (!orderDatePicker.obj) return;
+                orderDatePicker.obj.focusIn();
+                orderDatePicker.obj.element?.select?.();
             }
         };
 
@@ -1347,6 +1352,10 @@ const App = {
                         await secondaryGrid.create(state.secondaryData);
                     } else {
                         secondaryGrid.refresh();
+                    }
+
+                    if (!state.deleteMode) {
+                        orderDatePicker.focus();
                     }
                 });
             }

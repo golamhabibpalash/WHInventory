@@ -652,6 +652,11 @@ const App = {
                 if (orderDatePicker.obj) {
                     orderDatePicker.obj.value = state.orderDate ? new Date(state.orderDate) : null;
                 }
+            },
+            focus: () => {
+                if (!orderDatePicker.obj) return;
+                orderDatePicker.obj.focusIn();
+                orderDatePicker.obj.element?.select?.();
             }
         };
 
@@ -1274,6 +1279,11 @@ const App = {
                 mainModal.obj = new bootstrap.Modal(mainModalRef.value, {
                     backdrop: 'static',
                     keyboard: false
+                });
+                mainModalRef.value.addEventListener('shown.bs.modal', () => {
+                    if (!state.deleteMode) {
+                        orderDatePicker.focus();
+                    }
                 });
             }
         };
