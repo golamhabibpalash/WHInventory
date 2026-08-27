@@ -14,6 +14,8 @@ public record GetProductListDto
     public string? Name { get; init; }
     public string? Description { get; init; }
     public double? UnitPrice { get; init; }
+    public double? MinSellingPrice { get; init; }
+    public double? MaxSellingPrice { get; init; }
     public bool? Physical { get; init; }
     public string? UnitMeasureId { get; init; }
     public string? UnitMeasureName { get; init; }

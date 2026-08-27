@@ -385,6 +385,16 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""MinSellingPrice"" float8 NULL;
+                ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""MaxSellingPrice"" float8 NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE core.""Company"" ADD COLUMN IF NOT EXISTS ""AllowNegativeStock"" boolean NOT NULL DEFAULT FALSE;
+                ALTER TABLE core.""Company"" ADD COLUMN IF NOT EXISTS ""AllowPriceOutsideBand"" boolean NOT NULL DEFAULT FALSE;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 CREATE TABLE IF NOT EXISTS core.""PricePolicy"" (
                     ""Id""            varchar(50)   NOT NULL PRIMARY KEY,
                     ""Name""          varchar(255)  NULL,
@@ -672,6 +682,28 @@ public static class DI
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'WarrantyDays')
                 BEGIN
                     ALTER TABLE [Product] ADD [WarrantyDays] int NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'MinSellingPrice')
+                BEGIN
+                    ALTER TABLE [Product] ADD [MinSellingPrice] float NULL;
+                END
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'MaxSellingPrice')
+                BEGIN
+                    ALTER TABLE [Product] ADD [MaxSellingPrice] float NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'AllowNegativeStock')
+                BEGIN
+                    ALTER TABLE [Company] ADD [AllowNegativeStock] bit NOT NULL DEFAULT 0;
+                END
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'AllowPriceOutsideBand')
+                BEGIN
+                    ALTER TABLE [Company] ADD [AllowPriceOutsideBand] bit NOT NULL DEFAULT 0;
                 END
             ");
 

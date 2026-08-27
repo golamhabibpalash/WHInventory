@@ -17,6 +17,7 @@ const App = {
             faxNumber: '',
             emailAddress: '',
             website: '',
+            allowPriceOutsideBand: false,
             logoName: '',
             logoSrc: '',
             previewSrc: '',
@@ -114,7 +115,7 @@ const App = {
             },
             updateMainData: async (
                 id, name, description, currency, street, city, state, zipCode, country,
-                phoneNumber, faxNumber, emailAddress, website, updatedById
+                phoneNumber, faxNumber, emailAddress, website, allowPriceOutsideBand, updatedById
             ) => {
                 try {
                     const response = await AxiosManager.post('/Company/UpdateCompany', {
@@ -131,6 +132,7 @@ const App = {
                         faxNumber,
                         emailAddress,
                         website,
+                        allowPriceOutsideBand,
                         updatedById
                     });
                     return response;
@@ -242,6 +244,7 @@ const App = {
                             state.faxNumber = '';
                             state.emailAddress = '';
                             state.website = '';
+                            state.allowPriceOutsideBand = false;
                             state.logoName = '';
                             mainModal.obj.show();
                         }
@@ -265,6 +268,7 @@ const App = {
                                 state.faxNumber = selectedRecord.faxNumber ?? '';
                                 state.emailAddress = selectedRecord.emailAddress ?? '';
                                 state.website = selectedRecord.website ?? '';
+                                state.allowPriceOutsideBand = selectedRecord.allowPriceOutsideBand ?? false;
                                 state.logoName = selectedRecord.logoName ?? '';
                                 mainModal.obj.show();
                             }
@@ -609,6 +613,7 @@ const App = {
                             state.faxNumber,
                             state.emailAddress,
                             state.website,
+                            state.allowPriceOutsideBand,
                             StorageManager.getUserId()
                         );
                     } else {

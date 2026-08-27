@@ -202,6 +202,15 @@
                                                 <label class="text-danger">{{ state.errors.website }}</label>
                                             </div>
                                         </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-12">
+                                                <div class="form-check mt-1">
+                                                    <input v-model="state.allowPriceOutsideBand" id="AllowPriceOutsideBand" name="AllowPriceOutsideBand" type="checkbox" class="form-check-input">
+                                                    <label for="AllowPriceOutsideBand" class="form-check-label">Allow sales prices outside a product's Min/Max selling price</label>
+                                                </div>
+                                                <small class="text-muted d-block">Leave unchecked to block any sales order line priced outside the product's band.</small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -8,6 +8,16 @@ public class Product : BaseEntity
     public string? Number { get; set; }
     public string? Description { get; set; }
     public double? UnitPrice { get; set; }
+
+    /// <summary>
+    /// Lowest price this product may be sold at. Null means no floor.
+    /// </summary>
+    public double? MinSellingPrice { get; set; }
+
+    /// <summary>
+    /// Highest price this product may be sold at. Null means no ceiling.
+    /// </summary>
+    public double? MaxSellingPrice { get; set; }
     public bool? Physical { get; set; } = true;
     public string? UnitMeasureId { get; set; }
     public UnitMeasure? UnitMeasure { get; set; }

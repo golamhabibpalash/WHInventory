@@ -79,6 +79,30 @@ const App = {
         let currentEditProductName = '';
         let saveCancelledByStock = false;
 
+        // Tracks the allowed selling price band for the product being edited in the line-item grid.
+        // The server is the authority (see ValidateSellingPriceAsync); this only warns as the user types.
+        let currentEditMinSellingPrice = null;
+        let currentEditMaxSellingPrice = null;
+
+        const applyPriceBandHint = () => {
+            if (typeof priceObj === 'undefined' || !priceObj) return;
+
+            const inputEl = priceObj.element;
+            if (!inputEl) return;
+
+            const price = priceObj.value ?? 0;
+            const belowMin = currentEditMinSellingPrice !== null && price < currentEditMinSellingPrice;
+            const aboveMax = currentEditMaxSellingPrice !== null && price > currentEditMaxSellingPrice;
+            const fmt = (v) => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            inputEl.style.border = (belowMin || aboveMax) ? '2px solid #dc3545' : '';
+            inputEl.title = belowMin
+                ? `Below the minimum selling price: ${fmt(currentEditMinSellingPrice)}`
+                : aboveMax
+                    ? `Above the maximum selling price: ${fmt(currentEditMaxSellingPrice)}`
+                    : '';
+        };
+
         const validateForm = function () {
             state.errors.orderDate = '';
             state.errors.customerId = '';
@@ -913,6 +937,8 @@ const App = {
                                         currentEditAvailableStock = initProduct.physical ? (initProduct.availableStock ?? 0) : Infinity;
                                         currentEditProductPhysical = initProduct.physical ?? false;
                                         currentEditProductName = initProduct.name;
+                                        currentEditMinSellingPrice = initProduct.minSellingPrice ?? null;
+                                        currentEditMaxSellingPrice = initProduct.maxSellingPrice ?? null;
                                     }
 
                                     productObj = new ej.dropdowns.DropDownList({
@@ -925,6 +951,8 @@ const App = {
                                                 currentEditAvailableStock = selectedProduct.physical ? (selectedProduct.availableStock ?? 0) : Infinity;
                                                 currentEditProductPhysical = selectedProduct.physical ?? false;
                                                 currentEditProductName = selectedProduct.name;
+                                                currentEditMinSellingPrice = selectedProduct.minSellingPrice ?? null;
+                                                currentEditMaxSellingPrice = selectedProduct.maxSellingPrice ?? null;
 
                                                 if (quantityObj) {
                                                     const qty = quantityObj.value ?? 0;
@@ -944,6 +972,7 @@ const App = {
                                                 }
                                                 if (priceObj) {
                                                     priceObj.value = selectedProduct.unitPrice;
+                                                    applyPriceBandHint();
                                                 }
                                                 if (remarkObj) {
                                                     remarkObj.value = selectedProduct.description;
@@ -990,9 +1019,11 @@ const App = {
                                                 const total = e.value * quantityObj.value;
                                                 totalObj.value = total;
                                             }
+                                            applyPriceBandHint();
                                         }
                                     });
                                     priceObj.appendTo(args.element);
+                                    applyPriceBandHint();
                                 }
                             }
                         },

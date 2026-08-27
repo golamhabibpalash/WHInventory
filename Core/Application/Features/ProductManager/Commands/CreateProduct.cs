@@ -17,6 +17,8 @@ public class CreateProductRequest : IRequest<CreateProductResult>
     public string? Name { get; init; }
     public string? Description { get; init; }
     public double? UnitPrice { get; init; }
+    public double? MinSellingPrice { get; init; }
+    public double? MaxSellingPrice { get; init; }
     public bool? Physical { get; init; } = true;
     public string? UnitMeasureId { get; init; }
     public string? ProductGroupId { get; init; }
@@ -34,6 +36,16 @@ public class CreateProductValidator : AbstractValidator<CreateProductRequest>
     {
         RuleFor(x => x.Name).NotEmpty();
         RuleFor(x => x.UnitPrice).NotEmpty();
+        RuleFor(x => x.MinSellingPrice)
+            .GreaterThanOrEqualTo(0).When(x => x.MinSellingPrice.HasValue)
+            .WithMessage("Minimum selling price cannot be negative.");
+        RuleFor(x => x.MaxSellingPrice)
+            .GreaterThanOrEqualTo(0).When(x => x.MaxSellingPrice.HasValue)
+            .WithMessage("Maximum selling price cannot be negative.");
+        RuleFor(x => x.MaxSellingPrice)
+            .GreaterThanOrEqualTo(x => x.MinSellingPrice)
+            .When(x => x.MinSellingPrice.HasValue && x.MaxSellingPrice.HasValue)
+            .WithMessage("Maximum selling price must be greater than or equal to the minimum selling price.");
         RuleFor(x => x.Physical).NotEmpty();
         RuleFor(x => x.UnitMeasureId).NotEmpty();
         RuleFor(x => x.ProductGroupId).NotEmpty();
@@ -65,6 +77,8 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Create
         entity.Number = _numberSequenceService.GenerateNumber(nameof(Product), "", "ART");
         entity.Name = request.Name;
         entity.UnitPrice = request.UnitPrice;
+        entity.MinSellingPrice = request.MinSellingPrice;
+        entity.MaxSellingPrice = request.MaxSellingPrice;
         entity.Physical = request.Physical;
         entity.Description = request.Description;
         entity.UnitMeasureId = request.UnitMeasureId;

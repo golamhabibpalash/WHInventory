@@ -18,4 +18,10 @@ public class Company : BaseEntity
     public string? Website { get; set; }
     public string? LogoName { get; set; }
     public bool AllowNegativeStock { get; set; } = false;
+
+    /// <summary>
+    /// When true, sales prices outside a product's Min/Max selling price band are permitted.
+    /// Defaults to false so the band is enforced.
+    /// </summary>
+    public bool AllowPriceOutsideBand { get; set; } = false;
 }

@@ -63,6 +63,7 @@ public class CreateSalesOrderItemHandler : IRequestHandler<CreateSalesOrderItemR
     public async Task<CreateSalesOrderItemResult> Handle(CreateSalesOrderItemRequest request, CancellationToken cancellationToken = default)
     {
         await ValidateStockAsync(request.ProductId, request.Quantity, request.CreatedById, cancellationToken);
+        await ValidateSellingPriceAsync(request.ProductId, request.UnitPrice, request.CreatedById, cancellationToken);
 
         var entity = new SalesOrderItem();
         entity.CreatedById = request.CreatedById;
@@ -127,6 +128,55 @@ public class CreateSalesOrderItemHandler : IRequestHandler<CreateSalesOrderItemR
                 $"Insufficient stock for '{product.Name}'. " +
                 $"Available: {availableStock:N2}, Requested: {requestedQty:N2}. " +
                 $"Cannot add this Sales Order item.");
+        }
+    }
+
+    private async Task ValidateSellingPriceAsync(string? productId, double? unitPrice, string? userId, CancellationToken cancellationToken)
+    {
+        var product = await _queryContext.Product
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(x => x.Id == productId)
+            .Select(x => new { x.Name, x.MinSellingPrice, x.MaxSellingPrice })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (product == null)
+            return;
+
+        if (product.MinSellingPrice == null && product.MaxSellingPrice == null)
+            return;
+
+        var allowPriceOutsideBand = await _queryContext.Company
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Select(x => x.AllowPriceOutsideBand)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (allowPriceOutsideBand)
+            return;
+
+        var price = unitPrice ?? 0;
+
+        if (product.MinSellingPrice.HasValue && price < product.MinSellingPrice.Value)
+        {
+            _logger.LogWarning(
+                "Selling price validation failed on SalesOrderItem {Operation}. UserId={UserId} ProductId={ProductId} ProductName={ProductName} Min={Min} Requested={Requested}",
+                "create", userId, productId, product.Name, product.MinSellingPrice, price);
+
+            throw new Exception(
+                $"Unit price {price:N2} is below the minimum selling price for '{product.Name}' " +
+                $"({product.MinSellingPrice:N2}). Cannot save this Sales Order item.");
+        }
+
+        if (product.MaxSellingPrice.HasValue && price > product.MaxSellingPrice.Value)
+        {
+            _logger.LogWarning(
+                "Selling price validation failed on SalesOrderItem {Operation}. UserId={UserId} ProductId={ProductId} ProductName={ProductName} Max={Max} Requested={Requested}",
+                "create", userId, productId, product.Name, product.MaxSellingPrice, price);
+
+            throw new Exception(
+                $"Unit price {price:N2} exceeds the maximum selling price for '{product.Name}' " +
+                $"({product.MaxSellingPrice:N2}). Cannot save this Sales Order item.");
         }
     }
 }

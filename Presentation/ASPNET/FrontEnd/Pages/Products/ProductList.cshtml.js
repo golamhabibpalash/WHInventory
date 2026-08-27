@@ -18,6 +18,8 @@ const App = {
             name: '',
             number: '',
             unitPrice: '',
+            minSellingPrice: null,
+            maxSellingPrice: null,
             description: '',
             productGroupId: null,
             unitMeasureId: null,
@@ -33,6 +35,8 @@ const App = {
             errors: {
                 name: '',
                 unitPrice: '',
+                minSellingPrice: '',
+                maxSellingPrice: '',
                 productGroupId: '',
                 unitMeasureId: '',
                 brandId: '',
@@ -76,12 +80,16 @@ const App = {
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
         const unitPriceRef = Vue.ref(null);
+        const minSellingPriceRef = Vue.ref(null);
+        const maxSellingPriceRef = Vue.ref(null);
         const bulkFileInputRef = Vue.ref(null);
         const bulkUploadModalRef = Vue.ref(null);
 
         const validateForm = function () {
             state.errors.name = '';
             state.errors.unitPrice = '';
+            state.errors.minSellingPrice = '';
+            state.errors.maxSellingPrice = '';
             state.errors.productGroupId = '';
             state.errors.unitMeasureId = '';
             state.errors.brandId = '';
@@ -99,6 +107,22 @@ const App = {
                 state.errors.unitPrice = 'Unit price must be a numeric value with up to two decimal places.';
                 isValid = false;
             }
+            const min = state.minSellingPrice;
+            const max = state.maxSellingPrice;
+
+            if (min !== null && min < 0) {
+                state.errors.minSellingPrice = 'Min selling price cannot be negative.';
+                isValid = false;
+            }
+            if (max !== null && max < 0) {
+                state.errors.maxSellingPrice = 'Max selling price cannot be negative.';
+                isValid = false;
+            }
+            if (min !== null && max !== null && max < min) {
+                state.errors.maxSellingPrice = 'Max selling price must be greater than or equal to min selling price.';
+                isValid = false;
+            }
+
             if (!state.productGroupId) {
                 state.errors.productGroupId = 'ProductGroup is required.';
                 isValid = false;
@@ -116,6 +140,8 @@ const App = {
             state.name = '';
             state.number = '';
             state.unitPrice = '';
+            state.minSellingPrice = null;
+            state.maxSellingPrice = null;
             state.description = '';
             state.productGroupId = null;
             state.unitMeasureId = null;
@@ -131,6 +157,8 @@ const App = {
             state.errors = {
                 name: '',
                 unitPrice: '',
+                minSellingPrice: '',
+                maxSellingPrice: '',
                 productGroupId: '',
                 unitMeasureId: '',
                 brandId: '',
@@ -149,20 +177,20 @@ const App = {
                     throw error;
                 }
             },
-            createMainData: async (name, unitPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
+            createMainData: async (name, unitPrice, minSellingPrice, maxSellingPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Product/CreateProduct', {
-                        name, unitPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
+                        name, unitPrice, minSellingPrice, maxSellingPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, unitPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
+            updateMainData: async (id, name, unitPrice, minSellingPrice, maxSellingPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Product/UpdateProduct', {
-                        id, name, unitPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
+                        id, name, unitPrice, minSellingPrice, maxSellingPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -451,6 +479,50 @@ const App = {
             }
         };
 
+        const minSellingPriceNumber = {
+            obj: null,
+            create: () => {
+                minSellingPriceNumber.obj = new ej.inputs.NumericTextBox({
+                    format: 'n2',
+                    placeholder: 'No floor',
+                    min: 0,
+                    step: 0.01,
+                    validateDecimalOnType: true,
+                    change: (e) => {
+                        state.minSellingPrice = e.value ?? null;
+                    }
+                });
+                minSellingPriceNumber.obj.appendTo(minSellingPriceRef.value);
+            },
+            refresh: () => {
+                if (minSellingPriceNumber.obj) {
+                    minSellingPriceNumber.obj.value = state.minSellingPrice;
+                }
+            }
+        };
+
+        const maxSellingPriceNumber = {
+            obj: null,
+            create: () => {
+                maxSellingPriceNumber.obj = new ej.inputs.NumericTextBox({
+                    format: 'n2',
+                    placeholder: 'No ceiling',
+                    min: 0,
+                    step: 0.01,
+                    validateDecimalOnType: true,
+                    change: (e) => {
+                        state.maxSellingPrice = e.value ?? null;
+                    }
+                });
+                maxSellingPriceNumber.obj.appendTo(maxSellingPriceRef.value);
+            },
+            refresh: () => {
+                if (maxSellingPriceNumber.obj) {
+                    maxSellingPriceNumber.obj.value = state.maxSellingPrice;
+                }
+            }
+        };
+
         const warrantyDaysNumber = {
             obj: null,
             create: () => {
@@ -472,6 +544,22 @@ const App = {
                 }
             }
         };
+
+        Vue.watch(
+            () => state.minSellingPrice,
+            () => {
+                state.errors.minSellingPrice = '';
+                minSellingPriceNumber.refresh();
+            }
+        );
+
+        Vue.watch(
+            () => state.maxSellingPrice,
+            () => {
+                state.errors.maxSellingPrice = '';
+                maxSellingPriceNumber.refresh();
+            }
+        );
 
         Vue.watch(
             () => state.warrantyDays,
@@ -891,10 +979,10 @@ const App = {
                     const brandId = state.brandId === '' ? null : state.brandId;
 
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.unitPrice, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -906,6 +994,8 @@ const App = {
                             state.number = response?.data?.content?.data.number ?? '';
                             state.name = response?.data?.content?.data.name ?? '';
                             state.unitPrice = response?.data?.content?.data.unitPrice ?? '';
+                            state.minSellingPrice = response?.data?.content?.data.minSellingPrice ?? null;
+                            state.maxSellingPrice = response?.data?.content?.data.maxSellingPrice ?? null;
                             state.description = response?.data?.content?.data.description ?? '';
                             state.productGroupId = response?.data?.content?.data.productGroupId ?? '';
                             state.unitMeasureId = response?.data?.content?.data.unitMeasureId ?? '';
@@ -983,6 +1073,8 @@ const App = {
                 nameText.create();
                 numberText.create();
                 unitPriceNumber.create();
+                minSellingPriceNumber.create();
+                maxSellingPriceNumber.create();
                 warrantyDaysNumber.create();
 
                 mainModal.create();
@@ -1042,6 +1134,8 @@ const App = {
                         { field: 'productGroupName', headerText: 'Product Group', width: 150, minWidth: 150 },
                         { field: 'brandName', headerText: 'Brand', width: 150, minWidth: 150 },
                         { field: 'unitPrice', headerText: 'Unit Price', width: 150, minWidth: 150, format: 'N2' },
+                        { field: 'minSellingPrice', headerText: 'Min Sell Price', width: 140, minWidth: 140, format: 'N2' },
+                        { field: 'maxSellingPrice', headerText: 'Max Sell Price', width: 140, minWidth: 140, format: 'N2' },
                         { field: 'unitMeasureName', headerText: 'Unit Measure', width: 150, minWidth: 150 },
                         { field: 'barcode', headerText: 'Barcode', width: 150, minWidth: 150 },
                         { field: 'physical', headerText: 'Physical Product', width: 140, minWidth: 140, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
@@ -1103,6 +1197,8 @@ const App = {
                                 state.number = selectedRecord.number ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.unitPrice = selectedRecord.unitPrice ?? '';
+                                state.minSellingPrice = selectedRecord.minSellingPrice ?? null;
+                                state.maxSellingPrice = selectedRecord.maxSellingPrice ?? null;
                                 state.description = selectedRecord.description ?? '';
                                 state.productGroupId = selectedRecord.productGroupId ?? '';
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
@@ -1136,6 +1232,8 @@ const App = {
                                 state.number = selectedRecord.number ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.unitPrice = selectedRecord.unitPrice ?? '';
+                                state.minSellingPrice = selectedRecord.minSellingPrice ?? null;
+                                state.maxSellingPrice = selectedRecord.maxSellingPrice ?? null;
                                 state.description = selectedRecord.description ?? '';
                                 state.productGroupId = selectedRecord.productGroupId ?? '';
                                 state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
@@ -1199,6 +1297,8 @@ const App = {
             nameRef,
             numberRef,
             unitPriceRef,
+            minSellingPriceRef,
+            maxSellingPriceRef,
             state,
             handler,
         };

@@ -63,6 +63,20 @@
                                         </div>
                                         <div class="row mb-2">
                                             <div class="col-md-6">
+                                                <label for="MinSellingPrice">Min Selling Price</label>
+                                                <input ref="minSellingPriceRef" />
+                                                <small class="text-muted d-block">Lowest price this product may be sold at. Leave empty for no floor.</small>
+                                                <label class="text-danger">{{ state.errors.minSellingPrice }}</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="MaxSellingPrice">Max Selling Price</label>
+                                                <input ref="maxSellingPriceRef" />
+                                                <small class="text-muted d-block">Highest price this product may be sold at. Leave empty for no ceiling.</small>
+                                                <label class="text-danger">{{ state.errors.maxSellingPrice }}</label>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-6">
                                                 <label for="ProductGroupId">Product Group</label>
                                                 <div class="d-flex align-items-center gap-2">
                                                     <div ref="productGroupIdRef" class="flex-grow-1"></div>

@@ -25,6 +25,7 @@ public record GetCompanySingleDto
     public string? Website { get; init; }
     public string? LogoName { get; init; }
     public bool AllowNegativeStock { get; init; }
+    public bool AllowPriceOutsideBand { get; init; }
 }
 
 public class GetCompanySingleProfile : Profile

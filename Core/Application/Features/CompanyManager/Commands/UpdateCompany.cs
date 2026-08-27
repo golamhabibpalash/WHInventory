@@ -26,7 +26,14 @@ public class UpdateCompanyRequest : IRequest<UpdateCompanyResult>
     public string? EmailAddress { get; init; }
     public string? Website { get; init; }
     public string? UpdatedById { get; init; }
-    public bool AllowNegativeStock { get; init; }
+    /// <summary>
+    /// Nullable so a request that omits the field leaves the stored value untouched
+    /// instead of silently resetting it to false.
+    /// </summary>
+    public bool? AllowNegativeStock { get; init; }
+
+    /// <inheritdoc cref="AllowNegativeStock"/>
+    public bool? AllowPriceOutsideBand { get; init; }
 }
 
 public class UpdateCompanyValidator : AbstractValidator<UpdateCompanyRequest>
@@ -83,7 +90,15 @@ public class UpdateCompanyHandler : IRequestHandler<UpdateCompanyRequest, Update
         entity.FaxNumber = request.FaxNumber;
         entity.EmailAddress = request.EmailAddress;
         entity.Website = request.Website;
-        entity.AllowNegativeStock = request.AllowNegativeStock;
+        if (request.AllowNegativeStock.HasValue)
+        {
+            entity.AllowNegativeStock = request.AllowNegativeStock.Value;
+        }
+
+        if (request.AllowPriceOutsideBand.HasValue)
+        {
+            entity.AllowPriceOutsideBand = request.AllowPriceOutsideBand.Value;
+        }
         // LogoName is managed separately via UpdateCompanyLogo — preserve existing value
 
         _repository.Update(entity);
