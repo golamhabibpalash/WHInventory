@@ -77,6 +77,8 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<QuantityBreak> QuantityBreak { get; set; }
     public DbSet<Promotion> Promotion { get; set; }
     public DbSet<PriceHistory> PriceHistory { get; set; }
+    public DbSet<PaymentMethod> PaymentMethod { get; set; }
+    public DbSet<Payment> Payment { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -139,6 +141,8 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new QuantityBreakConfiguration());
         modelBuilder.ApplyConfiguration(new PromotionConfiguration());
         modelBuilder.ApplyConfiguration(new PriceHistoryConfiguration());
+        modelBuilder.ApplyConfiguration(new PaymentMethodConfiguration());
+        modelBuilder.ApplyConfiguration(new PaymentConfiguration());
 
         ApplyTenantFilters(modelBuilder);
     }

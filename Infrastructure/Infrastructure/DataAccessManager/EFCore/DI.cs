@@ -385,6 +385,60 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""PaymentMethod"" (
+                    ""Id""           varchar(50)   NOT NULL PRIMARY KEY,
+                    ""Name""         varchar(255)  NULL,
+                    ""Code""         varchar(50)   NULL,
+                    ""Description""  varchar(4000) NULL,
+                    ""SystemMethod"" boolean       NOT NULL DEFAULT FALSE,
+                    ""IsActive""     boolean       NOT NULL DEFAULT TRUE,
+                    ""TenantId""     varchar(50)   NULL,
+                    ""IsDeleted""    boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc"" timestamp     NULL,
+                    ""CreatedById""  varchar(450)  NULL,
+                    ""UpdatedAtUtc"" timestamp     NULL,
+                    ""UpdatedById""  varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_PaymentMethod_IsDeleted"" ON core.""PaymentMethod"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_PaymentMethod_TenantId""  ON core.""PaymentMethod"" (""TenantId"");
+                CREATE INDEX IF NOT EXISTS ""IX_PaymentMethod_Name""      ON core.""PaymentMethod"" (""Name"");
+                CREATE INDEX IF NOT EXISTS ""IX_PaymentMethod_Code""      ON core.""PaymentMethod"" (""Code"");
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""Payment"" (
+                    ""Id""              varchar(50)   NOT NULL PRIMARY KEY,
+                    ""Number""          varchar(50)   NULL,
+                    ""ModuleName""      varchar(255)  NULL,
+                    ""ModuleId""        varchar(50)   NULL,
+                    ""ModuleNumber""    varchar(50)   NULL,
+                    ""PaymentDate""     timestamp     NULL,
+                    ""Direction""       int           NOT NULL DEFAULT 0,
+                    ""Amount""          float8        NULL,
+                    ""PaymentMethodId"" varchar(50)   NULL,
+                    ""ReferenceNumber"" varchar(50)   NULL,
+                    ""Notes""           varchar(4000) NULL,
+                    ""TenantId""        varchar(50)   NULL,
+                    ""IsDeleted""       boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""    timestamp     NULL,
+                    ""CreatedById""     varchar(450)  NULL,
+                    ""UpdatedAtUtc""    timestamp     NULL,
+                    ""UpdatedById""     varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_Payment_IsDeleted""   ON core.""Payment"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_Payment_TenantId""    ON core.""Payment"" (""TenantId"");
+                CREATE INDEX IF NOT EXISTS ""IX_Payment_Number""      ON core.""Payment"" (""Number"");
+                CREATE INDEX IF NOT EXISTS ""IX_Payment_ModuleId""    ON core.""Payment"" (""ModuleId"");
+                CREATE INDEX IF NOT EXISTS ""IX_Payment_Module""      ON core.""Payment"" (""ModuleName"", ""ModuleId"");
+                CREATE INDEX IF NOT EXISTS ""IX_Payment_PaymentDate"" ON core.""Payment"" (""PaymentDate"");
+                ALTER TABLE core.""Payment""
+                    DROP CONSTRAINT IF EXISTS ""FK_Payment_PaymentMethod_PaymentMethodId"";
+                ALTER TABLE core.""Payment""
+                    ADD CONSTRAINT ""FK_Payment_PaymentMethod_PaymentMethodId""
+                    FOREIGN KEY (""PaymentMethodId"") REFERENCES core.""PaymentMethod"" (""Id"") ON DELETE SET NULL;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""MinSellingPrice"" float8 NULL;
                 ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""MaxSellingPrice"" float8 NULL;
             ");
@@ -682,6 +736,63 @@ public static class DI
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'WarrantyDays')
                 BEGIN
                     ALTER TABLE [Product] ADD [WarrantyDays] int NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'PaymentMethod')
+                BEGIN
+                    CREATE TABLE [PaymentMethod] (
+                        [Id]           nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [Name]         nvarchar(255)  NULL,
+                        [Code]         nvarchar(50)   NULL,
+                        [Description]  nvarchar(4000) NULL,
+                        [SystemMethod] bit            NOT NULL DEFAULT 0,
+                        [IsActive]     bit            NOT NULL DEFAULT 1,
+                        [TenantId]     nvarchar(50)   NULL,
+                        [IsDeleted]    bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc] datetime2      NULL,
+                        [CreatedById]  nvarchar(450)  NULL,
+                        [UpdatedAtUtc] datetime2      NULL,
+                        [UpdatedById]  nvarchar(450)  NULL
+                    );
+                    CREATE INDEX [IX_PaymentMethod_IsDeleted] ON [PaymentMethod] ([IsDeleted]);
+                    CREATE INDEX [IX_PaymentMethod_TenantId]  ON [PaymentMethod] ([TenantId]);
+                    CREATE INDEX [IX_PaymentMethod_Name]      ON [PaymentMethod] ([Name]);
+                    CREATE INDEX [IX_PaymentMethod_Code]      ON [PaymentMethod] ([Code]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Payment')
+                BEGIN
+                    CREATE TABLE [Payment] (
+                        [Id]              nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [Number]          nvarchar(50)   NULL,
+                        [ModuleName]      nvarchar(255)  NULL,
+                        [ModuleId]        nvarchar(50)   NULL,
+                        [ModuleNumber]    nvarchar(50)   NULL,
+                        [PaymentDate]     datetime2      NULL,
+                        [Direction]       int            NOT NULL DEFAULT 0,
+                        [Amount]          float          NULL,
+                        [PaymentMethodId] nvarchar(50)   NULL,
+                        [ReferenceNumber] nvarchar(50)   NULL,
+                        [Notes]           nvarchar(4000) NULL,
+                        [TenantId]        nvarchar(50)   NULL,
+                        [IsDeleted]       bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]    datetime2      NULL,
+                        [CreatedById]     nvarchar(450)  NULL,
+                        [UpdatedAtUtc]    datetime2      NULL,
+                        [UpdatedById]     nvarchar(450)  NULL
+                    );
+                    CREATE INDEX [IX_Payment_IsDeleted]   ON [Payment] ([IsDeleted]);
+                    CREATE INDEX [IX_Payment_TenantId]    ON [Payment] ([TenantId]);
+                    CREATE INDEX [IX_Payment_Number]      ON [Payment] ([Number]);
+                    CREATE INDEX [IX_Payment_ModuleId]    ON [Payment] ([ModuleId]);
+                    CREATE INDEX [IX_Payment_Module]      ON [Payment] ([ModuleName], [ModuleId]);
+                    CREATE INDEX [IX_Payment_PaymentDate] ON [Payment] ([PaymentDate]);
+                    ALTER TABLE [Payment] ADD CONSTRAINT [FK_Payment_PaymentMethod_PaymentMethodId]
+                        FOREIGN KEY ([PaymentMethodId]) REFERENCES [PaymentMethod] ([Id]) ON DELETE SET NULL;
                 END
             ");
 

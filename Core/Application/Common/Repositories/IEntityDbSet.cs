@@ -52,5 +52,7 @@ public interface IEntityDbSet
     DbSet<QuantityBreak> QuantityBreak { get; set; }
     DbSet<Promotion> Promotion { get; set; }
     DbSet<PriceHistory> PriceHistory { get; set; }
+    DbSet<PaymentMethod> PaymentMethod { get; set; }
+    DbSet<Payment> Payment { get; set; }
 }
 

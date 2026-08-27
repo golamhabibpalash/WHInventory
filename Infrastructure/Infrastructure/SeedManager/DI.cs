@@ -19,6 +19,7 @@ public static class DI
         services.AddScoped<UserAdminSeeder>();
         services.AddScoped<CompanySeeder>();
         services.AddScoped<SystemWarehouseSeeder>();
+        services.AddScoped<PaymentMethodSeeder>();
 
         return services;
     }
@@ -54,6 +55,14 @@ public static class DI
 
             var systemWarehouseSeeder = serviceProvider.GetRequiredService<SystemWarehouseSeeder>();
             systemWarehouseSeeder.GenerateDataAsync().Wait();
+        }
+
+        // Checked independently of the Company gate above: an installation that predates
+        // payment methods already has a Company, and would otherwise never receive them.
+        if (!context.PaymentMethod.Any())
+        {
+            var paymentMethodSeeder = serviceProvider.GetRequiredService<PaymentMethodSeeder>();
+            paymentMethodSeeder.GenerateDataAsync().Wait();
         }
 
         return host;
