@@ -32,7 +32,11 @@ public static class DependencyInjection
         var assembly = Assembly.GetExecutingAssembly();
         var featureTypes = assembly.GetTypes()
             .Where(type => type.IsClass && !type.IsAbstract)
-            .Where(type => type.Namespace != null && type.Namespace.StartsWith("Application.Features"));
+            .Where(type => type.Namespace != null && type.Namespace.StartsWith("Application.Features"))
+            // Validators are already registered by AddValidatorsFromAssembly above. Registering them
+            // again here gave every request two IValidator<T> instances, which made ValidationBehaviour
+            // report each validation message multiple times.
+            .Where(type => !typeof(IValidator).IsAssignableFrom(type));
 
         foreach (var type in featureTypes)
         {
