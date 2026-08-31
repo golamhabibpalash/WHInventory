@@ -11,11 +11,16 @@ const App = {
             errors: {
                 name: ''
             },
-            isSubmitting: false
+            isSubmitting: false,
+            bulkUploadFile: null,
+            bulkUploadSubmitting: false,
+            bulkUploadResult: null
         });
 
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
+        const bulkUploadModalRef = Vue.ref(null);
+        const bulkFileInputRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
 
@@ -127,6 +132,11 @@ const App = {
                     throw error;
                 }
             },
+            bulkCreateBrand: async (file) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                return await AxiosManager.post('/Brand/BulkCreateBrand', formData, {});
+            },
             toggleStatus: async (id, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Brand/ToggleBrandStatus', {
@@ -171,6 +181,37 @@ const App = {
                         text: error.response?.data?.message ?? 'Failed to toggle status.',
                         confirmButtonText: 'OK'
                     });
+                }
+            },
+            onBulkFileSelected: (event) => {
+                const files = event.target.files;
+                state.bulkUploadFile = files.length > 0 ? files[0] : null;
+                state.bulkUploadResult = null;
+            },
+            submitBulkUpload: async () => {
+                if (!state.bulkUploadFile) return;
+                try {
+                    state.bulkUploadSubmitting = true;
+                    state.bulkUploadResult = null;
+                    const response = await services.bulkCreateBrand(state.bulkUploadFile);
+                    const result = response?.data?.content;
+                    if (result) {
+                        state.bulkUploadResult = result;
+                        await methods.populateMainData();
+                        mainGrid.refresh();
+                        if (result.failureCount === 0) {
+                            Swal.fire({ icon: 'success', title: 'All brands created successfully', timer: 2000, showConfirmButton: false });
+                        }
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Upload Failed',
+                        text: error.response?.data?.message ?? 'Please try again.',
+                        confirmButtonText: 'OK'
+                    });
+                } finally {
+                    state.bulkUploadSubmitting = false;
                 }
             },
             handleSubmit: async function () {
@@ -257,6 +298,7 @@ const App = {
                 nameText.create();
                 numberText.create();
                 mainModal.create();
+                bulkUploadModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
                     resetFormState();
                 });
@@ -311,6 +353,8 @@ const App = {
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
                         { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
+                        { text: 'Bulk Upload', tooltipText: 'Bulk Upload', prefixIcon: 'e-upload', id: 'BulkUploadCustom' },
+                        { type: 'Separator' },
                         { text: 'Toggle Status', tooltipText: 'Toggle Active/Inactive', prefixIcon: 'e-toggle', id: 'ToggleStatusCustom' },
                     ],
                     beforeDataBound: () => { },
@@ -341,6 +385,13 @@ const App = {
                     toolbarClick: async (args) => {
                         if (args.item.id === 'MainGrid_excelexport') {
                             mainGrid.obj.excelExport();
+                        }
+
+                        if (args.item.id === 'BulkUploadCustom') {
+                            state.bulkUploadResult = null;
+                            state.bulkUploadFile = null;
+                            if (bulkFileInputRef.value) bulkFileInputRef.value.value = '';
+                            bulkUploadModal.obj.show();
                         }
 
                         if (args.item.id === 'AddCustom') {
@@ -415,9 +466,21 @@ const App = {
             }
         };
 
+        const bulkUploadModal = {
+            obj: null,
+            create: () => {
+                bulkUploadModal.obj = new bootstrap.Modal(bulkUploadModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         return {
             mainGridRef,
             mainModalRef,
+            bulkUploadModalRef,
+            bulkFileInputRef,
             nameRef,
             numberRef,
             state,

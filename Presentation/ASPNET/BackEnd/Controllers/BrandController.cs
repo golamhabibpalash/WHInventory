@@ -1,4 +1,5 @@
 using Application.Features.BrandManager.Commands;
+using ClosedXML.Excel;
 using Application.Features.BrandManager.Queries;
 using ASPNET.BackEnd.Common.Base;
 using ASPNET.BackEnd.Common.Models;
@@ -90,5 +91,58 @@ public class BrandController : BaseApiController
         });
     }
 
+    /// <summary>
+    /// Anonymous because the page offers it as a plain link, which cannot carry the bearer
+    /// token. The workbook is an empty header row - it exposes no data.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("DownloadImportTemplate")]
+    public IActionResult DownloadImportTemplate()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Brands");
+        sheet.Cell(1, 1).Value = "Name";
+        sheet.Cell(1, 2).Value = "Description";
+        sheet.Cell(1, 3).Value = "Status";
+
+        var headerRange = sheet.Range("A1:C1");
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+        sheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "brand-import-template.xlsx");
+    }
+
+    [Authorize]
+    [HttpPost("BulkCreateBrand")]
+    public async Task<ActionResult<ApiSuccessResult<BulkCreateBrandResult>>> BulkCreateBrandAsync(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("An Excel file is required.");
+        }
+
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream, cancellationToken);
+        var fileData = memoryStream.ToArray();
+
+        var request = new BulkCreateBrandRequest
+        {
+            Data = fileData
+        };
+
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<BulkCreateBrandResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(BulkCreateBrandAsync)}",
+            Content = response
+        });
+    }
 
 }
