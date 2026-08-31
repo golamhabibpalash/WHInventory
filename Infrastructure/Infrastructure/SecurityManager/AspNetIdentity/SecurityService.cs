@@ -74,6 +74,49 @@ public class SecurityService : ISecurityService
         }
     }
 
+    private const string ResetLinkSentMessage =
+        "A password reset link has been sent to the registered email address.";
+
+    private const string ResetFailedMessage = "Error resetting your password";
+
+    /// <summary>
+    /// True when the account may be acted on from the host this request arrived on. A host that
+    /// carries no tenant label (apex domain, bare IP, localhost) places no restriction; a tenant
+    /// subdomain serves only its own accounts.
+    /// </summary>
+    private bool BelongsToHostTenant(ApplicationUser user)
+    {
+        var hostTenantId = _tenantContext.TenantId;
+        return string.IsNullOrEmpty(hostTenantId) || user.TenantId == hostTenantId;
+    }
+
+    /// <summary>
+    /// Whether a password reset may proceed for this account. Callers must react identically
+    /// whatever the reason is false, so the endpoint cannot be used to probe which addresses are
+    /// registered, blocked, deleted, or belong to another tenant.
+    /// </summary>
+    private bool CanResetPassword(ApplicationUser? user)
+    {
+        return user != null
+            && user.IsBlocked != true
+            && user.IsDeleted != true
+            && BelongsToHostTenant(user);
+    }
+
+    /// <summary>
+    /// Adopts the authenticated user's tenant into the ambient context. The anonymous endpoints
+    /// (login, logout, refresh) run before a TenantId claim exists, so on a deployment that does
+    /// not use per-tenant subdomains nothing has resolved a tenant yet — every tenant-scoped read
+    /// would return nothing and every write would land un-stamped and be invisible afterwards.
+    /// </summary>
+    private void AdoptUserTenant(ApplicationUser user)
+    {
+        if (_tenantContext.IsRoot) return;
+        if (string.IsNullOrEmpty(user.TenantId)) return;
+
+        _tenantContext.SetTenant(user.TenantId);
+    }
+
     public async Task<LoginResultDto> LoginAsync(
         string email,
         string password,
@@ -99,8 +142,7 @@ public class SecurityService : ISecurityService
 
         // The host resolved a tenant (e.g. acme.ustock.app); the account must belong to it.
         // Same message as a bad password so the form cannot be used to enumerate accounts.
-        var hostTenantId = _tenantContext.TenantId;
-        if (!string.IsNullOrEmpty(hostTenantId) && user.TenantId != hostTenantId)
+        if (!BelongsToHostTenant(user))
         {
             throw new Exception("Invalid login credentials.");
         }
@@ -116,6 +158,9 @@ public class SecurityService : ISecurityService
         {
             throw new Exception("Invalid login credentials. NotSucceeded.");
         }
+
+        // From here on the request touches tenant-scoped tables (NavigationMenuSortOrder, Token).
+        AdoptUserTenant(user);
 
         var roles = await _userManager.GetRolesAsync(user);
         var roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
@@ -169,6 +214,8 @@ public class SecurityService : ISecurityService
         var user = await _userManager.FindByIdAsync(userId);
         if (user != null)
         {
+            AdoptUserTenant(user);
+
             var tokens = await _context.Token.Where(x => x.UserId == user.Id).ToListAsync(cancellationToken);
             foreach (var item in tokens)
             {
@@ -287,25 +334,26 @@ public class SecurityService : ISecurityService
     {
         var user = await _userManager.FindByEmailAsync(email);
 
-        if (user == null)
+        // Unknown, blocked, deleted, and other-tenant addresses all get the same reply as a
+        // genuine one — the caller learns nothing about who holds an account here.
+        if (!CanResetPassword(user))
         {
-            throw new Exception($"Unable to load user with email: {email}");
+            return ResetLinkSentMessage;
         }
 
-        var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var code = await _userManager.GeneratePasswordResetTokenAsync(user!);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
         var request = _httpContextAccessor?.HttpContext?.Request;
-        var callbackUrl = $"{request?.Scheme}://{request?.Host}/Accounts/ForgotPasswordConfirmation?email={user.Email}&code={code}";
+        var callbackUrl = $"{request?.Scheme}://{request?.Host}/Accounts/ForgotPasswordConfirmation?email={user!.Email}&code={code}";
         var encodeCallbackUrl = $"{HtmlEncoder.Default.Encode(callbackUrl)}";
 
         var emailSubject = $"Forgot password confirmation";
         var emailMessage = $"Please reset your password by <a href='{encodeCallbackUrl}'>clicking here</a>.";
 
-        await _emailService.SendEmailAsync(user.Email ?? "", emailSubject, emailMessage);
+        await _emailService.SendEmailAsync(user!.Email ?? "", emailSubject, emailMessage);
 
-        return "A password reset link has been sent to the registered email address.";
-
+        return ResetLinkSentMessage;
     }
 
     public async Task<string> ForgotPasswordConfirmationAsync(
@@ -316,17 +364,28 @@ public class SecurityService : ISecurityService
     {
         var user = await _userManager.FindByEmailAsync(email);
 
-        if (user == null)
+        // Indistinguishable from a bad or expired code, for the same reason as above.
+        if (!CanResetPassword(user))
         {
-            throw new Exception($"Unable to load user with email: {email}");
+            throw new Exception(ResetFailedMessage);
         }
 
-        code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
-        var result = await _userManager.ResetPasswordAsync(user, code, newPassword);
+        string decodedCode;
+        try
+        {
+            decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+        }
+        catch (FormatException)
+        {
+            // A truncated or hand-edited link, not a server fault.
+            throw new Exception(ResetFailedMessage);
+        }
+
+        var result = await _userManager.ResetPasswordAsync(user!, decodedCode, newPassword);
 
         if (!result.Succeeded)
         {
-            throw new Exception($"Error resetting your password");
+            throw new Exception(ResetFailedMessage);
         }
 
         return email;
@@ -337,7 +396,13 @@ public class SecurityService : ISecurityService
         CancellationToken cancellationToken
         )
     {
-        var registeredToken = await _context.Token.SingleOrDefaultAsync(x => x.RefreshToken == refreshToken && x.ExpiryDate > DateTime.UtcNow, cancellationToken);
+        // Refresh runs anonymously, so no TenantId claim exists yet and the ambient tenant is
+        // only set when the host carries a tenant subdomain. The tenant filter is therefore
+        // bypassed for this one lookup — the refresh token itself is the credential, and the
+        // tenant it belongs to is established from its user immediately below.
+        var registeredToken = await _context.Token
+            .IgnoreQueryFilters()
+            .SingleOrDefaultAsync(x => x.RefreshToken == refreshToken && !x.IsDeleted && x.ExpiryDate > DateTime.UtcNow, cancellationToken);
         if (registeredToken == null)
         {
             throw new Exception("Refresh token invalid or expired, please re-login");
@@ -347,6 +412,15 @@ public class SecurityService : ISecurityService
         {
             throw new Exception("Refresh token invalid, please re-login");
         }
+
+        // A token issued for one tenant must not be redeemed on another tenant's host.
+        if (!BelongsToHostTenant(user))
+        {
+            throw new Exception("Refresh token invalid, please re-login");
+        }
+
+        AdoptUserTenant(user);
+
         _context.Token.Remove(registeredToken!);
 
         var roles = await _userManager.GetRolesAsync(user);
