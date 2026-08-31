@@ -50,7 +50,14 @@
                 const response = await services.getPDFData(id);
                 const pdfData = response?.data?.content?.data || {};
 
-                state.items = pdfData.purchaseOrderItemList || [];
+                // The template prints these straight out, so format here rather than leaving raw
+                // doubles - a line total of 1234.5600000000001 otherwise reaches the invoice.
+                state.items = (pdfData.purchaseOrderItemList || []).map(item => ({
+                    ...item,
+                    unitPriceFormatted: NumberFormatManager.formatToLocale(item.unitPrice ?? 0),
+                    quantityFormatted: NumberFormatManager.formatToLocale(item.quantity ?? 0),
+                    totalFormatted: NumberFormatManager.formatToLocale(item.total ?? 0),
+                }));
                 state.vendor = pdfData.vendor || {};
                 state.orderNumber = pdfData.number || '';
                 state.orderDate = DateFormatManager.formatToLocale(pdfData.orderDate) || '';

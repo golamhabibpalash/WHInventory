@@ -1,3 +1,4 @@
+using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Application.Features.PurchaseOrderManager;
 using Domain.Entities;
@@ -69,7 +70,7 @@ public class UpdatePurchaseOrderItemHandler : IRequestHandler<UpdatePurchaseOrde
         entity.UnitPrice = request.UnitPrice;
         entity.Quantity = request.Quantity;
 
-        entity.Total = entity.UnitPrice * entity.Quantity;
+        entity.Total = (entity.UnitPrice * entity.Quantity).ToMoney();
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

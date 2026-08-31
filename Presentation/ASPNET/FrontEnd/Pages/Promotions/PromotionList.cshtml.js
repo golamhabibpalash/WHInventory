@@ -240,7 +240,7 @@ const App = {
                         { field: 'code', headerText: 'Code', width: 100 },
                         { field: 'productName', headerText: 'Product', width: 180 },
                         { field: 'pricePolicyName', headerText: 'Price Policy', width: 140 },
-                        { field: 'promotionalPrice', headerText: 'Promo Price', width: 120, format: 'N4' },
+                        { field: 'promotionalPrice', headerText: 'Promo Price', width: 120, format: 'N2' },
                         { field: 'discountPercent', headerText: 'Disc %', width: 90 },
                         { field: 'startDate', headerText: 'Start', width: 110, format: 'yyyy-MM-dd' },
                         { field: 'endDate', headerText: 'End', width: 110, format: 'yyyy-MM-dd' },

@@ -82,7 +82,7 @@ public class UpdateSalesOrderItemHandler : IRequestHandler<UpdateSalesOrderItemR
         entity.UnitPrice = request.UnitPrice;
         entity.Quantity = request.Quantity;
 
-        entity.Total = entity.UnitPrice * entity.Quantity;
+        entity.Total = (entity.UnitPrice * entity.Quantity).ToMoney();
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

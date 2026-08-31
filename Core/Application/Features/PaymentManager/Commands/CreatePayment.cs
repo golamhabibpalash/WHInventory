@@ -1,3 +1,4 @@
+using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
 using Application.Features.PaymentManager.Services;
@@ -63,7 +64,7 @@ public class CreatePaymentHandler : IRequestHandler<CreatePaymentRequest, Create
         var summary = await _paymentService.GetSummaryAsync(
             request.ModuleName, request.ModuleId, null, cancellationToken);
 
-        var amount = request.Amount ?? 0;
+        var amount = (request.Amount ?? 0).ToMoney();
 
         if (amount > summary.AmountOutstanding + PaymentService.Tolerance)
         {

@@ -40,12 +40,12 @@ public class SalesOrderService
             .Where(x => x.SalesOrderId == salesOrderId)
             .ToListAsync();
 
-        salesOrder.BeforeTaxAmount = salesOrderItems.Sum(x => x.Total ?? 0);
+        salesOrder.BeforeTaxAmount = salesOrderItems.Sum(x => x.Total ?? 0).ToMoney();
 
         var taxPercentage = salesOrder.Tax?.Percentage ?? 0;
-        salesOrder.TaxAmount = (salesOrder.BeforeTaxAmount ?? 0) * taxPercentage / 100;
+        salesOrder.TaxAmount = ((salesOrder.BeforeTaxAmount ?? 0) * taxPercentage / 100).ToMoney();
 
-        salesOrder.AfterTaxAmount = (salesOrder.BeforeTaxAmount ?? 0) + (salesOrder.TaxAmount ?? 0);
+        salesOrder.AfterTaxAmount = ((salesOrder.BeforeTaxAmount ?? 0) + (salesOrder.TaxAmount ?? 0)).ToMoney();
 
         _salesOrderRepository.Update(salesOrder);
         await _unitOfWork.SaveAsync();

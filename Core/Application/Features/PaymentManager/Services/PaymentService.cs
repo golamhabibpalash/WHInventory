@@ -70,9 +70,9 @@ public class PaymentService
             ModuleName = moduleName,
             ModuleId = moduleId,
             ModuleNumber = documentNumber,
-            DocumentTotal = Math.Round(documentTotal, 4),
-            AmountPaid = Math.Round(paid, 4),
-            AmountOutstanding = Math.Round(outstanding, 4),
+            DocumentTotal = documentTotal.ToMoney(),
+            AmountPaid = paid.ToMoney(),
+            AmountOutstanding = outstanding.ToMoney(),
             IsFullySettled = outstanding <= Tolerance,
             PaymentCount = count
         };

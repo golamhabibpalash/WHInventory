@@ -1,3 +1,4 @@
+using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
@@ -76,9 +77,9 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Create
 
         entity.Number = _numberSequenceService.GenerateNumber(nameof(Product), "", "ART");
         entity.Name = request.Name;
-        entity.UnitPrice = request.UnitPrice;
-        entity.MinSellingPrice = request.MinSellingPrice;
-        entity.MaxSellingPrice = request.MaxSellingPrice;
+        entity.UnitPrice = request.UnitPrice.ToMoney();
+        entity.MinSellingPrice = request.MinSellingPrice.ToMoney();
+        entity.MaxSellingPrice = request.MaxSellingPrice.ToMoney();
         entity.Physical = request.Physical;
         entity.Description = request.Description;
         entity.UnitMeasureId = request.UnitMeasureId;

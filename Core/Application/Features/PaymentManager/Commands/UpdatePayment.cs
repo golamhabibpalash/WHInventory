@@ -1,3 +1,4 @@
+using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Application.Features.PaymentManager.Services;
 using Domain.Entities;
@@ -66,7 +67,7 @@ public class UpdatePaymentHandler : IRequestHandler<UpdatePaymentRequest, Update
         var summary = await _paymentService.GetSummaryAsync(
             entity.ModuleName, entity.ModuleId, entity.Id, cancellationToken);
 
-        var amount = request.Amount ?? 0;
+        var amount = (request.Amount ?? 0).ToMoney();
 
         if (amount > summary.AmountOutstanding + PaymentService.Tolerance)
         {

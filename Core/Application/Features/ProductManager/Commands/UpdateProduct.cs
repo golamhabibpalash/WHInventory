@@ -1,3 +1,4 @@
+using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Domain.Entities;
 using FluentValidation;
@@ -79,9 +80,9 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, Update
         entity.UpdatedById = request.UpdatedById;
 
         entity.Name = request.Name;
-        entity.UnitPrice = request.UnitPrice;
-        entity.MinSellingPrice = request.MinSellingPrice;
-        entity.MaxSellingPrice = request.MaxSellingPrice;
+        entity.UnitPrice = request.UnitPrice.ToMoney();
+        entity.MinSellingPrice = request.MinSellingPrice.ToMoney();
+        entity.MaxSellingPrice = request.MaxSellingPrice.ToMoney();
         entity.Physical = request.Physical;
         entity.Description = request.Description;
         entity.UnitMeasureId = request.UnitMeasureId;

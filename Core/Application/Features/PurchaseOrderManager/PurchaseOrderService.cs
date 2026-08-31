@@ -45,12 +45,12 @@ public class PurchaseOrderService
             .Where(x => x.PurchaseOrderId == purchaseOrderId)
             .ToListAsync();
 
-        purchaseOrder.BeforeTaxAmount = purchaseOrderItems.Sum(x => x.Total ?? 0);
+        purchaseOrder.BeforeTaxAmount = purchaseOrderItems.Sum(x => x.Total ?? 0).ToMoney();
 
         var taxPercentage = purchaseOrder.Tax?.Percentage ?? 0;
-        purchaseOrder.TaxAmount = (purchaseOrder.BeforeTaxAmount ?? 0) * taxPercentage / 100;
+        purchaseOrder.TaxAmount = ((purchaseOrder.BeforeTaxAmount ?? 0) * taxPercentage / 100).ToMoney();
 
-        purchaseOrder.AfterTaxAmount = (purchaseOrder.BeforeTaxAmount ?? 0) + (purchaseOrder.TaxAmount ?? 0);
+        purchaseOrder.AfterTaxAmount = ((purchaseOrder.BeforeTaxAmount ?? 0) + (purchaseOrder.TaxAmount ?? 0)).ToMoney();
 
         _purchaseOrderRepository.Update(purchaseOrder);
         await _unitOfWork.SaveAsync();

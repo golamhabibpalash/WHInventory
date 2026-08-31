@@ -1,3 +1,4 @@
+using Application.Common.Extensions;
 using Application.Common.CQS.Queries;
 using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
@@ -170,7 +171,7 @@ public class BulkCreateProductHandler : IRequestHandler<BulkCreateProductRequest
             entity.CreatedById = request.CreatedById;
             entity.Number = _numberSequenceService.GenerateNumber(nameof(Product), "", "ART");
             entity.Name = name;
-            entity.UnitPrice = unitPrice;
+            entity.UnitPrice = unitPrice.ToMoney();
             entity.Physical = true;
             entity.Description = string.IsNullOrWhiteSpace(description) ? null : description;
             entity.UnitMeasureId = unitMeasure.Id;

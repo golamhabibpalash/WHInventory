@@ -74,7 +74,7 @@ public class CreateSalesOrderItemHandler : IRequestHandler<CreateSalesOrderItemR
         entity.UnitPrice = request.UnitPrice;
         entity.Quantity = request.Quantity;
 
-        entity.Total = entity.Quantity * entity.UnitPrice;
+        entity.Total = (entity.Quantity * entity.UnitPrice).ToMoney();
 
         await _repository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);
