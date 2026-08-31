@@ -1,11 +1,3 @@
-// toISOString() converts to UTC first, so in any timezone ahead of it the local midnight the
-// date picker hands back lands on the previous day — a claim checked against the wrong date.
-const toLocalDateString = (date) => {
-    if (!date) return null;
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
-
 const App = {
     setup() {
         const state = Vue.reactive({
@@ -14,7 +6,7 @@ const App = {
             productListLookupData: [],
             customerId: null,
             productId: null,
-            claimDate: toLocalDateString(new Date()),
+            claimDate: DateFormatManager.toApiDate(new Date()),
             isSearching: false,
         });
 
@@ -137,10 +129,10 @@ const App = {
             create: () => {
                 claimDatePicker.obj = new ej.calendars.DatePicker({
                     value: new Date(),
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     placeholder: 'Select claim date',
                     change: (e) => {
-                        state.claimDate = toLocalDateString(e.value);
+                        state.claimDate = DateFormatManager.toApiDate(e.value);
                     }
                 });
                 claimDatePicker.obj.appendTo(claimDateRef.value);
@@ -172,7 +164,7 @@ const App = {
             reset: () => {
                 state.customerId = null;
                 state.productId = null;
-                state.claimDate = toLocalDateString(new Date());
+                state.claimDate = DateFormatManager.toApiDate(new Date());
                 customerListLookup.obj.value = null;
                 productListLookup.obj.value = null;
                 claimDatePicker.obj.value = new Date();
@@ -230,14 +222,14 @@ const App = {
                         { field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false },
                         { field: 'deliveryOrderId', headerText: 'Delivery Order Id', visible: false },
                         { field: 'deliveryOrderNumber', headerText: 'Delivery No.', width: 150, minWidth: 150 },
-                        { field: 'deliveryDate', headerText: 'Delivery Date', width: 140, minWidth: 140, format: 'yyyy-MM-dd' },
+                        { field: 'deliveryDate', headerText: 'Delivery Date', width: 140, minWidth: 140, format: 'dd/MM/yyyy' },
                         { field: 'customerName', headerText: 'Customer', width: 180, minWidth: 180 },
                         { field: 'salesOrderNumber', headerText: 'Sales Order No.', width: 150, minWidth: 150 },
                         { field: 'productNumber', headerText: 'Product No.', width: 130, minWidth: 130 },
                         { field: 'productName', headerText: 'Product', width: 200, minWidth: 200 },
                         { field: 'quantity', headerText: 'Qty', width: 80, minWidth: 80, format: 'N2', textAlign: 'Right' },
                         { field: 'warrantyDays', headerText: 'Warranty (Days)', width: 140, minWidth: 140, textAlign: 'Right' },
-                        { field: 'warrantyExpireDate', headerText: 'Expires On', width: 130, minWidth: 130, format: 'yyyy-MM-dd' },
+                        { field: 'warrantyExpireDate', headerText: 'Expires On', width: 130, minWidth: 130, format: 'dd/MM/yyyy' },
                         { field: 'daysRemaining', headerText: 'Days Remaining', width: 140, minWidth: 140, textAlign: 'Right' },
                         {
                             field: 'warrantyStatus', headerText: 'Warranty Status', width: 140, minWidth: 140, textAlign: 'Center',

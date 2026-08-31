@@ -15,11 +15,11 @@
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <label class="mb-0 text-nowrap">From</label>
-                        <input v-model="state.filterFromDate" type="date" class="form-control form-control-sm" style="width:145px;" />
+                        <input ref="filterFromDateRef" style="width:145px;" />
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <label class="mb-0 text-nowrap">To</label>
-                        <input v-model="state.filterToDate" type="date" class="form-control form-control-sm" style="width:145px;" />
+                        <input ref="filterToDateRef" style="width:145px;" />
                     </div>
                     <button type="button" class="btn btn-sm btn-primary" v-on:click="handler.applyFilter">
                         <i class="fas fa-search me-1"></i>Search

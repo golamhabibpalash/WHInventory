@@ -512,7 +512,7 @@
                         { field: 'emailConfirmed', headerText: 'Email Confirmed', textAlign: 'Center', width: 150, minWidth: 150, type: 'boolean', displayAsCheckBox: true },
                         { field: 'isBlocked', headerText: 'Is Blocked', textAlign: 'Center', width: 150, minWidth: 150, type: 'boolean', displayAsCheckBox: true },
                         { field: 'isDeleted', headerText: 'Is Deleted', textAlign: 'Center', width: 150, minWidth: 150, type: 'boolean', displayAsCheckBox: true },
-                        { field: 'createdAt', headerText: 'Created At', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAt', headerText: 'Created At', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

@@ -587,7 +587,7 @@ const App = {
             obj: null,
             create: () => {
                 orderDatePicker.obj = new ej.calendars.DatePicker({
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     value: state.orderDate ? new Date(state.orderDate) : null,
                     change: (e) => {
                         state.orderDate = e.value;
@@ -901,12 +901,12 @@ const App = {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
                         { field: 'number', headerText: 'Number', width: 150, minWidth: 150 },
-                        { field: 'orderDate', headerText: 'PO Date', width: 150, format: 'yyyy-MM-dd' },
+                        { field: 'orderDate', headerText: 'PO Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'vendorName', headerText: 'Vendor', width: 200, minWidth: 200 },
                         { field: 'orderStatusName', headerText: 'Status', width: 150, minWidth: 150 },
                         { field: 'taxName', headerText: 'Tax', width: 150, minWidth: 150 },
                         { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2' },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

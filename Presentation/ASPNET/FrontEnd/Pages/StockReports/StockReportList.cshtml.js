@@ -79,7 +79,7 @@
                         { field: 'productNumber', headerText: 'Product Number', width: 200 },
                         { field: 'stock', headerText: 'Stock', width: 150, type: 'number', format: '+0.00;-0.00;0.00', textAlign: 'Right' },
                         { field: 'statusName', headerText: 'Status', width: 100 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     aggregates: [
                         {

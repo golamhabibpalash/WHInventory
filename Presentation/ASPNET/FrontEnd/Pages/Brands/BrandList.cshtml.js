@@ -344,7 +344,7 @@ const App = {
                         { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
                         { field: 'status', headerText: 'Status', width: 120, minWidth: 120 },
                         { field: 'description', headerText: 'Description', width: 400, minWidth: 400 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

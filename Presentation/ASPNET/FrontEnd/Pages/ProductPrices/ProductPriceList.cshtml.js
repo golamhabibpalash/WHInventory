@@ -171,7 +171,7 @@ const App = {
             obj: null,
             create: function () {
                 this.obj = new ej.calendars.DatePicker({
-                    placeholder: 'Select date', format: 'yyyy-MM-dd',
+                    placeholder: 'Select date', format: 'dd/MM/yyyy',
                     change: (e) => { state[stateKey] = e.value; }
                 });
                 this.obj.appendTo(ref.value);
@@ -353,9 +353,9 @@ const App = {
                         { field: 'maximumDiscountPercent', headerText: 'Max Disc %', width: 120 },
                         { field: 'priority', headerText: 'Priority', width: 90 },
                         { field: 'isActive', headerText: 'Active', width: 90, displayAsCheckBox: true },
-                        { field: 'effectiveFrom', headerText: 'From', width: 110, format: 'yyyy-MM-dd' },
-                        { field: 'effectiveTo', headerText: 'To', width: 110, format: 'yyyy-MM-dd' },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'effectiveFrom', headerText: 'From', width: 110, format: 'dd/MM/yyyy' },
+                        { field: 'effectiveTo', headerText: 'To', width: 110, format: 'dd/MM/yyyy' },
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

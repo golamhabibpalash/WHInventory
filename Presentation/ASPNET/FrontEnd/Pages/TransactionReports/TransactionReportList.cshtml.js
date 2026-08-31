@@ -76,7 +76,7 @@
                         },
                         { field: 'warehouseName', headerText: 'Warehouse', width: 100 },
                         { field: 'productName', headerText: 'Product', width: 100 },
-                        { field: 'movementDate', headerText: 'Movement Date', width: 100, format: 'yyyy-MM-dd' },
+                        { field: 'movementDate', headerText: 'Movement Date', width: 100, format: 'dd/MM/yyyy' },
                         { field: 'number', headerText: 'Number', width: 100 },
                         { field: 'movement', headerText: 'Movement', width: 100, type: 'number', format: 'N2', textAlign: 'Right' },
                         { field: 'transTypeName', headerText: 'Trans Type', width: 100 },
@@ -87,7 +87,7 @@
                         { field: 'moduleNumber', headerText: 'Module Number', width: 100 },
                         { field: 'warehouseFromName', headerText: 'Warehouse From', width: 100 },
                         { field: 'warehouseToName', headerText: 'Warehouse To', width: 100 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     aggregates: [
                         {

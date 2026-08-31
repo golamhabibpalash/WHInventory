@@ -82,7 +82,7 @@ const App = {
             create: () => {
                 receiveDatePicker.obj = new ej.calendars.DatePicker({
                     placeholder: 'Select Date',
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     value: state.receiveDate ? new Date(state.receiveDate) : null,
                     change: (e) => {
                         state.receiveDate = e.value;
@@ -547,10 +547,10 @@ const App = {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
                         { field: 'number', headerText: 'Number', width: 150, minWidth: 150 },
-                        { field: 'receiveDate', headerText: 'Receive Date', width: 150, format: 'yyyy-MM-dd' },
+                        { field: 'receiveDate', headerText: 'Receive Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'purchaseOrderNumber', headerText: 'Purchase Order', width: 150, minWidth: 150 },
                         { field: 'statusName', headerText: 'Status', width: 150, minWidth: 150 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

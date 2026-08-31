@@ -71,6 +71,7 @@ const App = {
         });
 
         const mainGridRef = Vue.ref(null);
+        const paymentDateRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const orderDateRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
@@ -143,13 +144,45 @@ const App = {
             return isValid;
         };
 
+        const paymentDatePicker = {
+            obj: null,
+            // The payment form is behind a v-if, so its host element comes and goes with the
+            // modal. Rebuild the picker each time Vue hands back a fresh node.
+            mount: (element) => {
+                if (paymentDatePicker.obj) {
+                    paymentDatePicker.obj.destroy();
+                    paymentDatePicker.obj = null;
+                }
+                if (!element) return;
+
+                paymentDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'Select date',
+                    cssClass: 'e-small',
+                    value: DateFormatManager.fromApiDate(state.newPayment.paymentDate),
+                    change: (e) => {
+                        state.newPayment.paymentDate = DateFormatManager.toApiDate(e.value) ?? '';
+                    }
+                });
+                paymentDatePicker.obj.appendTo(element);
+            },
+            refresh: () => {
+                if (paymentDatePicker.obj) {
+                    paymentDatePicker.obj.value = DateFormatManager.fromApiDate(state.newPayment.paymentDate);
+                }
+            }
+        };
+
+        Vue.watch(() => paymentDateRef.value, (element) => paymentDatePicker.mount(element));
+
         const resetNewPaymentState = () => {
             state.newPayment = {
-                paymentDate: new Date().toISOString().slice(0, 10),
+                paymentDate: DateFormatManager.toApiDate(new Date()),
                 paymentMethodId: '',
                 amount: null,
                 referenceNumber: ''
             };
+            paymentDatePicker.refresh();
         };
 
         const resetFormState = () => {
@@ -761,7 +794,7 @@ const App = {
             obj: null,
             create: () => {
                 orderDatePicker.obj = new ej.calendars.DatePicker({
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     value: state.orderDate ? new Date(state.orderDate) : null,
                     change: (e) => {
                         state.orderDate = e.value;
@@ -852,12 +885,12 @@ const App = {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
                         { field: 'number', headerText: 'Number', width: 150, minWidth: 150 },
-                        { field: 'orderDate', headerText: 'SO Date', width: 150, format: 'yyyy-MM-dd' },
+                        { field: 'orderDate', headerText: 'SO Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'customerName', headerText: 'Customer', width: 200, minWidth: 200 },
                         { field: 'orderStatusName', headerText: 'Status', width: 150, minWidth: 150 },
                         { field: 'taxName', headerText: 'Tax', width: 150, minWidth: 150 },
                         { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2' },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
@@ -1464,6 +1497,7 @@ const App = {
 
         return {
             mainGridRef,
+            paymentDateRef,
             mainModalRef,
             orderDateRef,
             numberRef,

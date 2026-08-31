@@ -15,7 +15,7 @@ const App = {
             create: () => {
                 dateFromPicker.obj = new ej.calendars.DatePicker({
                     placeholder: 'Select From Date',
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     change: (args) => {
                         state.dateFrom = args.value ? args.value : null;
                     }
@@ -33,7 +33,7 @@ const App = {
             create: () => {
                 dateToPicker.obj = new ej.calendars.DatePicker({
                     placeholder: 'Select To Date',
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     change: (args) => {
                         state.dateTo = args.value ? args.value : null;
                     }
@@ -118,7 +118,7 @@ const App = {
                         },
                         { field: 'customerName', headerText: 'Customer', width: 200, minWidth: 200 },
                         { field: 'salesOrderNumber', headerText: 'Sales Order', width: 200, minWidth: 200 },
-                        { field: 'orderDate', headerText: 'Order Date', width: 130, minWidth: 130, format: 'yyyy-MM-dd', type: 'date' },
+                        { field: 'orderDate', headerText: 'Order Date', width: 130, minWidth: 130, format: 'dd/MM/yyyy', type: 'date' },
                         { field: 'productNumber', headerText: 'Product Number', width: 200, minWidth: 200 },
                         { field: 'productName', headerText: 'Product Name', width: 200, minWidth: 200 },
                         { field: 'unitPrice', headerText: 'Unit Price', width: 150, minWidth: 150, format: 'N2' },

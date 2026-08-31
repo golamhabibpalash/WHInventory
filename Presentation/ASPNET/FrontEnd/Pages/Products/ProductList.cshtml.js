@@ -1140,7 +1140,7 @@ const App = {
                         { field: 'barcode', headerText: 'Barcode', width: 150, minWidth: 150 },
                         { field: 'physical', headerText: 'Physical Product', width: 140, minWidth: 140, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
                         { field: 'isWarrantyApplicable', headerText: 'Warranty', width: 120, minWidth: 120, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

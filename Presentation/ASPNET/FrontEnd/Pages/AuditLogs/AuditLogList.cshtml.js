@@ -18,7 +18,37 @@ const App = {
         });
 
         const mainGridRef = Vue.ref(null);
+        const filterFromDateRef = Vue.ref(null);
+        const filterToDateRef = Vue.ref(null);
         const detailModalRef = Vue.ref(null);
+
+        const filterDatePickers = {
+            from: null,
+            to: null,
+            create: () => {
+                // EJ2 rather than <input type="date">, whose rendering follows the browser's
+                // own locale and cannot be pinned to the dd/MM/yyyy this application uses.
+                filterDatePickers.from = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'From',
+                    showClearButton: true,
+                    change: (e) => { state.filterFromDate = DateFormatManager.toApiDate(e.value) ?? ''; }
+                });
+                filterDatePickers.from.appendTo(filterFromDateRef.value);
+
+                filterDatePickers.to = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'To',
+                    showClearButton: true,
+                    change: (e) => { state.filterToDate = DateFormatManager.toApiDate(e.value) ?? ''; }
+                });
+                filterDatePickers.to.appendTo(filterToDateRef.value);
+            },
+            clear: () => {
+                if (filterDatePickers.from) filterDatePickers.from.value = null;
+                if (filterDatePickers.to) filterDatePickers.to.value = null;
+            }
+        };
 
         const services = {
             getMainData: async (entityType, fromDate, toDate) => {
@@ -67,6 +97,7 @@ const App = {
                 state.filterEntityType = '';
                 state.filterFromDate = '';
                 state.filterToDate = '';
+                filterDatePickers.clear();
                 await methods.populateMainData();
             }
         };
@@ -109,7 +140,7 @@ const App = {
                         },
                         { field: 'userId', headerText: 'User Id', width: 220, minWidth: 160 },
                         { field: 'ipAddress', headerText: 'IP Address', width: 130, minWidth: 100 },
-                        { field: 'createdAtUtc', headerText: 'Timestamp (UTC)', width: 175, format: 'yyyy-MM-dd HH:mm:ss' }
+                        { field: 'createdAtUtc', headerText: 'Timestamp (UTC)', width: 175, format: 'dd/MM/yyyy HH:mm:ss' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
@@ -170,9 +201,10 @@ const App = {
             mainGrid.create([]);
             detailModal.create();
             await methods.populateMainData();
+            filterDatePickers.create();
         });
 
-        return { state, mainGridRef, detailModalRef, formatDate, formatJson, operationBadgeClass, handler };
+        return { state, mainGridRef, detailModalRef, formatDate, formatJson, operationBadgeClass, handler, filterFromDateRef, filterToDateRef };
     }
 };
 

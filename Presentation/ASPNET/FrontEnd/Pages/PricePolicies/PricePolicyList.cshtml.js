@@ -117,7 +117,7 @@ const App = {
             create: () => {
                 effectiveFromPicker.obj = new ej.calendars.DatePicker({
                     placeholder: 'Select date',
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     change: (e) => { state.effectiveFrom = e.value; }
                 });
                 effectiveFromPicker.obj.appendTo(effectiveFromRef.value);
@@ -130,7 +130,7 @@ const App = {
             create: () => {
                 effectiveToPicker.obj = new ej.calendars.DatePicker({
                     placeholder: 'Select date',
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     change: (e) => { state.effectiveTo = e.value; }
                 });
                 effectiveToPicker.obj.appendTo(effectiveToRef.value);
@@ -223,10 +223,10 @@ const App = {
                         { field: 'code', headerText: 'Code', width: 120 },
                         { field: 'priority', headerText: 'Priority', width: 100 },
                         { field: 'isActive', headerText: 'Active', width: 100, displayAsCheckBox: true },
-                        { field: 'effectiveFrom', headerText: 'From', width: 120, format: 'yyyy-MM-dd' },
-                        { field: 'effectiveTo', headerText: 'To', width: 120, format: 'yyyy-MM-dd' },
+                        { field: 'effectiveFrom', headerText: 'From', width: 120, format: 'dd/MM/yyyy' },
+                        { field: 'effectiveTo', headerText: 'To', width: 120, format: 'dd/MM/yyyy' },
                         { field: 'description', headerText: 'Description', width: 300 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

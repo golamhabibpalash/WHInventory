@@ -67,7 +67,7 @@ const App = {
             create: () => {
                 adjustmentDatePicker.obj = new ej.calendars.DatePicker({
                     placeholder: 'Select Date',
-                    format: 'yyyy-MM-dd',
+                    format: 'dd/MM/yyyy',
                     value: state.adjustmentDate ? new Date(state.adjustmentDate) : null,
                     change: (e) => {
                         state.adjustmentDate = e.value;
@@ -413,9 +413,9 @@ const App = {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
                         { field: 'number', headerText: 'Number', width: 150, minWidth: 150 },
-                        { field: 'adjustmentDate', headerText: 'Adjustment Date', width: 150, format: 'yyyy-MM-dd' },
+                        { field: 'adjustmentDate', headerText: 'Adjustment Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'statusName', headerText: 'Status', width: 150, minWidth: 150 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

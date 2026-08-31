@@ -136,7 +136,7 @@ const App = {
         const startDatePicker = {
             obj: null,
             create: () => {
-                startDatePicker.obj = new ej.calendars.DatePicker({ placeholder: 'Select date', format: 'yyyy-MM-dd', change: (e) => { state.startDate = e.value; } });
+                startDatePicker.obj = new ej.calendars.DatePicker({ placeholder: 'Select date', format: 'dd/MM/yyyy', change: (e) => { state.startDate = e.value; } });
                 startDatePicker.obj.appendTo(startDateRef.value);
             },
             refresh: () => { if (startDatePicker.obj) startDatePicker.obj.value = state.startDate ? new Date(state.startDate) : null; }
@@ -145,7 +145,7 @@ const App = {
         const endDatePicker = {
             obj: null,
             create: () => {
-                endDatePicker.obj = new ej.calendars.DatePicker({ placeholder: 'Select date', format: 'yyyy-MM-dd', change: (e) => { state.endDate = e.value; } });
+                endDatePicker.obj = new ej.calendars.DatePicker({ placeholder: 'Select date', format: 'dd/MM/yyyy', change: (e) => { state.endDate = e.value; } });
                 endDatePicker.obj.appendTo(endDateRef.value);
             },
             refresh: () => { if (endDatePicker.obj) endDatePicker.obj.value = state.endDate ? new Date(state.endDate) : null; }
@@ -242,11 +242,11 @@ const App = {
                         { field: 'pricePolicyName', headerText: 'Price Policy', width: 140 },
                         { field: 'promotionalPrice', headerText: 'Promo Price', width: 120, format: 'N2' },
                         { field: 'discountPercent', headerText: 'Disc %', width: 90 },
-                        { field: 'startDate', headerText: 'Start', width: 110, format: 'yyyy-MM-dd' },
-                        { field: 'endDate', headerText: 'End', width: 110, format: 'yyyy-MM-dd' },
+                        { field: 'startDate', headerText: 'Start', width: 110, format: 'dd/MM/yyyy' },
+                        { field: 'endDate', headerText: 'End', width: 110, format: 'dd/MM/yyyy' },
                         { field: 'priority', headerText: 'Priority', width: 90 },
                         { field: 'isActive', headerText: 'Active', width: 80, displayAsCheckBox: true },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

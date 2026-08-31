@@ -431,7 +431,7 @@
                         { field: 'jobTitle', headerText: 'Job Title', width: 150, minWidth: 150 },
                         { field: 'phoneNumber', headerText: 'Phone', width: 150, minWidth: 150 },
                         { field: 'emailAddress', headerText: 'Email', width: 150, minWidth: 150 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'yyyy-MM-dd HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
