@@ -1,6 +1,5 @@
 using Application.Common.CQS.Commands;
 using Application.Common.Tenancy;
-using Domain.Common;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +23,7 @@ public class CommandContext : DataContext, ICommandContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        StampTenant();
+        StampTenant(); // before the audit snapshot so NewValues records the stamped TenantId
         var auditEntries = BuildAuditEntries();
         var result = await base.SaveChangesAsync(cancellationToken);
         if (auditEntries.Count > 0)
@@ -36,13 +35,12 @@ public class CommandContext : DataContext, ICommandContext
     }
 
     /// <summary>
-    /// The synchronous path must stamp and audit exactly like the async one. IUnitOfWork.Save()
-    /// routes here — NumberSequenceService uses it on every document number — so leaving it
-    /// unoverridden wrote rows with a null TenantId that the tenant query filter then hid.
+    /// The synchronous path must audit exactly like the async one. IUnitOfWork.Save() routes
+    /// here — NumberSequenceService uses it on every document number.
     /// </summary>
     public override int SaveChanges()
     {
-        StampTenant();
+        StampTenant(); // before the audit snapshot so NewValues records the stamped TenantId
         var auditEntries = BuildAuditEntries();
         var result = base.SaveChanges();
         if (auditEntries.Count > 0)
@@ -51,29 +49,6 @@ public class CommandContext : DataContext, ICommandContext
             base.SaveChanges();
         }
         return result;
-    }
-
-    /// <summary>
-    /// Stamps the ambient tenant onto new rows. Done here rather than in CommandRepository so
-    /// that seeders and any direct context.Add call are covered too.
-    /// </summary>
-    private void StampTenant()
-    {
-        var tenantId = CurrentTenantId;
-        if (string.IsNullOrEmpty(tenantId)) return;
-
-        // Materialised up front so the assignment below cannot disturb the lazy enumeration.
-        var pending = ChangeTracker.Entries<IHasTenant>()
-            .Where(entry =>
-                entry.State == EntityState.Added &&
-                entry.Entity is not Domain.Entities.Tenant &&
-                string.IsNullOrEmpty(entry.Entity.TenantId))
-            .ToList();
-
-        foreach (var entry in pending)
-        {
-            entry.Entity.TenantId = tenantId;
-        }
     }
 
     private List<AuditLog> BuildAuditEntries()

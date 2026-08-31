@@ -77,7 +77,13 @@ public class TenantResolutionMiddleware
         if (System.Net.IPAddress.TryParse(host, out _)) return null;
 
         var labels = host.Split('.');
-        if (labels.Length < 2) return null;
+
+        // A tenant label only exists where there is a real subdomain: "acme.ustock.app" has one,
+        // the apex "ustock.app" does not — reading "ustock" there as a slug would let the apex
+        // impersonate a tenant. "acme.localhost" is the two-label exception used in development.
+        var hasSubdomain = labels.Length >= 3
+            || (labels.Length == 2 && labels[^1].Equals("localhost", StringComparison.OrdinalIgnoreCase));
+        if (!hasSubdomain) return null;
 
         var first = labels[0].ToLowerInvariant();
         if (NonTenantHostLabels.Contains(first)) return null;

@@ -80,6 +80,43 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<PaymentMethod> PaymentMethod { get; set; }
     public DbSet<Payment> Payment { get; set; }
 
+    /// <summary>
+    /// Stamps the ambient tenant onto new rows. Lives on the base context so that every writer
+    /// is covered — CommandContext, the seeders, and services such as SecurityService that hold
+    /// a plain DataContext. Without it those writes land with a null TenantId and the tenant
+    /// query filter then hides the row from the very tenant that created it.
+    /// </summary>
+    protected void StampTenant()
+    {
+        var tenantId = CurrentTenantId;
+        if (string.IsNullOrEmpty(tenantId)) return;
+
+        // Materialised up front so the assignment below cannot disturb the lazy enumeration.
+        var pending = ChangeTracker.Entries<IHasTenant>()
+            .Where(entry =>
+                entry.State == EntityState.Added &&
+                entry.Entity is not Domain.Entities.Tenant &&
+                string.IsNullOrEmpty(entry.Entity.TenantId))
+            .ToList();
+
+        foreach (var entry in pending)
+        {
+            entry.Entity.TenantId = tenantId;
+        }
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        StampTenant();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override int SaveChanges()
+    {
+        StampTenant();
+        return base.SaveChanges();
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
