@@ -132,7 +132,89 @@
                                         <h5 class="mb-0"><i class="fas fa-receipt me-2 text-success"></i>Payment Summary</h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="row justify-content-end">
+                                        <div class="row g-4">
+                                            <div class="col-md-6">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0 fw-bold"><i class="fas fa-hand-holding-usd me-2 text-success"></i>Payments Received</h6>
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"
+                                                          v-if="state.paymentList.length">{{ state.paymentList.length }}</span>
+                                                </div>
+
+                                                <div class="table-responsive" v-if="state.paymentList.length">
+                                                    <table class="table table-sm align-middle mb-2">
+                                                        <thead>
+                                                            <tr class="text-muted small">
+                                                                <th>Date</th>
+                                                                <th>Method</th>
+                                                                <th>Reference</th>
+                                                                <th class="text-end">Amount</th>
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr v-for="p in state.paymentList" v-bind:key="p.id">
+                                                                <td class="small">{{ handler.formatPaymentDate(p.paymentDate) }}</td>
+                                                                <td class="small">{{ p.paymentMethodName }}</td>
+                                                                <td class="small text-muted">{{ p.referenceNumber || '—' }}</td>
+                                                                <td class="small text-end">{{ handler.formatAmount(p.amount) }}</td>
+                                                                <td class="text-end">
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-outline-danger border-0"
+                                                                            v-on:click="handler.deletePayment(p)"
+                                                                            v-bind:disabled="state.deleteMode || state.isPaymentSubmitting"
+                                                                            title="Remove this payment">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <p class="text-muted small mb-2" v-else>No payments recorded against this order yet.</p>
+
+                                                <div class="border-top pt-3" v-if="!state.deleteMode && state.id">
+                                                    <div class="row g-2">
+                                                        <div class="col-6">
+                                                            <label class="form-label small mb-1">Date</label>
+                                                            <input type="date" class="form-control form-control-sm" v-model="state.newPayment.paymentDate">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label small mb-1">Method</label>
+                                                            <select class="form-select form-select-sm" v-model="state.newPayment.paymentMethodId">
+                                                                <option value="">Select...</option>
+                                                                <option v-for="m in state.paymentMethodListLookupData" v-bind:key="m.id" v-bind:value="m.id">{{ m.name }}</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label small mb-1">Amount</label>
+                                                            <input type="number" step="0.01" min="0" class="form-control form-control-sm"
+                                                                   v-model.number="state.newPayment.amount"
+                                                                   v-bind:placeholder="handler.formatAmount(state.paymentSummary ? state.paymentSummary.amountOutstanding : 0)">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label small mb-1">Reference</label>
+                                                            <input type="text" class="form-control form-control-sm" v-model="state.newPayment.referenceNumber" placeholder="Optional">
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2 mt-2">
+                                                        <button type="button" class="btn btn-sm btn-success"
+                                                                v-on:click="handler.submitPayment"
+                                                                v-bind:disabled="state.isPaymentSubmitting || state.isFullySettled">
+                                                            <span class="spinner-border spinner-border-sm me-1" v-if="state.isPaymentSubmitting" role="status" aria-hidden="true"></span>
+                                                            <i class="fas fa-plus me-1" v-else></i>Record Payment
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                                v-on:click="handler.payFullBalance"
+                                                                v-bind:disabled="state.isPaymentSubmitting || state.isFullySettled"
+                                                                title="Fill the amount with the outstanding balance">
+                                                            Pay full balance
+                                                        </button>
+                                                    </div>
+                                                    <div class="text-danger small mt-1" v-if="state.paymentError">{{ state.paymentError }}</div>
+                                                    <div class="text-success small mt-1" v-if="state.isFullySettled">This order is fully settled.</div>
+                                                </div>
+                                            </div>
+
                                             <div class="col-md-6">
                                                 <div class="d-flex justify-content-between py-2 border-bottom">
                                                     <span class="fw-bold">Subtotal</span>
@@ -142,9 +224,21 @@
                                                     <span class="fw-bold">Tax</span>
                                                     <span id="TaxAmount">{{ state.taxAmount }}</span>
                                                 </div>
-                                                <div class="d-flex justify-content-between py-2">
+                                                <div class="d-flex justify-content-between py-2 border-bottom">
                                                     <span class="fw-bold">Total Amount</span>
                                                     <span id="TotalAmount" class="fw-bold text-success">{{ state.totalAmount }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between py-2 border-bottom" v-if="state.paymentSummary">
+                                                    <span class="fw-bold">Paid</span>
+                                                    <span id="AmountPaid">{{ handler.formatAmount(state.paymentSummary.amountPaid) }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between py-2" v-if="state.paymentSummary">
+                                                    <span class="fw-bold">Balance Due</span>
+                                                    <span id="AmountOutstanding"
+                                                          class="fw-bold"
+                                                          v-bind:class="state.isFullySettled ? 'text-success' : 'text-danger'">
+                                                        {{ handler.formatAmount(state.paymentSummary.amountOutstanding) }}
+                                                    </span>
                                                 </div>
                                                 <div class="py-2 border-top mt-1" v-if="state.amountInWords">
                                                     <div class="text-muted small fw-bold">Amount in Words</div>

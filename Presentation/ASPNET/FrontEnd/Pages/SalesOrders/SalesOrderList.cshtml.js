@@ -27,6 +27,18 @@ const App = {
             },
             showComplexDiv: false,
             isSubmitting: false,
+            paymentMethodListLookupData: [],
+            paymentList: [],
+            paymentSummary: null,
+            isFullySettled: false,
+            isPaymentSubmitting: false,
+            paymentError: '',
+            newPayment: {
+                paymentDate: '',
+                paymentMethodId: '',
+                amount: null,
+                referenceNumber: ''
+            },
             subTotalAmount: '0.00',
             taxAmount: '0.00',
             totalAmount: '0.00',
@@ -131,6 +143,15 @@ const App = {
             return isValid;
         };
 
+        const resetNewPaymentState = () => {
+            state.newPayment = {
+                paymentDate: new Date().toISOString().slice(0, 10),
+                paymentMethodId: '',
+                amount: null,
+                referenceNumber: ''
+            };
+        };
+
         const resetFormState = () => {
             state.id = '';
             state.number = '';
@@ -147,6 +168,11 @@ const App = {
                 description: ''
             };
             state.secondaryData = [];
+            state.paymentList = [];
+            state.paymentSummary = null;
+            state.isFullySettled = false;
+            state.paymentError = '';
+            resetNewPaymentState();
             state.subTotalAmount = '0.00';
             state.taxAmount = '0.00';
             state.totalAmount = '0.00';
@@ -250,6 +276,48 @@ const App = {
                     const response = await AxiosManager.post('/SalesOrderItem/DeleteSalesOrderItem', {
                         id, deletedById
                     });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPaymentMethodListLookupData: async () => {
+                try {
+                    const response = await AxiosManager.get('/PaymentMethod/GetPaymentMethodList?activeOnly=true', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPaymentListByModule: async (salesOrderId) => {
+                try {
+                    const response = await AxiosManager.get(
+                        `/Payment/GetPaymentListByModule?moduleName=SalesOrder&moduleId=${salesOrderId}`, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPaymentSummaryData: async (salesOrderId) => {
+                try {
+                    const response = await AxiosManager.get(
+                        `/Payment/GetPaymentSummary?moduleName=SalesOrder&moduleId=${salesOrderId}`, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createPayment: async (payload) => {
+                try {
+                    const response = await AxiosManager.post('/Payment/CreatePayment', payload);
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            deletePaymentData: async (id, deletedById) => {
+                try {
+                    const response = await AxiosManager.post('/Payment/DeletePayment', { id, deletedById });
                     return response;
                 } catch (error) {
                     throw error;
@@ -394,6 +462,35 @@ const App = {
                     state.totalAmount = NumberFormatManager.formatToLocale(record.afterTaxAmount ?? 0);
                     state.amountInWords = AmountInWordsManager.convert(record.afterTaxAmount ?? 0);
                 }
+
+                await methods.refreshPaymentLedger(id);
+            },
+            refreshPaymentLedger: async (id) => {
+                if (!id) {
+                    state.paymentList = [];
+                    state.paymentSummary = null;
+                    state.isFullySettled = false;
+                    return;
+                }
+
+                try {
+                    const [listResponse, summaryResponse] = await Promise.all([
+                        services.getPaymentListByModule(id),
+                        services.getPaymentSummaryData(id)
+                    ]);
+
+                    state.paymentList = listResponse?.data?.content?.data ?? [];
+                    state.paymentSummary = summaryResponse?.data?.content?.data ?? null;
+                    state.isFullySettled = state.paymentSummary?.isFullySettled ?? false;
+                } catch (error) {
+                    state.paymentList = [];
+                    state.paymentSummary = null;
+                    state.isFullySettled = false;
+                }
+            },
+            populatePaymentMethodListLookupData: async () => {
+                const response = await services.getPaymentMethodListLookupData();
+                state.paymentMethodListLookupData = response?.data?.content?.data ?? [];
             },
             handleFormSubmit: async () => {
                 state.isSubmitting = true;
@@ -825,6 +922,8 @@ const App = {
 
                         if (args.item.id === 'EditCustom') {
                             state.deleteMode = false;
+                            state.paymentError = '';
+                            resetNewPaymentState();
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
                                 state.mainTitle = 'Edit Sales Order';
@@ -847,6 +946,8 @@ const App = {
 
                         if (args.item.id === 'DeleteCustom') {
                             state.deleteMode = true;
+                            state.paymentError = '';
+                            resetNewPaymentState();
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
                                 state.mainTitle = 'Delete Sales Order?';
@@ -1338,6 +1439,7 @@ const App = {
                     methods.populateTaxListLookupData(),
                     methods.populateSalesOrderStatusListLookupData(),
                     methods.populateProductListLookupData(),
+                    methods.populatePaymentMethodListLookupData(),
                     methods.populateCustomerGroupListLookupData(),
                     methods.populateCustomerCategoryListLookupData(),
                 ]).then(() => {
@@ -1379,6 +1481,98 @@ const App = {
             methods,
             handler: {
                 handleSubmit: methods.handleFormSubmit,
+                formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
+                formatPaymentDate: (value) => {
+                    if (!value) return '';
+                    const d = new Date(value);
+                    return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+                },
+                payFullBalance: () => {
+                    state.paymentError = '';
+                    const outstanding = state.paymentSummary?.amountOutstanding ?? 0;
+                    state.newPayment.amount = outstanding > 0 ? Number(outstanding.toFixed(2)) : null;
+                },
+                submitPayment: async () => {
+                    state.paymentError = '';
+
+                    const amount = Number(state.newPayment.amount);
+
+                    if (!state.newPayment.paymentDate) {
+                        state.paymentError = 'Payment date is required.';
+                        return;
+                    }
+                    if (!state.newPayment.paymentMethodId) {
+                        state.paymentError = 'Select a payment method.';
+                        return;
+                    }
+                    if (!amount || amount <= 0) {
+                        state.paymentError = 'Enter an amount greater than zero.';
+                        return;
+                    }
+
+                    const outstanding = state.paymentSummary?.amountOutstanding ?? 0;
+                    if (amount > outstanding + 0.005) {
+                        state.paymentError = `Amount exceeds the balance due of ${NumberFormatManager.formatToLocale(outstanding)}.`;
+                        return;
+                    }
+
+                    try {
+                        state.isPaymentSubmitting = true;
+
+                        const response = await services.createPayment({
+                            moduleName: 'SalesOrder',
+                            moduleId: state.id,
+                            paymentDate: state.newPayment.paymentDate,
+                            amount: amount,
+                            paymentMethodId: state.newPayment.paymentMethodId,
+                            referenceNumber: state.newPayment.referenceNumber || null,
+                            createdById: StorageManager.getUserId()
+                        });
+
+                        if (response.data.code === 200) {
+                            resetNewPaymentState();
+                            await methods.refreshPaymentLedger(state.id);
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Payment Recorded',
+                                text: `Balance due: ${NumberFormatManager.formatToLocale(state.paymentSummary?.amountOutstanding ?? 0)}`,
+                                timer: 1600,
+                                showConfirmButton: false
+                            });
+                        }
+                    } catch (error) {
+                        state.paymentError = error.response?.data?.message ?? 'Failed to record the payment.';
+                    } finally {
+                        state.isPaymentSubmitting = false;
+                    }
+                },
+                deletePayment: async (payment) => {
+                    const confirmed = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Remove this payment?',
+                        html: `<strong>${NumberFormatManager.formatToLocale(payment.amount ?? 0)}</strong> via ${payment.paymentMethodName || 'unknown method'}.<br>The balance due will go back up.`,
+                        showCancelButton: true,
+                        confirmButtonText: 'Remove',
+                        confirmButtonColor: '#dc3545'
+                    });
+
+                    if (!confirmed.isConfirmed) return;
+
+                    try {
+                        state.isPaymentSubmitting = true;
+                        await services.deletePaymentData(payment.id, StorageManager.getUserId());
+                        await methods.refreshPaymentLedger(state.id);
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.response?.data?.message ?? 'Failed to remove the payment.'
+                        });
+                    } finally {
+                        state.isPaymentSubmitting = false;
+                    }
+                },
                 openCustomerQuickCreate: () => {
                     state.customerQuickName = '';
                     state.customerQuickDescription = '';
