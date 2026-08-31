@@ -8,6 +8,13 @@ namespace Application.Features.WarrantyManager.Queries;
 
 public record GetWarrantyCheckDto
 {
+    /// <summary>
+    /// Unique per result row. One delivery order ships every line of its sales order, so a
+    /// delivery order id alone repeats across rows and cannot key the grid.
+    /// </summary>
+    public string? Id { get; init; }
+
+    public string? SalesOrderItemId { get; init; }
     public string? DeliveryOrderId { get; init; }
     public string? DeliveryOrderNumber { get; init; }
     public DateTime? DeliveryDate { get; init; }
@@ -63,6 +70,7 @@ public class GetWarrantyCheckHandler : IRequestHandler<GetWarrantyCheckRequest, 
             where request.ProductId == null || soi.ProductId == request.ProductId
             select new
             {
+                SalesOrderItemId = soi.Id,
                 DeliveryOrderId = d.Id,
                 d.Number,
                 d.DeliveryDate,
@@ -77,7 +85,13 @@ public class GetWarrantyCheckHandler : IRequestHandler<GetWarrantyCheckRequest, 
                 p.WarrantyDays,
             };
 
-        var rows = await query.Take(2000).ToListAsync(cancellationToken);
+        // Ordered before the cap, otherwise which 2000 rows survive is left to the database.
+        var rows = await query
+            .OrderByDescending(x => x.DeliveryDate)
+            .ThenBy(x => x.Number)
+            .ThenBy(x => x.ProductName)
+            .Take(2000)
+            .ToListAsync(cancellationToken);
 
         var dtos = rows.Select(row =>
         {
@@ -89,14 +103,24 @@ public class GetWarrantyCheckHandler : IRequestHandler<GetWarrantyCheckRequest, 
                 ? (int)(expireDate.Value - claimDate).TotalDays
                 : (int?)null;
 
-            var isValid = expireDate.HasValue && claimDate <= expireDate.Value;
+            // A warranty cannot be claimed before the goods were delivered, so a claim date
+            // earlier than the delivery date is out of cover just as an expired one is.
+            var deliveryDate = row.DeliveryDate?.Date;
+            var notYetDelivered = deliveryDate.HasValue && claimDate < deliveryDate.Value;
+
+            var isValid = expireDate.HasValue
+                && !notYetDelivered
+                && claimDate <= expireDate.Value;
 
             var status = expireDate == null ? "Not Applicable"
+                       : notYetDelivered ? "Not Delivered"
                        : isValid ? "Valid"
                        : "Expired";
 
             return new GetWarrantyCheckDto
             {
+                Id = $"{row.DeliveryOrderId}:{row.SalesOrderItemId}",
+                SalesOrderItemId = row.SalesOrderItemId,
                 DeliveryOrderId = row.DeliveryOrderId,
                 DeliveryOrderNumber = row.Number,
                 DeliveryDate = row.DeliveryDate,

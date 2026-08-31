@@ -1,3 +1,11 @@
+// toISOString() converts to UTC first, so in any timezone ahead of it the local midnight the
+// date picker hands back lands on the previous day — a claim checked against the wrong date.
+const toLocalDateString = (date) => {
+    if (!date) return null;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 const App = {
     setup() {
         const state = Vue.reactive({
@@ -6,7 +14,7 @@ const App = {
             productListLookupData: [],
             customerId: null,
             productId: null,
-            claimDate: new Date().toISOString().slice(0, 10),
+            claimDate: toLocalDateString(new Date()),
             isSearching: false,
         });
 
@@ -56,8 +64,10 @@ const App = {
             },
             populateProductListLookupData: async () => {
                 const response = await services.getProductListLookupData();
+                // Mirrors the server filter: a product flagged for warranty but left with no
+                // warranty days yields no rows, so offering it here would look like a dead search.
                 state.productListLookupData = (response?.data?.content?.data ?? [])
-                    .filter(p => p.isWarrantyApplicable === true);
+                    .filter(p => p.isWarrantyApplicable === true && p.warrantyDays > 0);
                 if (productListLookup.obj) {
                     productListLookup.obj.setProperties({ dataSource: state.productListLookupData });
                 }
@@ -130,7 +140,7 @@ const App = {
                     format: 'yyyy-MM-dd',
                     placeholder: 'Select claim date',
                     change: (e) => {
-                        state.claimDate = e.value ? e.value.toISOString().slice(0, 10) : null;
+                        state.claimDate = toLocalDateString(e.value);
                     }
                 });
                 claimDatePicker.obj.appendTo(claimDateRef.value);
@@ -162,7 +172,7 @@ const App = {
             reset: () => {
                 state.customerId = null;
                 state.productId = null;
-                state.claimDate = new Date().toISOString().slice(0, 10);
+                state.claimDate = toLocalDateString(new Date());
                 customerListLookup.obj.value = null;
                 productListLookup.obj.value = null;
                 claimDatePicker.obj.value = new Date();
@@ -215,7 +225,10 @@ const App = {
                     gridLines: 'Horizontal',
                     columns: [
                         { type: 'checkbox', width: 60 },
-                        { field: 'deliveryOrderId', isPrimaryKey: true, headerText: 'Id', visible: false },
+                        // One delivery order ships every line of its sales order, so its id repeats
+                        // across rows; the composite row id from the server is the unique key.
+                        { field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false },
+                        { field: 'deliveryOrderId', headerText: 'Delivery Order Id', visible: false },
                         { field: 'deliveryOrderNumber', headerText: 'Delivery No.', width: 150, minWidth: 150 },
                         { field: 'deliveryDate', headerText: 'Delivery Date', width: 140, minWidth: 140, format: 'yyyy-MM-dd' },
                         { field: 'customerName', headerText: 'Customer', width: 180, minWidth: 180 },
@@ -231,6 +244,7 @@ const App = {
                             template: (data) => {
                                 const cls = data.warrantyStatus === 'Valid' ? 'badge bg-success'
                                           : data.warrantyStatus === 'Expired' ? 'badge bg-danger'
+                                          : data.warrantyStatus === 'Not Delivered' ? 'badge bg-warning text-dark'
                                           : 'badge bg-secondary';
                                 return `<span class="${cls}">${data.warrantyStatus ?? ''}</span>`;
                             }
