@@ -16,4 +16,16 @@ public class RoleHelper
     {
         return "Profiles";
     }
+
+    /// <summary>
+    /// Roles that administer the platform rather than one organisation. Only the installation's
+    /// own administrator holds these; a tenant administrator created by provisioning does not, or
+    /// they could reach the tenant registry and every other organisation in it.
+    /// </summary>
+    public static readonly string[] PlatformRoles = { "Tenants" };
+
+    public static bool IsPlatformRole(string role)
+    {
+        return PlatformRoles.Contains(role, StringComparer.OrdinalIgnoreCase);
+    }
 }

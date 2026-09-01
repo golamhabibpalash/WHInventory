@@ -19,7 +19,6 @@ namespace ASPNET.BackEnd.Common.Middlewares;
 public class TenantResolutionMiddleware
 {
     private const string TenantSlugItemKey = "TenantSlug";
-    private static readonly string[] NonTenantHostLabels = { "www", "localhost", "app", "api" };
 
     private readonly RequestDelegate _next;
 
@@ -86,7 +85,7 @@ public class TenantResolutionMiddleware
         if (!hasSubdomain) return null;
 
         var first = labels[0].ToLowerInvariant();
-        if (NonTenantHostLabels.Contains(first)) return null;
+        if (TenantDefaults.ReservedSlugs.Contains(first) && first != TenantDefaults.DefaultTenantSlug) return null;
 
         return first;
     }

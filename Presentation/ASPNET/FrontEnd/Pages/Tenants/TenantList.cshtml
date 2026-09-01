@@ -1,0 +1,115 @@
+@page
+@{
+    ViewData["Title"] = "Tenants";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-start gap-2">
+                <i class="fas fa-info-circle mt-1"></i>
+                <div>
+                    Each tenant is a separate organisation with its own data, users and documents.
+                    Creating one sets up its company record, system warehouses and payment methods,
+                    and its first administrator.
+                </div>
+            </div>
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="mainModalRef" id="MainModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" v-bind:class="state.deleteMode ? 'bg-danger text-white' : 'bg-primary text-white'">
+                    <h5 class="modal-title"><i class="fas fa-city me-2"></i>{{ state.mainTitle }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning" v-if="state.deleteMode">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Deleting a tenant hides it and blocks its users from signing in. Its data is kept, not erased.
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Organisation Name <span class="text-danger">*</span></label>
+                            <input v-model="state.name" type="text" class="form-control" placeholder="Acme Ltd"
+                                   v-bind:disabled="state.deleteMode">
+                            <label class="text-danger small">{{ state.errors.name }}</label>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Address <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input v-model="state.slug" type="text" class="form-control" placeholder="acme"
+                                       v-bind:disabled="state.deleteMode">
+                                <span class="input-group-text text-muted">.your-domain</span>
+                            </div>
+                            <div class="form-text">Lowercase letters, digits and hyphens. This is the subdomain its users sign in on.</div>
+                            <label class="text-danger small">{{ state.errors.slug }}</label>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2" v-if="state.id && !state.deleteMode">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" v-model="state.isActive" id="IsActiveSwitch">
+                                <label class="form-check-label" for="IsActiveSwitch">
+                                    Active — when off, nobody in this tenant can sign in.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="!state.id">
+                        <hr>
+                        <h6 class="fw-bold"><i class="fas fa-user-shield me-2 text-primary"></i>First Administrator</h6>
+                        <p class="text-muted small">
+                            This account is created inside the new tenant with every module role except tenant administration.
+                        </p>
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <input v-model="state.adminEmail" type="email" class="form-control" placeholder="admin@acme.com">
+                                <label class="text-danger small">{{ state.errors.adminEmail }}</label>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Password <span class="text-danger">*</span></label>
+                                <input v-model="state.adminPassword" type="text" class="form-control" placeholder="At least 6 characters">
+                                <label class="text-danger small">{{ state.errors.adminPassword }}</label>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name</label>
+                                <input v-model="state.adminFirstName" type="text" class="form-control" placeholder="Optional">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name</label>
+                                <input v-model="state.adminLastName" type="text" class="form-control" placeholder="Optional">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                    <button type="button"
+                            class="btn"
+                            v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
+                            v-on:click="handler.handleSubmit"
+                            v-bind:disabled="state.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting"></span>
+                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-1' : 'fas fa-save me-1'"></i>
+                        <span>{{ state.isSubmitting ? 'Working...' : (state.deleteMode ? 'Delete' : 'Save') }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Tenants/TenantList.cshtml.js"></script>
+}

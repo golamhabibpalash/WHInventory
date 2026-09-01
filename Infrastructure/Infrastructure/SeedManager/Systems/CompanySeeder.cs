@@ -15,13 +15,16 @@ public class CompanySeeder
         _repository = repository;
         _unitOfWork = unitOfWork;
     }
-    public async Task GenerateDataAsync()
+    /// <param name="companyName">
+    /// Provisioning passes the new tenant's own name; startup seeding takes the placeholder.
+    /// </param>
+    public async Task GenerateDataAsync(string? companyName = null)
     {
         var entity = new Company
         {
             CreatedAtUtc = DateTime.UtcNow,
             IsDeleted = false,
-            Name = "Acme Corp",
+            Name = string.IsNullOrWhiteSpace(companyName) ? "Acme Corp" : companyName.Trim(),
             Currency = "USD",
             Street = "123 Main St",
             City = "Metropolis",

@@ -6,6 +6,7 @@ using Infrastructure.LogManager.Serilogs;
 using Infrastructure.SecurityManager.AspNetIdentity;
 using Infrastructure.SecurityManager.Tokens;
 using Infrastructure.SeedManager;
+using Infrastructure.TenantManager;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,6 +31,9 @@ public static class DependencyInjection
 
         //>>> System Seed Manager
         services.RegisterSystemSeedManager(configuration);
+
+        //>>> Tenant Manager (provisioning depends on the system seeders above)
+        services.RegisterTenantManager(configuration);
 
         //>>> Demo Seed Manager
         services.RegisterDemoSeedManager(configuration);

@@ -365,6 +365,12 @@ public static class NavigationTreeStructure
             "IsModule": true,
             "Children": [
                 {
+                    "URL": "/Tenants/TenantList",
+                    "Name": "Tenants",
+                    "Icon": "fas fa-city",
+                    "IsModule": false
+                },
+                {
                     "URL": "/AuditLogs/AuditLogList",
                     "Name": "Audit Log",
                     "Icon": "fas fa-shield-alt",

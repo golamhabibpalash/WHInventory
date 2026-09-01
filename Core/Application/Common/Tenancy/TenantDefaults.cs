@@ -10,4 +10,13 @@ public static class TenantDefaults
     public const string DefaultTenantSlug = "default";
 
     public const string DefaultTenantName = "Default";
+
+    /// <summary>
+    /// Host labels that never identify a tenant, so they cannot be claimed as one either. Shared
+    /// with the tenant resolution middleware so the two can never disagree.
+    /// </summary>
+    public static readonly string[] ReservedSlugs =
+    {
+        "www", "localhost", "app", "api", "admin", "mail", "static", "assets", DefaultTenantSlug
+    };
 }

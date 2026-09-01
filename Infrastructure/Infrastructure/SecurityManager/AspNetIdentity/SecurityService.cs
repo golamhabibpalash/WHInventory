@@ -104,6 +104,28 @@ public class SecurityService : ISecurityService
     }
 
     /// <summary>
+    /// A tenant that has been deactivated or deleted must not admit its users, however valid their
+    /// credentials are - deactivating an organisation is the way an administrator shuts off access
+    /// for everyone in it at once. Users with no tenant are rows adopted by the startup backfill
+    /// and are left alone.
+    /// </summary>
+    private async Task EnsureTenantIsActiveAsync(ApplicationUser user, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(user.TenantId)) return;
+
+        var tenant = await _context.Tenant
+            .AsNoTracking()
+            .Where(x => x.Id == user.TenantId)
+            .Select(x => new { x.IsActive, x.IsDeleted })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (tenant == null || tenant.IsDeleted || !tenant.IsActive)
+        {
+            throw new Exception("This organisation is no longer active. Please contact your administrator.");
+        }
+    }
+
+    /// <summary>
     /// Adopts the authenticated user's tenant into the ambient context. The anonymous endpoints
     /// (login, logout, refresh) run before a TenantId claim exists, so on a deployment that does
     /// not use per-tenant subdomains nothing has resolved a tenant yet — every tenant-scoped read
@@ -158,6 +180,8 @@ public class SecurityService : ISecurityService
         {
             throw new Exception("Invalid login credentials. NotSucceeded.");
         }
+
+        await EnsureTenantIsActiveAsync(user, cancellationToken);
 
         // From here on the request touches tenant-scoped tables (NavigationMenuSortOrder, Token).
         AdoptUserTenant(user);
@@ -418,6 +442,8 @@ public class SecurityService : ISecurityService
         {
             throw new Exception("Refresh token invalid, please re-login");
         }
+
+        await EnsureTenantIsActiveAsync(user, cancellationToken);
 
         AdoptUserTenant(user);
 
