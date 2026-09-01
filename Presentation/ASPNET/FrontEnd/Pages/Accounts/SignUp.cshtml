@@ -1,0 +1,92 @@
+@page
+@{
+    ViewData["Title"] = "Create your organisation";
+}
+<div id="app" class="container-fluid" v-cloak>
+
+    <div class="card-body register-card-body">
+        <p class="login-box-msg">@ViewData["Title"]</p>
+
+        <div v-if="state.done">
+            <div class="alert alert-success">
+                <h6 class="fw-bold"><i class="fas fa-check-circle me-1"></i>{{ state.result.name }} is ready</h6>
+                <p class="mb-1 small">Your workspace address is <strong>{{ state.result.slug }}</strong>.</p>
+                <p class="mb-0 small" v-if="state.result.emailConfirmationRequired">
+                    Confirm <strong>{{ state.result.adminEmail }}</strong> using the link we emailed you, then sign in.
+                </p>
+                <p class="mb-0 small" v-else>
+                    Sign in as <strong>{{ state.result.adminEmail }}</strong> to get started.
+                </p>
+            </div>
+            <a class="btn btn-primary btn-block" asp-page="/Accounts/Login">Go to sign in</a>
+        </div>
+
+        <form v-on:submit.prevent="handleSubmit" v-else>
+            <div class="input-group mb-3">
+                <input type="text" placeholder="Organisation Name" class="form-control"
+                       v-model="state.organizationName" v-on:input="state.errors.organizationName = ''">
+                <div class="input-group-append"><div class="input-group-text"><span class="fas fa-building"></span></div></div>
+            </div>
+            <label v-if="state.errors.organizationName" class="text-danger small">{{ state.errors.organizationName }}</label>
+
+            <div class="input-group mb-1">
+                <input type="text" placeholder="Workspace address (e.g. acme)" class="form-control"
+                       v-model="state.slug" v-on:input="handleSlugInput">
+                <div class="input-group-append"><div class="input-group-text"><span class="fas fa-link"></span></div></div>
+            </div>
+            <p class="text-muted small mb-2">Lowercase letters, digits and hyphens. This is where your team signs in.</p>
+            <label v-if="state.errors.slug" class="text-danger small">{{ state.errors.slug }}</label>
+
+            <div class="row">
+                <div class="col-6">
+                    <div class="input-group mb-3">
+                        <input type="text" placeholder="First Name" class="form-control"
+                               v-model="state.firstName" v-on:input="state.errors.firstName = ''">
+                    </div>
+                    <label v-if="state.errors.firstName" class="text-danger small">{{ state.errors.firstName }}</label>
+                </div>
+                <div class="col-6">
+                    <div class="input-group mb-3">
+                        <input type="text" placeholder="Last Name" class="form-control"
+                               v-model="state.lastName" v-on:input="state.errors.lastName = ''">
+                    </div>
+                    <label v-if="state.errors.lastName" class="text-danger small">{{ state.errors.lastName }}</label>
+                </div>
+            </div>
+
+            <div class="input-group mb-3">
+                <input type="email" placeholder="Email" class="form-control"
+                       v-model="state.email" v-on:input="state.errors.email = ''">
+                <div class="input-group-append"><div class="input-group-text"><span class="fas fa-envelope"></span></div></div>
+            </div>
+            <label v-if="state.errors.email" class="text-danger small">{{ state.errors.email }}</label>
+
+            <div class="input-group mb-3">
+                <input type="password" placeholder="Password" class="form-control"
+                       v-model="state.password" v-on:input="state.errors.password = ''">
+                <div class="input-group-append"><div class="input-group-text"><span class="fas fa-lock"></span></div></div>
+            </div>
+            <label v-if="state.errors.password" class="text-danger small">{{ state.errors.password }}</label>
+
+            <div class="input-group mb-3">
+                <input type="password" placeholder="Confirm Password" class="form-control"
+                       v-model="state.confirmPassword" v-on:input="state.errors.confirmPassword = ''">
+                <div class="input-group-append"><div class="input-group-text"><span class="fas fa-lock"></span></div></div>
+            </div>
+            <label v-if="state.errors.confirmPassword" class="text-danger small">{{ state.errors.confirmPassword }}</label>
+
+            <button type="submit" class="btn btn-primary btn-block" v-bind:disabled="state.isSubmitting">
+                <span class="spinner-border spinner-border-sm me-1" v-if="state.isSubmitting"></span>
+                {{ state.isSubmitting ? 'Creating...' : 'Create organisation' }}
+            </button>
+        </form>
+
+        <p class="mt-3 mb-0 text-center">
+            Already have an account? <a asp-page="/Accounts/Login">Sign in</a>
+        </p>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Accounts/SignUp.cshtml.js"></script>
+}

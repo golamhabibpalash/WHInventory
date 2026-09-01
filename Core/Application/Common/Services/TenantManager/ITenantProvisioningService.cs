@@ -8,6 +8,13 @@ public class ProvisionTenantDto
     public required string AdminPassword { get; init; }
     public string? AdminFirstName { get; init; }
     public string? AdminLastName { get; init; }
+
+    /// <summary>
+    /// When true the administrator must confirm their address before signing in, and a
+    /// confirmation link is emailed. Public sign-up sets this from the identity configuration;
+    /// a tenant an operator created by hand does not need it, the operator vouched for them.
+    /// </summary>
+    public bool RequireEmailConfirmation { get; init; }
 }
 
 /// <summary>
@@ -18,8 +25,23 @@ public class ProvisionTenantDto
 /// Implemented in Infrastructure because it drives the same seeders startup uses and creates an
 /// Identity user, neither of which the Application layer can reach.
 /// </summary>
+public class TenantSignUpPolicyDto
+{
+    /// <summary>Whether anonymous visitors may create their own organisation.</summary>
+    public bool PublicSignUpEnabled { get; init; }
+
+    /// <summary>Whether a new administrator must confirm their address before signing in.</summary>
+    public bool RequireEmailConfirmation { get; init; }
+}
+
 public interface ITenantProvisioningService
 {
+    /// <summary>
+    /// Installation-level sign-up policy. Read here rather than in the handler so the Application
+    /// layer stays free of configuration plumbing.
+    /// </summary>
+    TenantSignUpPolicyDto GetSignUpPolicy();
+
     Task ProvisionAsync(ProvisionTenantDto request, CancellationToken cancellationToken = default);
 
     /// <summary>

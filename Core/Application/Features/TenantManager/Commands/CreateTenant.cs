@@ -26,6 +26,12 @@ public class CreateTenantRequest : IRequest<CreateTenantResult>
     public string? AdminFirstName { get; init; }
     public string? AdminLastName { get; init; }
     public string? CreatedById { get; init; }
+
+    /// <summary>
+    /// Set by public sign-up when the installation requires confirmed email addresses. An
+    /// operator creating a tenant by hand leaves it false - they have vouched for the address.
+    /// </summary>
+    public bool RequireEmailConfirmation { get; init; }
 }
 
 public class CreateTenantValidator : AbstractValidator<CreateTenantRequest>
@@ -111,7 +117,8 @@ public class CreateTenantHandler : IRequestHandler<CreateTenantRequest, CreateTe
             AdminEmail = email,
             AdminPassword = request.AdminPassword!,
             AdminFirstName = request.AdminFirstName,
-            AdminLastName = request.AdminLastName
+            AdminLastName = request.AdminLastName,
+            RequireEmailConfirmation = request.RequireEmailConfirmation
         }, cancellationToken);
 
         return new CreateTenantResult

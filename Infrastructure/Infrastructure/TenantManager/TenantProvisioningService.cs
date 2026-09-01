@@ -1,10 +1,17 @@
+using Application.Common.Services.EmailManager;
 using Application.Common.Services.TenantManager;
 using Application.Common.Tenancy;
 using Infrastructure.SecurityManager.AspNetIdentity;
 using Infrastructure.SecurityManager.Roles;
 using Infrastructure.SeedManager.Systems;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Text;
+using System.Text.Encodings.Web;
 
 namespace Infrastructure.TenantManager;
 
@@ -15,13 +22,21 @@ public class TenantProvisioningService : ITenantProvisioningService
     private readonly CompanySeeder _companySeeder;
     private readonly SystemWarehouseSeeder _systemWarehouseSeeder;
     private readonly PaymentMethodSeeder _paymentMethodSeeder;
+    private readonly IEmailService _emailService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<TenantProvisioningService> _logger;
+    private readonly IConfiguration _configuration;
 
     public TenantProvisioningService(
         ITenantContext tenantContext,
         UserManager<ApplicationUser> userManager,
         CompanySeeder companySeeder,
         SystemWarehouseSeeder systemWarehouseSeeder,
-        PaymentMethodSeeder paymentMethodSeeder
+        PaymentMethodSeeder paymentMethodSeeder,
+        IEmailService emailService,
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<TenantProvisioningService> logger,
+        IConfiguration configuration
         )
     {
         _tenantContext = tenantContext;
@@ -29,6 +44,19 @@ public class TenantProvisioningService : ITenantProvisioningService
         _companySeeder = companySeeder;
         _systemWarehouseSeeder = systemWarehouseSeeder;
         _paymentMethodSeeder = paymentMethodSeeder;
+        _emailService = emailService;
+        _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
+        _configuration = configuration;
+    }
+
+    public TenantSignUpPolicyDto GetSignUpPolicy()
+    {
+        return new TenantSignUpPolicyDto
+        {
+            PublicSignUpEnabled = _configuration.GetValue<bool>("AllowPublicTenantSignUp"),
+            RequireEmailConfirmation = _configuration.GetValue<bool>("AspNetIdentity:SignIn:RequireConfirmedEmail")
+        };
     }
 
     public async Task<bool> IsEmailAvailableAsync(string email)
@@ -92,7 +120,7 @@ public class TenantProvisioningService : ITenantProvisioningService
             )
         {
             TenantId = request.TenantId,
-            EmailConfirmed = true
+            EmailConfirmed = !request.RequireEmailConfirmation
         };
 
         var created = await _userManager.CreateAsync(user, request.AdminPassword);
@@ -114,6 +142,39 @@ public class TenantProvisioningService : ITenantProvisioningService
             {
                 await _userManager.AddToRoleAsync(user, role);
             }
+        }
+
+        if (request.RequireEmailConfirmation)
+        {
+            await SendConfirmationEmailAsync(user);
+        }
+    }
+
+    /// <summary>
+    /// A mail failure must not undo the sign-up: the tenant and its administrator already exist,
+    /// and the address can be confirmed later from a resent link. Logged loudly instead.
+    /// </summary>
+    private async Task SendConfirmationEmailAsync(ApplicationUser user)
+    {
+        try
+        {
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            var httpRequest = _httpContextAccessor?.HttpContext?.Request;
+            var callbackUrl = $"{httpRequest?.Scheme}://{httpRequest?.Host}/Accounts/EmailConfirm?email={user.Email}&code={code}";
+            var encodedCallbackUrl = HtmlEncoder.Default.Encode(callbackUrl);
+
+            await _emailService.SendEmailAsync(
+                user.Email ?? "",
+                "Confirm your email",
+                $"Please confirm your account by <a href='{encodedCallbackUrl}'>clicking here</a>.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Tenant sign-up completed but the confirmation email could not be sent. Email={Email} TenantId={TenantId}",
+                user.Email, user.TenantId);
         }
     }
 }

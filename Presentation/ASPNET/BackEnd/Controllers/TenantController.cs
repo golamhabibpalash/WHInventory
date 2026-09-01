@@ -20,6 +20,24 @@ public class TenantController : BaseApiController
     {
     }
 
+    /// <summary>
+    /// The one anonymous door in this controller: a visitor creating their own organisation. It
+    /// refuses unless AllowPublicTenantSignUp is set, and reuses CreateTenant's guards wholesale.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("SignUp")]
+    public async Task<ActionResult<ApiSuccessResult<SignUpTenantResult>>> SignUpAsync(SignUpTenantRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<SignUpTenantResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(SignUpAsync)}",
+            Content = response
+        });
+    }
+
     [HttpGet("GetTenantList")]
     public async Task<ActionResult<ApiSuccessResult<GetTenantListResult>>> GetTenantListAsync(
         CancellationToken cancellationToken,
