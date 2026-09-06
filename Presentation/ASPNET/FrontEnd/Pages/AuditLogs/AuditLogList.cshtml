@@ -7,26 +7,34 @@
     <div class="row">
         <div class="col-12">
             <div class="card mb-3">
-                <div class="card-header d-flex align-items-center gap-3 flex-wrap">
+                <div class="card-header">
                     <span class="fw-semibold"><i class="fas fa-shield-alt me-2 text-warning"></i>Filters</span>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="mb-0 text-nowrap">Entity Type</label>
-                        <input v-model="state.filterEntityType" type="text" class="form-control form-control-sm" style="width:160px;" placeholder="e.g. Customer" />
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4 col-lg-3">
+                            <label class="form-label mb-1">Entity Type</label>
+                            <input v-model="state.filterEntityType" type="text" class="form-control form-control-sm" placeholder="e.g. Customer" />
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label mb-1">From</label>
+                            <input ref="filterFromDateRef" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label mb-1">To</label>
+                            <input ref="filterToDateRef" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-primary w-100" v-on:click="handler.applyFilter">
+                                <i class="fas fa-search me-1"></i>Search
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-100" v-on:click="handler.clearFilter">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </button>
+                        </div>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="mb-0 text-nowrap">From</label>
-                        <input ref="filterFromDateRef" style="width:145px;" />
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="mb-0 text-nowrap">To</label>
-                        <input ref="filterToDateRef" style="width:145px;" />
-                    </div>
-                    <button type="button" class="btn btn-sm btn-primary" v-on:click="handler.applyFilter">
-                        <i class="fas fa-search me-1"></i>Search
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" v-on:click="handler.clearFilter">
-                        <i class="fas fa-times me-1"></i>Clear
-                    </button>
                 </div>
             </div>
             <div class="grid-container">
