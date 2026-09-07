@@ -444,7 +444,6 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                ALTER TABLE core.""Company"" ADD COLUMN IF NOT EXISTS ""AllowNegativeStock"" boolean NOT NULL DEFAULT FALSE;
                 ALTER TABLE core.""Company"" ADD COLUMN IF NOT EXISTS ""AllowPriceOutsideBand"" boolean NOT NULL DEFAULT FALSE;
             ");
 
@@ -808,10 +807,6 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
-                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'AllowNegativeStock')
-                BEGIN
-                    ALTER TABLE [Company] ADD [AllowNegativeStock] bit NOT NULL DEFAULT 0;
-                END
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'AllowPriceOutsideBand')
                 BEGIN
                     ALTER TABLE [Company] ADD [AllowPriceOutsideBand] bit NOT NULL DEFAULT 0;

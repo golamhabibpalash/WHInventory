@@ -3,7 +3,6 @@ using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Application.Features.SalesOrderManager;
 using Domain.Entities;
-using Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -64,7 +63,8 @@ public class UpdateSalesOrderItemHandler : IRequestHandler<UpdateSalesOrderItemR
 
     public async Task<UpdateSalesOrderItemResult> Handle(UpdateSalesOrderItemRequest request, CancellationToken cancellationToken)
     {
-        await ValidateStockAsync(request.ProductId, request.Quantity, request.UpdatedById, cancellationToken);
+        await _salesOrderService.EnsureAvailableToPromiseAsync(
+            request.ProductId, request.SalesOrderId, request.Quantity, request.Id, request.UpdatedById, cancellationToken);
         await ValidateSellingPriceAsync(request.ProductId, request.UnitPrice, request.UpdatedById, cancellationToken);
 
         var entity = await _repository.GetAsync(request.Id ?? string.Empty, cancellationToken);
@@ -93,50 +93,6 @@ public class UpdateSalesOrderItemHandler : IRequestHandler<UpdateSalesOrderItemR
         {
             Data = entity
         };
-    }
-
-    private async Task ValidateStockAsync(string? productId, double? requestedQty, string? userId, CancellationToken cancellationToken)
-    {
-        var product = await _queryContext.Product
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.Id == productId)
-            .Select(x => new { x.Name, x.Physical })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (product == null || product.Physical != true)
-            return;
-
-        var allowNegativeStock = await _queryContext.Company
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Select(x => x.AllowNegativeStock)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (allowNegativeStock)
-            return;
-
-        var availableStock = await _queryContext.InventoryTransaction
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x =>
-                x.Status == InventoryTransactionStatus.Confirmed &&
-                x.ProductId == productId &&
-                x.Warehouse != null &&
-                x.Warehouse.SystemWarehouse == false)
-            .SumAsync(x => (double?)x.Stock ?? 0.0, cancellationToken);
-
-        if ((requestedQty ?? 0) > availableStock)
-        {
-            _logger.LogWarning(
-                "Stock validation failed on SalesOrderItem update. UserId={UserId} ProductId={ProductId} ProductName={ProductName} Available={Available} Requested={Requested}",
-                userId, productId, product.Name, availableStock, requestedQty);
-
-            throw new Exception(
-                $"Insufficient stock for '{product.Name}'. " +
-                $"Available: {availableStock:N2}, Requested: {requestedQty:N2}. " +
-                $"Cannot update this Sales Order item.");
-        }
     }
 
     private async Task ValidateSellingPriceAsync(string? productId, double? unitPrice, string? userId, CancellationToken cancellationToken)

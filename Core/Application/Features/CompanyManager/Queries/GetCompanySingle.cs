@@ -24,7 +24,6 @@ public record GetCompanySingleDto
     public string? EmailAddress { get; init; }
     public string? Website { get; init; }
     public string? LogoName { get; init; }
-    public bool AllowNegativeStock { get; init; }
     public bool AllowPriceOutsideBand { get; init; }
 }
 

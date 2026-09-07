@@ -24,7 +24,6 @@ public class CompanyConfiguration : BaseEntityConfiguration<Company>
         builder.Property(x => x.EmailAddress).HasMaxLength(NameConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.Website).HasMaxLength(NameConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.LogoName).HasMaxLength(NameConsts.MaxLength).IsRequired(false);
-        builder.Property(x => x.AllowNegativeStock).IsRequired();
         builder.Property(x => x.AllowPriceOutsideBand).IsRequired();
     }
 }
