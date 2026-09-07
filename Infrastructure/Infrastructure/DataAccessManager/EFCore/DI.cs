@@ -447,6 +447,12 @@ public static class DI
                 ALTER TABLE core.""Company"" ADD COLUMN IF NOT EXISTS ""AllowPriceOutsideBand"" boolean NOT NULL DEFAULT FALSE;
             ");
 
+            // AllowNegativeStock was removed — stock availability is now always enforced.
+            // Drop the legacy NOT NULL column so inserts that no longer supply it succeed.
+            dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE core.""Company"" DROP COLUMN IF EXISTS ""AllowNegativeStock"";
+            ");
+
             dataContext.Database.ExecuteSqlRaw(@"
                 CREATE TABLE IF NOT EXISTS core.""PricePolicy"" (
                     ""Id""            varchar(50)   NOT NULL PRIMARY KEY,
@@ -810,6 +816,21 @@ public static class DI
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'AllowPriceOutsideBand')
                 BEGIN
                     ALTER TABLE [Company] ADD [AllowPriceOutsideBand] bit NOT NULL DEFAULT 0;
+                END
+            ");
+
+            // AllowNegativeStock was removed — stock availability is now always enforced.
+            // Drop the legacy NOT NULL column so inserts that no longer supply it succeed.
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Company' AND COLUMN_NAME = 'AllowNegativeStock')
+                BEGIN
+                    DECLARE @df sysname;
+                    SELECT @df = dc.name
+                    FROM sys.default_constraints dc
+                    JOIN sys.columns c ON c.object_id = dc.parent_object_id AND c.column_id = dc.parent_column_id
+                    WHERE dc.parent_object_id = OBJECT_ID('[Company]') AND c.name = 'AllowNegativeStock';
+                    IF @df IS NOT NULL EXEC('ALTER TABLE [Company] DROP CONSTRAINT [' + @df + ']');
+                    ALTER TABLE [Company] DROP COLUMN [AllowNegativeStock];
                 END
             ");
 
