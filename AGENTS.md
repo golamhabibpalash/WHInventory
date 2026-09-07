@@ -20,7 +20,7 @@ Infrastructure/       → EF Core, Identity, JWT, SMTP, Serilog, seeding (implem
 Presentation/ASPNET   → controllers (REST API) + Razor Pages (Vue 3 + Syncfusion EJ2)
 ```
 
-- **API routing**: `api/[controller]/[action]` (RPC-style, not RESTful — actions named like `CreateWarehouse`, `GetWarehouseList`)
+- **API routing**: `api/{controller}/{ActionName}` (RPC-style, not RESTful — controllers override `BaseApiController`'s `api/[controller]/[action]` with `api/[controller]`, action names come from `[HttpPost("CreateWarehouse")]` / `[HttpGet("GetWarehouseList")]` attributes)
 - **Controllers** inherit `BaseApiController` → inject `ISender`, call `_sender.Send(request, ct)`, wrap in `ApiSuccessResult<T>`
 - **MediatR pipeline** (in order): `LoggingBehaviour` → `ValidationBehaviour` (FluentValidation auto-run; throws `ValidationException`, caught by `GlobalApiExceptionHandlerMiddleware`)
 - **Autowired audit**: `AuditFieldActionFilter` injects JWT `NameIdentifier` into `CreatedById`/`UpdatedById` fields before handlers run
