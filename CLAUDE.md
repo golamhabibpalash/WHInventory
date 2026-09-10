@@ -143,8 +143,6 @@ On every startup:
 ```bash
 docker compose up -d          # full stack: PostgreSQL + app + Cloudflare tunnel
 docker compose up -d db app   # app + database only (skip the tunnel)
-docker compose -f docker-compose.synology.yml --env-file .env up -d --build   # Synology NAS
 ```
 
 - `.env` is gitignored — copy `.env.example` and adjust (DB creds, JWT key, admin, SMTP).
-- Production VPS (Ubuntu 24.04): `deploy.sh` installs to `/opt/platform/`; `update.sh` redeploys via `git pull` + `docker compose -f docker-compose.platform.yml --env-file .env up -d --build`, served behind nginx (`nginx/`).

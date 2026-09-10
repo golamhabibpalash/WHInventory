@@ -4,6 +4,7 @@
 
 ```bash
 dotnet build WHInventory.sln                      # build (IDE* warnings = errors → build fails on unused usings)
+dotnet build WHInventory.sln -c Release           # release build
 dotnet run --project Presentation/ASPNET/ASPNET.csproj  # dev server on http://localhost:8080
 dotnet run --project Presentation/ASPNET/ASPNET.csproj --environment Development  # Swagger at /swagger (Dev only)
 ```
@@ -103,8 +104,6 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 ```bash
 docker compose up -d             # full stack: db + app + Cloudflare tunnel
 docker compose up -d db app      # skip tunnel
-docker compose -f docker-compose.synology.yml --env-file .env up -d --build  # Synology NAS
 ```
 
 - `.env` is gitignored — copy from `.env.example` (DB creds, JWT key, admin, SMTP).
-- Production VPS (Ubuntu 24.04): `deploy.sh` installs to `/opt/platform/`, `update.sh` redeploys via `git pull` + `docker compose -f docker-compose.platform.yml --env-file .env up -d --build`, served behind nginx (`nginx/`).
