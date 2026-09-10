@@ -3,89 +3,9 @@
     ViewData["Title"] = "Sales Order List";
 }
 
-<style>
-    /* POS-style Add Sales Order modal */
-    .pos-modal .modal-body {
-        background: #eceff1;
-    }
-
-    .pos-orderbar {
-        background: #ffffff;
-        border: 1px solid #dcdcdc;
-        border-radius: .5rem;
-        padding: .75rem .85rem;
-    }
-
-    .pos-orderbar label {
-        font-size: .75rem;
-        color: #6c757d;
-        margin-bottom: .15rem;
-    }
-
-    .pos-panel {
-        background: #ffffff;
-        border: 1px solid #dcdcdc;
-        border-radius: .5rem;
-        overflow: hidden;
-    }
-
-    .pos-panel-head {
-        background: #1f2937;
-        color: #ffffff;
-        padding: .5rem .85rem;
-        font-size: .85rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .pos-panel-body {
-        padding: .85rem;
-    }
-
-    .pos-cart {
-        font-size: .85rem;
-    }
-
-    .pos-cart thead th {
-        font-size: .72rem;
-        text-transform: uppercase;
-        letter-spacing: .03em;
-        color: #6c757d;
-        border-bottom: 2px solid #dcdcdc;
-    }
-
-    .pos-cart td {
-        vertical-align: middle;
-    }
-
-    .pos-qty .form-control {
-        max-width: 58px;
-        padding-left: .25rem;
-        padding-right: .25rem;
-    }
-
-    .pos-total {
-        background: #eafaf0;
-        border-color: #8fd6ab;
-        color: #1f7a4c;
-        font-weight: 600;
-    }
-
-    .pos-hint {
-        font-size: .78rem;
-        min-height: 1rem;
-    }
-
-    .pos-bill-total {
-        font-size: 1.05rem;
-    }
-
-    .pos-modal .e-ddl.e-input-group {
-        width: 100%;
-    }
-</style>
+@section styles {
+    <link rel="stylesheet" href="~/css/pos-order-modal.css" asp-append-version="true" />
+}
 
 <div id="app" v-cloak>
     <div class="row">
@@ -106,112 +26,110 @@
                 <div class="modal-body">
                     <input type="hidden" v-model="state.id" id="Id" name="Id" />
 
-                    <!-- Order detail bar (always rendered so the Syncfusion inputs keep their host nodes) -->
-                    <form id="MainForm" class="pos-orderbar mb-3">
-                        <div class="row g-2">
-                            <div class="col-md-4">
-                                <label for="CustomerId">Customer <span class="text-danger">*</span></label>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div ref="customerIdRef" class="flex-grow-1"></div>
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-primary flex-shrink-0"
-                                            v-on:click="handler.openCustomerQuickCreate"
-                                            v-bind:disabled="state.deleteMode"
-                                            title="Quick-create a new customer">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
+                    <!-- Order-detail bar (always rendered so the Syncfusion inputs keep their host nodes) -->
+                    <form id="MainForm" class="card pos-orderbar mb-3">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="CustomerId" class="form-label">Customer <span class="text-danger">*</span></label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div ref="customerIdRef" class="flex-grow-1"></div>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary flex-shrink-0"
+                                                v-on:click="handler.openCustomerQuickCreate"
+                                                v-bind:disabled="state.deleteMode"
+                                                title="Quick-create a new customer">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div class="text-danger small mt-1" v-if="state.errors.customerId">{{ state.errors.customerId }}</div>
                                 </div>
-                                <label class="text-danger small">{{ state.errors.customerId }}</label>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="OrderDate">Order Date</label>
-                                <input ref="orderDateRef" />
-                                <label class="text-danger small">{{ state.errors.orderDate }}</label>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="Number">Number</label>
-                                <input ref="numberRef" v-model="state.number" readonly>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="TaxId">Tax <span class="text-danger">*</span></label>
-                                <div ref="taxIdRef"></div>
-                                <label class="text-danger small">{{ state.errors.taxId }}</label>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="OrderStatus">Status <span class="text-danger">*</span></label>
-                                <div ref="orderStatusRef"></div>
-                                <label class="text-danger small">{{ state.errors.orderStatus }}</label>
-                            </div>
-                        </div>
-                        <div class="row g-2 mt-1">
-                            <div class="col-md-12">
-                                <label for="Description">Description</label>
-                                <textarea class="form-control form-control-sm" rows="1" v-model="state.description"></textarea>
+                                <div class="col-md-2">
+                                    <label for="OrderDate" class="form-label">Order Date</label>
+                                    <input ref="orderDateRef" />
+                                    <div class="text-danger small mt-1" v-if="state.errors.orderDate">{{ state.errors.orderDate }}</div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="Number" class="form-label">Number</label>
+                                    <input ref="numberRef" v-model="state.number" readonly>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="TaxId" class="form-label">Tax <span class="text-danger">*</span></label>
+                                    <div ref="taxIdRef"></div>
+                                    <div class="text-danger small mt-1" v-if="state.errors.taxId">{{ state.errors.taxId }}</div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="OrderStatus" class="form-label">Status <span class="text-danger">*</span></label>
+                                    <div ref="orderStatusRef"></div>
+                                    <div class="text-danger small mt-1" v-if="state.errors.orderStatus">{{ state.errors.orderStatus }}</div>
+                                </div>
+                                <div class="col-12">
+                                    <label for="Description" class="form-label">Description</label>
+                                    <textarea class="form-control" rows="1" v-model="state.description"></textarea>
+                                </div>
                             </div>
                         </div>
                     </form>
 
-                    <div class="alert alert-danger" v-if="state.deleteMode">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        You are about to delete Sales Order <strong>{{ state.number }}</strong>
-                        and its {{ state.secondaryData.length }} line item(s). This cannot be undone.
+                    <div class="alert alert-danger d-flex align-items-center gap-2" v-if="state.deleteMode">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>You are about to delete Sales Order <strong>{{ state.number }}</strong> and its {{ state.secondaryData.length }} line item(s). This cannot be undone.</span>
                     </div>
 
                     <!-- POS working area -->
                     <div class="row g-3" v-show="!state.deleteMode">
                         <!-- LEFT: product picker + cart -->
                         <div class="col-lg-7">
-                            <div class="pos-panel mb-3">
-                                <div class="pos-panel-head">
-                                    <span><i class="fas fa-box-open me-2"></i>Select Product</span>
+                            <div class="card pos-card mb-3">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-box-open me-2"></i>Select Product</h6>
                                 </div>
-                                <div class="pos-panel-body">
-                                    <div class="mb-2">
-                                        <label class="small text-muted mb-1">Product</label>
+                                <div class="card-body pos-pick">
+                                    <div class="mb-3">
+                                        <label class="form-label">Product</label>
                                         <div ref="productPickRef"></div>
                                     </div>
-                                    <div class="row g-2 align-items-end mb-2">
+                                    <div class="row g-3 align-items-end mb-2">
                                         <div class="col-4">
-                                            <label class="small text-muted mb-1">Unit Price</label>
+                                            <label class="form-label">Unit Price</label>
                                             <input type="number" step="0.01" min="0"
-                                                   class="form-control form-control-sm text-end"
+                                                   class="form-control text-end"
                                                    v-model.number="state.productPick.unitPrice">
                                         </div>
                                         <div class="col-4">
-                                            <label class="small text-muted mb-1">Qty</label>
-                                            <div class="input-group input-group-sm pos-qty">
-                                                <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepQty(-1)">&minus;</button>
-                                                <input type="number" step="any" min="0" class="form-control text-center" v-model.number="state.productPick.quantity">
-                                                <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepQty(1)">+</button>
+                                            <label class="form-label">Qty</label>
+                                            <div class="input-group pos-qty">
+                                                <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepQty(-1)" aria-label="Decrease quantity">&minus;</button>
+                                                <input type="number" step="any" min="0" class="form-control" v-model.number="state.productPick.quantity">
+                                                <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepQty(1)" aria-label="Increase quantity">+</button>
                                             </div>
                                         </div>
                                         <div class="col-4">
-                                            <label class="small text-muted mb-1">Line Total</label>
-                                            <input type="text" class="form-control form-control-sm text-end pos-total" readonly
+                                            <label class="form-label">Line Total</label>
+                                            <input type="text" class="form-control text-end pos-line-total" readonly
                                                    v-bind:value="handler.formatAmount(posLineTotal)">
                                         </div>
                                     </div>
-                                    <div class="pos-hint mb-2" v-if="state.productHint.name">
+                                    <div class="small mb-3" v-if="state.productHint.name">
                                         <span v-if="state.productHint.physical"
-                                              v-bind:class="posStockExceeded ? 'text-danger fw-bold' : 'text-muted'">
+                                              v-bind:class="posStockExceeded ? 'text-danger fw-semibold' : 'text-muted'">
                                             <i class="fas fa-warehouse me-1"></i>Available: {{ handler.formatQty(state.productHint.stock) }}
                                         </span>
                                         <span v-else class="text-muted"><i class="fas fa-infinity me-1"></i>Non-stock item</span>
                                         <span v-if="posPriceOutOfBand" class="text-danger ms-2">
-                                            <i class="fas fa-tag me-1"></i>Price outside
-                                            {{ handler.formatAmount(state.productHint.minPrice || 0) }} &ndash; {{ handler.formatAmount(state.productHint.maxPrice || 0) }}
+                                            <i class="fas fa-tag me-1"></i>Price outside {{ handler.formatAmount(state.productHint.minPrice || 0) }} &ndash; {{ handler.formatAmount(state.productHint.maxPrice || 0) }}
                                         </span>
                                     </div>
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-sm btn-primary flex-grow-1"
+                                        <button type="button" class="btn btn-primary flex-grow-1"
                                                 v-on:click="handler.addLineToCart"
                                                 v-bind:disabled="state.isAddingLine">
-                                            <span class="spinner-border spinner-border-sm me-1" v-if="state.isAddingLine" role="status" aria-hidden="true"></span>
+                                            <span class="spinner-border spinner-border-sm me-2" v-if="state.isAddingLine" role="status" aria-hidden="true"></span>
                                             <i class="fas fa-cart-plus me-1" v-else></i>Add to Cart
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" v-on:click="handler.clearProductPick">Clear</button>
+                                        <button type="button" class="btn btn-outline-secondary" v-on:click="handler.clearProductPick">Clear</button>
                                     </div>
-                                    <div class="input-group input-group-sm mt-2">
+                                    <div class="input-group mt-3">
                                         <span class="input-group-text"><i class="fas fa-barcode"></i></span>
                                         <input ref="barcodeScanRef"
                                                v-model="state.barcodeInput"
@@ -227,113 +145,115 @@
                                 </div>
                             </div>
 
-                            <div class="pos-panel">
-                                <div class="pos-panel-head">
-                                    <span><i class="fas fa-shopping-cart me-2"></i>Cart Items ({{ state.secondaryData.length }})</span>
-                                    <button type="button" class="btn btn-sm btn-outline-light py-0"
+                            <div class="card pos-card">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-shopping-cart me-2"></i>Cart Items ({{ state.secondaryData.length }})</h6>
+                                    <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0"
                                             v-on:click="handler.clearCart"
-                                            v-bind:disabled="!state.secondaryData.length">Clear All</button>
+                                            v-bind:disabled="!state.secondaryData.length">Clear all</button>
                                 </div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm pos-cart mb-0 align-middle">
-                                        <thead>
-                                            <tr>
-                                                <th>Product</th>
-                                                <th class="text-center" style="width:130px;">Qty</th>
-                                                <th class="text-end" style="width:120px;">Unit Price</th>
-                                                <th class="text-end" style="width:110px;">Total</th>
-                                                <th style="width:36px;"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-if="!state.secondaryData.length">
-                                                <td colspan="5" class="text-center text-muted py-4">
-                                                    Cart is empty &mdash; search and add a product above
-                                                </td>
-                                            </tr>
-                                            <tr v-for="line in state.secondaryData" v-bind:key="line.id">
-                                                <td>
-                                                    <div class="fw-semibold">{{ line.productName }}</div>
-                                                    <div class="text-muted small">{{ line.productNumber }}</div>
-                                                </td>
-                                                <td>
-                                                    <div class="input-group input-group-sm pos-qty">
-                                                        <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepLineQty(line, -1)">&minus;</button>
-                                                        <input type="number" step="any" min="0" class="form-control text-center"
-                                                               v-bind:value="line.quantity"
-                                                               v-on:change="handler.commitLineQty(line, $event.target.value)">
-                                                        <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepLineQty(line, 1)">+</button>
-                                                    </div>
-                                                </td>
-                                                <td class="text-end">
-                                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end"
-                                                           v-bind:value="line.unitPrice"
-                                                           v-on:change="handler.commitLinePrice(line, $event.target.value)">
-                                                </td>
-                                                <td class="text-end fw-semibold">{{ handler.formatAmount((line.unitPrice || 0) * (line.quantity || 0)) }}</td>
-                                                <td class="text-center">
-                                                    <button type="button" class="btn btn-sm btn-link text-danger p-0" v-on:click="handler.removeLine(line)" title="Remove item">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table pos-cart align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Product</th>
+                                                    <th class="text-center" style="width:132px;">Qty</th>
+                                                    <th class="text-end" style="width:120px;">Unit Price</th>
+                                                    <th class="text-end" style="width:110px;">Total</th>
+                                                    <th style="width:44px;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-if="!state.secondaryData.length">
+                                                    <td colspan="5">
+                                                        <div class="pos-cart-empty">Cart is empty &mdash; search and add a product above</div>
+                                                    </td>
+                                                </tr>
+                                                <tr v-for="line in state.secondaryData" v-bind:key="line.id">
+                                                    <td>
+                                                        <div class="fw-semibold">{{ line.productName }}</div>
+                                                        <div class="text-muted small">{{ line.productNumber }}</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="input-group input-group-sm pos-qty">
+                                                            <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepLineQty(line, -1)" aria-label="Decrease quantity">&minus;</button>
+                                                            <input type="number" step="any" min="0" class="form-control"
+                                                                   v-bind:value="line.quantity"
+                                                                   v-on:change="handler.commitLineQty(line, $event.target.value)">
+                                                            <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepLineQty(line, 1)" aria-label="Increase quantity">+</button>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end"
+                                                               v-bind:value="line.unitPrice"
+                                                               v-on:change="handler.commitLinePrice(line, $event.target.value)">
+                                                    </td>
+                                                    <td class="text-end fw-semibold">{{ handler.formatAmount((line.unitPrice || 0) * (line.quantity || 0)) }}</td>
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn btn-sm btn-link text-danger p-0" v-on:click="handler.removeLine(line)" title="Remove item">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- RIGHT: bill + payments -->
                         <div class="col-lg-5">
-                            <div class="pos-panel mb-3">
-                                <div class="pos-panel-head">
-                                    <span><i class="fas fa-receipt me-2"></i>Bill</span>
-                                    <span class="badge bg-light text-dark" v-if="state.number">{{ state.number }}</span>
+                            <div class="card pos-card mb-3">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-receipt me-2"></i>Bill</h6>
+                                    <span class="badge bg-light text-dark border" v-if="state.number">{{ state.number }}</span>
                                 </div>
-                                <div class="pos-panel-body">
-                                    <div class="d-flex justify-content-between py-1">
+                                <div class="card-body">
+                                    <div class="pos-summary-row">
                                         <span class="text-muted">Subtotal</span>
                                         <span id="SubTotalAmount">{{ state.subTotalAmount }}</span>
                                     </div>
-                                    <div class="d-flex justify-content-between py-1">
+                                    <div class="pos-summary-row">
                                         <span class="text-muted">Tax</span>
                                         <span id="TaxAmount">{{ state.taxAmount }}</span>
                                     </div>
-                                    <div class="d-flex justify-content-between py-2 border-top mt-1 pos-bill-total">
-                                        <span class="fw-bold">Total</span>
-                                        <span id="TotalAmount" class="fw-bold text-success">{{ state.totalAmount }}</span>
+                                    <div class="pos-summary-row pos-summary-total">
+                                        <span>Total</span>
+                                        <span id="TotalAmount" class="text-success">{{ state.totalAmount }}</span>
                                     </div>
-                                    <div class="d-flex justify-content-between py-1" v-if="state.paymentSummary">
+                                    <div class="pos-summary-row" v-if="state.paymentSummary">
                                         <span class="text-muted">Paid</span>
                                         <span id="AmountPaid">{{ handler.formatAmount(state.paymentSummary.amountPaid) }}</span>
                                     </div>
-                                    <div class="d-flex justify-content-between py-1" v-if="state.paymentSummary">
-                                        <span class="fw-bold">Balance Due</span>
+                                    <div class="pos-summary-row" v-if="state.paymentSummary">
+                                        <span class="fw-semibold">Balance Due</span>
                                         <span id="AmountOutstanding"
-                                              class="fw-bold"
+                                              class="fw-semibold"
                                               v-bind:class="state.isFullySettled ? 'text-success' : 'text-danger'">
                                             {{ handler.formatAmount(state.paymentSummary.amountOutstanding) }}
                                         </span>
                                     </div>
-                                    <div class="pt-2 mt-1 border-top" v-if="state.amountInWords">
-                                        <div class="text-muted small fw-bold">Amount in Words</div>
-                                        <div id="AmountInWords" class="fst-italic text-dark small">{{ state.amountInWords }}</div>
+                                    <div class="mt-2 pt-2 border-top" v-if="state.amountInWords">
+                                        <div class="text-muted small fw-semibold">Amount in Words</div>
+                                        <div id="AmountInWords" class="fst-italic text-muted small">{{ state.amountInWords }}</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="pos-panel">
-                                <div class="pos-panel-head">
-                                    <span><i class="fas fa-hand-holding-usd me-2"></i>Payments</span>
-                                    <span class="badge bg-light text-dark" v-if="state.paymentList.length">{{ state.paymentList.length }}</span>
+                            <div class="card pos-card">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-hand-holding-usd me-2"></i>Payments</h6>
+                                    <span class="badge bg-light text-dark border" v-if="state.paymentList.length">{{ state.paymentList.length }}</span>
                                 </div>
-                                <div class="pos-panel-body">
+                                <div class="card-body">
                                     <p class="text-muted small mb-2" v-if="!state.id">
-                                        Add a product to create the order, then you can record payments here.
+                                        Add a product to create the order, then record payments here.
                                     </p>
 
                                     <div class="table-responsive" v-if="state.paymentList.length">
-                                        <table class="table table-sm align-middle mb-2">
+                                        <table class="table table-sm align-middle mb-3">
                                             <thead>
                                                 <tr class="text-muted small">
                                                     <th>Date</th>
@@ -362,31 +282,31 @@
                                     </div>
                                     <p class="text-muted small mb-2" v-else-if="state.id">No payments recorded yet.</p>
 
-                                    <div class="border-top pt-2" v-if="!state.deleteMode && state.id">
-                                        <div class="row g-2">
+                                    <div class="border-top pt-3" v-if="!state.deleteMode && state.id">
+                                        <div class="row g-3">
                                             <div class="col-6">
-                                                <label class="form-label small mb-1">Date</label>
+                                                <label class="form-label">Date</label>
                                                 <input ref="paymentDateRef">
                                             </div>
                                             <div class="col-6">
-                                                <label class="form-label small mb-1">Method</label>
+                                                <label class="form-label">Method</label>
                                                 <select class="form-select form-select-sm" v-model="state.newPayment.paymentMethodId">
                                                     <option value="">Select...</option>
                                                     <option v-for="m in state.paymentMethodListLookupData" v-bind:key="m.id" v-bind:value="m.id">{{ m.name }}</option>
                                                 </select>
                                             </div>
                                             <div class="col-6">
-                                                <label class="form-label small mb-1">Amount Paid</label>
+                                                <label class="form-label">Amount Paid</label>
                                                 <input type="number" step="0.01" min="0" class="form-control form-control-sm"
                                                        v-model.number="state.newPayment.amount"
                                                        v-bind:placeholder="handler.formatAmount(state.paymentSummary ? state.paymentSummary.amountOutstanding : 0)">
                                             </div>
                                             <div class="col-6">
-                                                <label class="form-label small mb-1">Reference</label>
+                                                <label class="form-label">Reference</label>
                                                 <input type="text" class="form-control form-control-sm" v-model="state.newPayment.referenceNumber" placeholder="Optional">
                                             </div>
                                         </div>
-                                        <div class="d-flex align-items-center gap-2 mt-2">
+                                        <div class="d-flex align-items-center gap-2 mt-3">
                                             <button type="button" class="btn btn-sm btn-success"
                                                     v-on:click="handler.submitPayment"
                                                     v-bind:disabled="state.isPaymentSubmitting || state.isFullySettled">
@@ -400,8 +320,8 @@
                                                 Pay full balance
                                             </button>
                                         </div>
-                                        <div class="text-danger small mt-1" v-if="state.paymentError">{{ state.paymentError }}</div>
-                                        <div class="text-success small mt-1" v-if="state.isFullySettled">This order is fully settled.</div>
+                                        <div class="text-danger small mt-2" v-if="state.paymentError">{{ state.paymentError }}</div>
+                                        <div class="text-success small mt-2" v-if="state.isFullySettled">This order is fully settled.</div>
                                     </div>
                                 </div>
                             </div>

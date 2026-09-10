@@ -1,0 +1,126 @@
+/*
+ * Shared styles for the POS-style Add/Edit order modals
+ * (Sales Order, Purchase Order, and any future order page that adopts the pattern).
+ *
+ * Built on the app's existing .card component + tokens from Shared/AdminLTE/__css.cshtml:
+ *   --primary #1b84ff | border #dee2e6 | muted text #6c757d
+ *   control border #ced4da | subtle surface #f8f9fa | radius .25rem
+ * No colour / radius values outside that set. Spacing uses Bootstrap utility classes in the markup.
+ */
+
+.pos-modal .modal-body {
+    background: #f8f9fa;
+}
+
+/* Order-detail bar: one card, compact labels */
+.pos-orderbar .form-label {
+    font-size: .75rem;
+    font-weight: 500;
+    color: #6c757d;
+    margin-bottom: .25rem;
+}
+
+/* Section cards reuse Bootstrap .card; only the header rhythm is tuned */
+.pos-modal .pos-card > .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .5rem .75rem;
+    background: #fff;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.pos-modal .pos-card > .card-header h6 {
+    margin: 0;
+    font-size: .8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: #6c757d;
+}
+
+/* Cart line-item table: dense and scannable (standard §10) */
+.pos-cart {
+    margin-bottom: 0;
+    font-size: .875rem;
+}
+
+.pos-cart > thead > tr > th {
+    font-size: .6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.pos-cart > :not(caption) > * > * {
+    padding: .5rem .75rem;
+}
+
+.pos-cart > tbody > tr > td {
+    vertical-align: middle;
+}
+
+.pos-cart > tbody > tr:hover {
+    background: #f8f9fa;
+}
+
+/* Quantity stepper: fixed width, centred value, buttons matched to input height */
+.pos-qty {
+    width: 116px;
+}
+
+.pos-qty .form-control {
+    text-align: center;
+    padding-left: .25rem;
+    padding-right: .25rem;
+}
+
+.pos-qty .btn {
+    --bs-btn-padding-x: .5rem;
+    padding-left: .5rem;
+    padding-right: .5rem;
+}
+
+/* Cart inputs live outside <form>, so restore the app's control border + radius */
+.pos-modal .pos-cart .form-control,
+.pos-modal .pos-pick .form-control {
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+}
+
+/* Read-only computed line total */
+.pos-line-total {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+/* Bill / summary rows */
+.pos-summary-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: .375rem 0;
+    font-size: .875rem;
+}
+
+.pos-summary-row + .pos-summary-row {
+    border-top: 1px solid #dee2e6;
+}
+
+.pos-summary-row.pos-summary-total {
+    margin-top: .25rem;
+    padding-top: .625rem;
+    border-top: 1px solid #dee2e6;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Empty-cart placeholder */
+.pos-cart-empty {
+    padding: 1.5rem .75rem;
+    text-align: center;
+    color: #6c757d;
+    font-size: .875rem;
+}
