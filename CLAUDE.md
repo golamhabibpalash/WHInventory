@@ -113,6 +113,12 @@ Razor Pages live in `Presentation/ASPNET/FrontEnd/Pages/` and are served with `/
 
 Dates are displayed as `DD/MM/YYYY` throughout.
 
+**UI standard (binding): [`docs/FRONTEND-UI-STANDARD.md`](docs/FRONTEND-UI-STANDARD.md).** Read Section 22 before editing markup/CSS; a task meets "done" only per Section 24. Key rules for this codebase:
+- **Reuse components** — Bootstrap `.card`/`.card-header`/`.card-body` (re-styled in `Shared/AdminLTE/__css.cshtml`), `.form-card*`, Bootstrap modals, SweetAlert2, Syncfusion controls. Do not hand-roll a new variant of an existing pattern.
+- **Tokens only** — `--primary` (`#1b84ff`), border `#dee2e6`, muted `#6c757d`, subtle surface `#f8f9fa`, control border `#ced4da`, radius `.25rem`. No arbitrary hex, spacing, or radius values in components.
+- **Icons** — Font Awesome 5 solid (`fas fa-*`) only. No emoji, no mixing icon sets.
+- **Page CSS** — shared rules go in a stylesheet under `wwwroot/css/` pulled in via `@section styles { <link ... asp-append-version="true" /> }`. Never inline a `<style>` block in `.cshtml`, never duplicate one across pages.
+
 ### Seeding
 
 On every startup:

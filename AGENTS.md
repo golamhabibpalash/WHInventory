@@ -80,6 +80,7 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 - Razor Pages root: `/FrontEnd/Pages` (not `/Pages`)
 - Each page has a paired `.cshtml.js` file — Vue 3 Composition API + Syncfusion EJ2 Grid/Charts + Bootstrap 5 modals + SweetAlert2 + AJAX via `AxiosManager` (custom wrapper in `wwwroot/lib/indotalent/`)
 - `SecurityManager.authorizePage(permissions)` and `validateToken()` called in every JS `setup()`
+- **UI standard (binding): `docs/FRONTEND-UI-STANDARD.md`** — read §22 before editing markup/CSS, "done" is §24. Reuse `.card`/`.form-card*`/modals/SweetAlert2/Syncfusion instead of new variants; use only the app tokens (`--primary` `#1b84ff`, border `#dee2e6`, muted `#6c757d`, surface `#f8f9fa`, control border `#ced4da`, radius `.25rem`); Font Awesome 5 solid only (no emoji); page CSS goes in `wwwroot/css/*.css` via `@section styles`, never an inline `<style>` block or a block duplicated across pages.
 
 ## Adding a New Feature
 
