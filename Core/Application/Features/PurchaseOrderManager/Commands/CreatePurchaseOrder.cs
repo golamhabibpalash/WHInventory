@@ -17,6 +17,7 @@ public class CreatePurchaseOrderRequest : IRequest<CreatePurchaseOrderResult>
     public DateTime? OrderDate { get; init; }
     public string? OrderStatus { get; init; }
     public string? Description { get; init; }
+    public string? ReferenceNumber { get; init; }
     public string? VendorId { get; init; }
     public string? TaxId { get; init; }
     public string? CreatedById { get; init; }
@@ -62,6 +63,7 @@ public class CreatePurchaseOrderHandler : IRequestHandler<CreatePurchaseOrderReq
         entity.OrderDate = request.OrderDate;
         entity.OrderStatus = (PurchaseOrderStatus)int.Parse(request.OrderStatus!);
         entity.Description = request.Description;
+        entity.ReferenceNumber = request.ReferenceNumber;
         entity.VendorId = request.VendorId;
         entity.TaxId = request.TaxId;
 

@@ -78,6 +78,7 @@ public class GetPurchaseOrderListForReceiveHandler : IRequestHandler<GetPurchase
                 OrderStatus = po.OrderStatus,
                 OrderStatusName = po.OrderStatus.HasValue ? po.OrderStatus.Value.ToFriendlyName() : string.Empty,
                 Description = po.Description,
+                ReferenceNumber = po.ReferenceNumber,
                 VendorId = po.VendorId,
                 VendorName = v.Name,
                 CreatedAtUtc = po.CreatedAtUtc,

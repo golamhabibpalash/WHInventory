@@ -13,6 +13,7 @@ const App = {
             number: '',
             orderDate: new Date(),
             description: '',
+            referenceNumber: '',
             vendorId: null,
             taxId: null,
             orderStatus: null,
@@ -133,6 +134,7 @@ const App = {
             state.number = '';
             state.orderDate = new Date();
             state.description = '';
+            state.referenceNumber = '';
             state.vendorId = null;
             state.taxId = null;
             state.orderStatus = null;
@@ -160,20 +162,20 @@ const App = {
                     throw error;
                 }
             },
-            createMainData: async (orderDate, description, orderStatus, taxId, vendorId, createdById) => {
+            createMainData: async (orderDate, description, referenceNumber, orderStatus, taxId, vendorId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/PurchaseOrder/CreatePurchaseOrder', {
-                        orderDate, description, orderStatus, taxId, vendorId, createdById
+                        orderDate, description, referenceNumber, orderStatus, taxId, vendorId, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, orderDate, description, orderStatus, taxId, vendorId, updatedById) => {
+            updateMainData: async (id, orderDate, description, referenceNumber, orderStatus, taxId, vendorId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/PurchaseOrder/UpdatePurchaseOrder', {
-                        id, orderDate, description, orderStatus, taxId, vendorId, updatedById
+                        id, orderDate, description, referenceNumber, orderStatus, taxId, vendorId, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -378,10 +380,10 @@ const App = {
 
                 try {
                     const response = wasCreating
-                        ? await services.createMainData(state.orderDate, state.description, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId())
+                        ? await services.createMainData(state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.orderDate, state.description, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -392,6 +394,7 @@ const App = {
                             state.number = response?.data?.content?.data.number ?? '';
                             state.orderDate = response?.data?.content?.data.orderDate ? new Date(response.data.content.data.orderDate) : null;
                             state.description = response?.data?.content?.data.description ?? '';
+                            state.referenceNumber = response?.data?.content?.data.referenceNumber ?? '';
                             state.vendorId = response?.data?.content?.data.vendorId ?? '';
                             state.taxId = response?.data?.content?.data.taxId ?? '';
                             taxListLookup.trackingChange = true;
@@ -984,6 +987,7 @@ const App = {
                                 state.number = selectedRecord.number ?? '';
                                 state.orderDate = selectedRecord.orderDate ? new Date(selectedRecord.orderDate) : null;
                                 state.description = selectedRecord.description ?? '';
+                                state.referenceNumber = selectedRecord.referenceNumber ?? '';
                                 state.vendorId = selectedRecord.vendorId ?? '';
                                 state.taxId = selectedRecord.taxId ?? '';
                                 taxListLookup.trackingChange = true;
@@ -1086,7 +1090,7 @@ const App = {
 
             try {
                 const response = await services.createMainData(
-                    state.orderDate, state.description, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId());
+                    state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId());
 
                 if (response.data.code === 200) {
                     const data = response.data.content.data;

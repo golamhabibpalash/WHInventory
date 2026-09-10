@@ -604,6 +604,10 @@ public static class DI
                     ADD CONSTRAINT ""FK_CustomerGroup_PricePolicy_PricePolicyId""
                     FOREIGN KEY (""PricePolicyId"") REFERENCES core.""PricePolicy"" (""Id"") ON DELETE SET NULL;
             ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE core.""PurchaseOrder"" ADD COLUMN IF NOT EXISTS ""ReferenceNumber"" varchar(50) NULL;
+            ");
         }
         else
         {
@@ -978,6 +982,13 @@ public static class DI
                     CREATE INDEX [IX_CustomerGroup_PricePolicyId] ON [CustomerGroup] ([PricePolicyId]);
                     ALTER TABLE [CustomerGroup] ADD CONSTRAINT [FK_CustomerGroup_PricePolicy_PricePolicyId]
                         FOREIGN KEY ([PricePolicyId]) REFERENCES [PricePolicy] ([Id]) ON DELETE SET NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'PurchaseOrder' AND COLUMN_NAME = 'ReferenceNumber')
+                BEGIN
+                    ALTER TABLE [PurchaseOrder] ADD [ReferenceNumber] nvarchar(50) NULL;
                 END
             ");
         }

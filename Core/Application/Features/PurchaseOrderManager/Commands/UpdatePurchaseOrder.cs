@@ -17,6 +17,7 @@ public class UpdatePurchaseOrderRequest : IRequest<UpdatePurchaseOrderResult>
     public DateTime? OrderDate { get; init; }
     public string? OrderStatus { get; init; }
     public string? Description { get; init; }
+    public string? ReferenceNumber { get; init; }
     public string? VendorId { get; init; }
     public string? TaxId { get; init; }
     public string? UpdatedById { get; init; }
@@ -66,6 +67,7 @@ public class UpdatePurchaseOrderHandler : IRequestHandler<UpdatePurchaseOrderReq
         entity.OrderDate = request.OrderDate;
         entity.OrderStatus = (PurchaseOrderStatus)int.Parse(request.OrderStatus!);
         entity.Description = request.Description;
+        entity.ReferenceNumber = request.ReferenceNumber;
         entity.VendorId = request.VendorId;
         entity.TaxId = request.TaxId;
 

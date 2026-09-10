@@ -9,6 +9,7 @@ public class PurchaseOrder : BaseEntity
     public DateTime? OrderDate { get; set; }
     public PurchaseOrderStatus? OrderStatus { get; set; }
     public string? Description { get; set; }
+    public string? ReferenceNumber { get; set; }
     public string? VendorId { get; set; }
     public Vendor? Vendor { get; set; }
     public string? TaxId { get; set; }

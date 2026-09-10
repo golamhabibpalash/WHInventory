@@ -14,6 +14,7 @@ public record GetPurchaseOrderListDto
     public PurchaseOrderStatus? OrderStatus { get; init; }
     public string? OrderStatusName { get; init; }
     public string? Description { get; init; }
+    public string? ReferenceNumber { get; init; }
     public string? VendorId { get; init; }
     public string? VendorName { get; init; }
     public string? TaxId { get; init; }
@@ -58,6 +59,7 @@ public class GetPurchaseOrderListHandler : IRequestHandler<GetPurchaseOrderListR
                 OrderStatus = x.OrderStatus,
                 OrderStatusName = x.OrderStatus.HasValue ? x.OrderStatus.Value.ToFriendlyName() : string.Empty,
                 Description = x.Description,
+                ReferenceNumber = x.ReferenceNumber,
                 VendorId = x.VendorId,
                 VendorName = x.Vendor != null ? x.Vendor.Name : string.Empty,
                 TaxId = x.TaxId,

@@ -327,10 +327,15 @@ const App = {
             },
             populatePurchaseOrderListLookupData: async () => {
                 const response = await services.getPurchaseOrderListLookupData();
-                state.purchaseOrderListLookupData = (response?.data?.content?.data ?? []).map(item => ({
-                    ...item,
-                    numberVendorName: `${item.number} - ${item.vendorName}`
-                }));
+                state.purchaseOrderListLookupData = (response?.data?.content?.data ?? []).map(item => {
+                    const dateStr = item.orderDate ? new Date(item.orderDate).toLocaleDateString('en-GB') : '';
+                    const refStr = item.referenceNumber ? `Ref: ${item.referenceNumber}` : '';
+                    const parts = [item.number, item.vendorName, dateStr, refStr].filter(Boolean);
+                    return {
+                        ...item,
+                        numberVendorName: parts.join(' - ')
+                    };
+                });
             },
             populateGoodsReceiveStatusListLookupData: async () => {
                 const response = await services.getGoodsReceiveStatusListLookupData();
