@@ -580,58 +580,73 @@
     <!-- ── KPI tiles ────────────────────────────────────────── -->
     <div class="row g-3">
         <div class="col-sm-6 col-xl-3">
-            <div class="kpi-tile">
-                <div class="kpi-tile-icon" style="--kt-bg:rgba(99,102,241,.12); --kt-fg:#6366f1;">
-                    <i class="fas fa-warehouse"></i>
-                </div>
-                <div>
-                    <div class="kpi-tile-label">Total Inventory</div>
-                    <div class="kpi-tile-value">{{ methods.formatQty(state.kpi.totalInventory) }}</div>
-                    <div class="kpi-tile-foot">
-                        <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.totalInventoryDeltaPct)]">
-                            <i v-bind:class="methods.deltaIcon(state.kpi.totalInventoryDeltaPct)"></i>
-                            {{ methods.formatDelta(state.kpi.totalInventoryDeltaPct) }}
-                        </span>
-                        <span>vs last month</span>
+            <a v-bind:href="methods.stockReportUrl()" class="kpi-tile-link" title="View the stock report">
+                <div class="kpi-tile">
+                    <div class="kpi-tile-icon" style="--kt-bg:rgba(99,102,241,.12); --kt-fg:#6366f1;">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <div>
+                        <div class="kpi-tile-label">Total Inventory</div>
+                        <div class="kpi-tile-value">
+                            {{ methods.formatQty(state.kpi.totalInventory) }}
+                            <i class="fas fa-chevron-right kpi-tile-cta"></i>
+                        </div>
+                        <div class="kpi-tile-foot">
+                            <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.totalInventoryDeltaPct)]">
+                                <i v-bind:class="methods.deltaIcon(state.kpi.totalInventoryDeltaPct)"></i>
+                                {{ methods.formatDelta(state.kpi.totalInventoryDeltaPct) }}
+                            </span>
+                            <span>vs last month</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <div class="kpi-tile">
-                <div class="kpi-tile-icon" style="--kt-bg:rgba(16,185,129,.12); --kt-fg:#10b981;">
-                    <i class="fas fa-arrow-down"></i>
-                </div>
-                <div>
-                    <div class="kpi-tile-label">Inbound Today</div>
-                    <div class="kpi-tile-value">{{ methods.formatQty(state.kpi.inboundToday) }}</div>
-                    <div class="kpi-tile-foot">
-                        <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.inboundDeltaPct)]">
-                            <i v-bind:class="methods.deltaIcon(state.kpi.inboundDeltaPct)"></i>
-                            {{ methods.formatDelta(state.kpi.inboundDeltaPct) }}
-                        </span>
-                        <span>vs daily average</span>
+            <a v-bind:href="methods.inboundReportUrl()" class="kpi-tile-link" title="View today's inbound transactions">
+                <div class="kpi-tile">
+                    <div class="kpi-tile-icon" style="--kt-bg:rgba(16,185,129,.12); --kt-fg:#10b981;">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div>
+                        <div class="kpi-tile-label">Inbound Today</div>
+                        <div class="kpi-tile-value">
+                            {{ methods.formatQty(state.kpi.inboundToday) }}
+                            <i class="fas fa-chevron-right kpi-tile-cta"></i>
+                        </div>
+                        <div class="kpi-tile-foot">
+                            <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.inboundDeltaPct)]">
+                                <i v-bind:class="methods.deltaIcon(state.kpi.inboundDeltaPct)"></i>
+                                {{ methods.formatDelta(state.kpi.inboundDeltaPct) }}
+                            </span>
+                            <span>vs daily average</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <div class="kpi-tile">
-                <div class="kpi-tile-icon" style="--kt-bg:rgba(249,115,22,.12); --kt-fg:#f97316;">
-                    <i class="fas fa-arrow-up"></i>
-                </div>
-                <div>
-                    <div class="kpi-tile-label">Outbound Today</div>
-                    <div class="kpi-tile-value">{{ methods.formatQty(state.kpi.outboundToday) }}</div>
-                    <div class="kpi-tile-foot">
-                        <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.outboundDeltaPct)]">
-                            <i v-bind:class="methods.deltaIcon(state.kpi.outboundDeltaPct)"></i>
-                            {{ methods.formatDelta(state.kpi.outboundDeltaPct) }}
-                        </span>
-                        <span>vs daily average</span>
+            <a v-bind:href="methods.outboundReportUrl()" class="kpi-tile-link" title="View today's outbound transactions">
+                <div class="kpi-tile">
+                    <div class="kpi-tile-icon" style="--kt-bg:rgba(249,115,22,.12); --kt-fg:#f97316;">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div>
+                        <div class="kpi-tile-label">Outbound Today</div>
+                        <div class="kpi-tile-value">
+                            {{ methods.formatQty(state.kpi.outboundToday) }}
+                            <i class="fas fa-chevron-right kpi-tile-cta"></i>
+                        </div>
+                        <div class="kpi-tile-foot">
+                            <span v-bind:class="['kpi-delta', methods.deltaClass(state.kpi.outboundDeltaPct)]">
+                                <i v-bind:class="methods.deltaIcon(state.kpi.outboundDeltaPct)"></i>
+                                {{ methods.formatDelta(state.kpi.outboundDeltaPct) }}
+                            </span>
+                            <span>vs daily average</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-sm-6 col-xl-3">
             <a v-bind:href="methods.lowStockListUrl()" class="kpi-tile-link" title="View the low stock product list">

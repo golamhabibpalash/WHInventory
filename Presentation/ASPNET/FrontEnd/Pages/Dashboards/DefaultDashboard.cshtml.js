@@ -92,6 +92,12 @@ const App = {
             // so the list matches the count shown on the tile.
             lowStockListUrl: () =>
                 `/StockReports/LowStockReportList${methods.warehouseQuery(state.selectedWarehouseId)}`,
+            stockReportUrl: () =>
+                `/StockReports/StockReportList${methods.warehouseQuery(state.selectedWarehouseId)}`,
+            inboundReportUrl: () =>
+                `/StockReports/InboundReportList${methods.warehouseQuery(state.selectedWarehouseId)}`,
+            outboundReportUrl: () =>
+                `/StockReports/OutboundReportList${methods.warehouseQuery(state.selectedWarehouseId)}`,
             populateCompanyName: async () => {
                 // The admin layout caches this, but it fetches asynchronously and may not have
                 // landed yet on a fresh load, so fall back to the API.

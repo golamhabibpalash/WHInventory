@@ -69,6 +69,8 @@ public class GetInventoryTransactionListResult
 public class GetInventoryTransactionListRequest : IRequest<GetInventoryTransactionListResult>
 {
     public bool IsDeleted { get; init; } = false;
+    public string? WarehouseId { get; init; }
+    public string? TransType { get; init; }
 }
 
 
@@ -98,10 +100,23 @@ public class GetInventoryTransactionListHandler : IRequestHandler<GetInventoryTr
                 x.Warehouse!.SystemWarehouse == false &&
                 x.Status == Domain.Enums.InventoryTransactionStatus.Confirmed
             )
-            .OrderByDescending(x => x.CreatedAtUtc)
             .AsQueryable();
 
-        var entities = await query.Take(2000).ToListAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(request.WarehouseId))
+        {
+            query = query.Where(x => x.WarehouseId == request.WarehouseId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TransType)
+            && Enum.TryParse<Domain.Enums.InventoryTransType>(request.TransType, true, out var transType))
+        {
+            query = query.Where(x => x.TransType == transType);
+        }
+
+        var entities = await query
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Take(2000)
+            .ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetInventoryTransactionListDto>>(entities);
 
