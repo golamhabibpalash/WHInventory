@@ -124,6 +124,31 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             (reserved, onOrder) = await GetPipelineTotalsAsync(cancellationToken);
         }
 
+        // Financial KPIs: orders carry no WarehouseId, so these are always company-wide.
+        var todayPurchaseAmount = await _context.PurchaseOrder
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(x =>
+                x.OrderStatus == PurchaseOrderStatus.Confirmed &&
+                x.OrderDate >= todayStart && x.OrderDate < tomorrowStart)
+            .SumAsync(x => (double?)x.AfterTaxAmount, cancellationToken) ?? 0.0;
+
+        var todaySalesAmount = await _context.SalesOrder
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(x =>
+                x.OrderStatus == SalesOrderStatus.Confirmed &&
+                x.OrderDate >= todayStart && x.OrderDate < tomorrowStart)
+            .SumAsync(x => (double?)x.AfterTaxAmount, cancellationToken) ?? 0.0;
+
+        var todayDueAmount = await _context.Payment
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(x =>
+                x.Direction == PaymentDirection.Received &&
+                x.PaymentDate >= todayStart && x.PaymentDate < tomorrowStart)
+            .SumAsync(x => (double?)x.Amount, cancellationToken) ?? 0.0;
+
         // Pull a generous slice of lines so the roll-up below still yields enough distinct documents.
         var activityRows = await ledger
             .OrderByDescending(x => x.CreatedAtUtc)
@@ -184,7 +209,10 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             OutboundDeltaPct = CalculateDeltaPct(outboundToday, outboundDailyAverage),
             LowStockCount = lowStockCount,
             LowStockDeltaPct = CalculateDeltaPct(lowStockCount, lowStockCountThen),
-            LowStockThreshold = LowStockThreshold
+            LowStockThreshold = LowStockThreshold,
+            TodayPurchaseAmount = todayPurchaseAmount,
+            TodaySalesAmount = todaySalesAmount,
+            TodayDueAmount = todayDueAmount
         };
 
         // Reserved units are still physically on hand, so subtract them out of the In Stock slice

@@ -25,8 +25,20 @@ const App = {
                 orderStatus: '',
                 description: ''
             },
-            showComplexDiv: false,
             isSubmitting: false,
+            isAddingLine: false,
+            productPick: {
+                productId: null,
+                unitPrice: 0,
+                quantity: 1
+            },
+            productHint: {
+                name: '',
+                physical: false,
+                stock: null,
+                minPrice: null,
+                maxPrice: null
+            },
             paymentMethodListLookupData: [],
             paymentList: [],
             paymentSummary: null,
@@ -78,7 +90,7 @@ const App = {
         const customerIdRef = Vue.ref(null);
         const taxIdRef = Vue.ref(null);
         const orderStatusRef = Vue.ref(null);
-        const secondaryGridRef = Vue.ref(null);
+        const productPickRef = Vue.ref(null);
         const customerQuickModalRef = Vue.ref(null);
         const customerGroupQuickModalRef = Vue.ref(null);
         const customerCategoryQuickModalRef = Vue.ref(null);
@@ -86,34 +98,40 @@ const App = {
         const customerQuickCategoryIdRef = Vue.ref(null);
         const barcodeScanRef = Vue.ref(null);
 
-        // Tracks available stock for the product being edited in the line-item grid
-        let currentEditAvailableStock = Infinity;
-        let currentEditProductPhysical = false;
-        let currentEditProductName = '';
-        let saveCancelledByStock = false;
+        // Running line total for the "Select Product" form.
+        const posLineTotal = Vue.computed(() => (state.productPick.unitPrice || 0) * (state.productPick.quantity || 0));
 
-        // Tracks the allowed selling price band for the product being edited in the line-item grid.
-        // The server is the authority (see ValidateSellingPriceAsync); this only warns as the user types.
-        let currentEditMinSellingPrice = null;
-        let currentEditMaxSellingPrice = null;
+        // Warns when the picked quantity is above what the warehouse can supply. The server is the
+        // authority; this only nudges the cashier before they hit "Add to Cart".
+        const posStockExceeded = Vue.computed(() =>
+            state.productHint.physical
+            && state.productHint.stock !== null
+            && (state.productPick.quantity || 0) > state.productHint.stock);
 
-        const applyPriceBandHint = () => {
-            if (typeof priceObj === 'undefined' || !priceObj) return;
+        // Warns when the unit price falls outside the product's allowed selling band
+        // (see ValidateSellingPriceAsync on the server, which enforces it on save).
+        const posPriceOutOfBand = Vue.computed(() => {
+            const price = state.productPick.unitPrice;
+            if (price === null || price === undefined || price === '') return false;
+            const belowMin = state.productHint.minPrice !== null && price < state.productHint.minPrice;
+            const aboveMax = state.productHint.maxPrice !== null && price > state.productHint.maxPrice;
+            return belowMin || aboveMax;
+        });
 
-            const inputEl = priceObj.element;
-            if (!inputEl) return;
+        const formatQty = (value) => Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-            const price = priceObj.value ?? 0;
-            const belowMin = currentEditMinSellingPrice !== null && price < currentEditMinSellingPrice;
-            const aboveMax = currentEditMaxSellingPrice !== null && price > currentEditMaxSellingPrice;
-            const fmt = (v) => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        // Quantity of a product already sitting in the cart, so stock checks account for it.
+        const quantityInCart = (productId, exceptLineId) => state.secondaryData
+            .filter(line => line.productId === productId && line.id !== exceptLineId)
+            .reduce((sum, line) => sum + (line.quantity || 0), 0);
 
-            inputEl.style.border = (belowMin || aboveMax) ? '2px solid #dc3545' : '';
-            inputEl.title = belowMin
-                ? `Below the minimum selling price: ${fmt(currentEditMinSellingPrice)}`
-                : aboveMax
-                    ? `Above the maximum selling price: ${fmt(currentEditMaxSellingPrice)}`
-                    : '';
+        const resetProductPick = () => {
+            state.productPick = { productId: null, unitPrice: 0, quantity: 1 };
+            state.productHint = { name: '', physical: false, stock: null, minPrice: null, maxPrice: null };
+            if (productPickLookup.obj) {
+                productPickLookup.obj.value = null;
+                productPickLookup.obj.text = '';
+            }
         };
 
         const validateForm = function () {
@@ -210,7 +228,7 @@ const App = {
             state.taxAmount = '0.00';
             state.totalAmount = '0.00';
             state.amountInWords = '';
-            state.showComplexDiv = false;
+            resetProductPick();
         };
 
         const services = {
@@ -550,7 +568,6 @@ const App = {
                         mainGrid.refresh();
 
                         if (!state.deleteMode) {
-                            state.mainTitle = 'Edit Sales Order';
                             state.id = response?.data?.content?.data.id ?? '';
                             state.number = response?.data?.content?.data.number ?? '';
                             state.orderDate = response?.data?.content?.data.orderDate ? new Date(response.data.content.data.orderDate) : null;
@@ -560,36 +577,29 @@ const App = {
                             taxListLookup.trackingChange = true;
                             state.orderStatus = String(response?.data?.content?.data.orderStatus ?? '');
 
-                            if (isNewOrder) {
-                                // Step 2: stay in the same workflow and open the product section
-                                // against the order we just created, rather than closing and
-                                // making the user reopen it from the list to add items.
-                                state.mainTitle = `Sales Order ${state.number} - Add Products`;
-                                state.showComplexDiv = true;
+                            state.mainTitle = `Sales Order ${state.number}`;
 
+                            if (isNewOrder) {
+                                // POS flow: stay on the same screen with the order now created,
+                                // so the cashier can go straight to adding products.
                                 await methods.populateSecondaryData(state.id);
-                                secondaryGrid.refresh();
                                 await methods.refreshPaymentSummary(state.id);
 
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Sales Order Created',
-                                    text: `${state.number} saved. Now add products to this order.`,
-                                    timer: 2200,
+                                    text: `${state.number} saved. Add products to build the cart.`,
+                                    timer: 1800,
                                     showConfirmButton: false
                                 });
                             } else {
+                                // Header edit: persist without leaving the POS screen.
                                 Swal.fire({
                                     icon: 'success',
-                                    title: 'Save Successful',
-                                    text: 'Form will be closed...',
-                                    timer: 2000,
+                                    title: 'Order Details Saved',
+                                    timer: 1400,
                                     showConfirmButton: false
                                 });
-                                setTimeout(() => {
-                                    mainModal.obj.hide();
-                                    resetFormState();
-                                }, 2000);
                             }
                         } else {
                             Swal.fire({
@@ -947,9 +957,6 @@ const App = {
                             state.deleteMode = false;
                             state.mainTitle = 'Add Sales Order';
                             resetFormState();
-                            state.secondaryData = [];
-                            secondaryGrid.refresh();
-                            state.showComplexDiv = false;
                             mainModal.obj.show();
                         }
 
@@ -957,9 +964,10 @@ const App = {
                             state.deleteMode = false;
                             state.paymentError = '';
                             resetNewPaymentState();
+                            resetProductPick();
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Edit Sales Order';
+                                state.mainTitle = `Sales Order ${selectedRecord.number ?? ''}`;
                                 state.id = selectedRecord.id ?? '';
                                 state.number = selectedRecord.number ?? '';
                                 state.orderDate = selectedRecord.orderDate ? new Date(selectedRecord.orderDate) : null;
@@ -968,10 +976,8 @@ const App = {
                                 state.taxId = selectedRecord.taxId ?? '';
                                 taxListLookup.trackingChange = true;
                                 state.orderStatus = String(selectedRecord.orderStatus ?? '');
-                                state.showComplexDiv = true;
 
                                 await methods.populateSecondaryData(selectedRecord.id);
-                                secondaryGrid.refresh();
 
                                 mainModal.obj.show();
                             }
@@ -981,6 +987,7 @@ const App = {
                             state.deleteMode = true;
                             state.paymentError = '';
                             resetNewPaymentState();
+                            resetProductPick();
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
                                 state.mainTitle = 'Delete Sales Order?';
@@ -991,10 +998,8 @@ const App = {
                                 state.customerId = selectedRecord.customerId ?? '';
                                 state.taxId = selectedRecord.taxId ?? '';
                                 state.orderStatus = String(selectedRecord.orderStatus ?? '');
-                                state.showComplexDiv = false;
 
                                 await methods.populateSecondaryData(selectedRecord.id);
-                                secondaryGrid.refresh();
 
                                 mainModal.obj.show();
                             }
@@ -1017,424 +1022,241 @@ const App = {
             }
         };
 
-        const secondaryGrid = {
+        // "Select Product" search box in the POS panel. Mirrors customerListLookup: a Syncfusion
+        // DropDownList over the same product+stock dataset the cart validation uses.
+        const productPickLookup = {
             obj: null,
-            create: async (dataSource) => {
-                secondaryGrid.obj = new ej.grids.Grid({
-                    height: 400,
-                    dataSource: dataSource,
-                    editSettings: { allowEditing: true, allowAdding: true, allowDeleting: true, showDeleteConfirmDialog: true, mode: 'Normal', allowEditOnDblClick: true },
-                    allowFiltering: false,
-                    allowSorting: true,
-                    allowSelection: true,
-                    allowGrouping: false,
-                    allowTextWrap: true,
-                    allowResizing: true,
-                    allowPaging: false,
-                    allowExcelExport: true,
-                    filterSettings: { type: 'CheckBox' },
-                    sortSettings: { columns: [{ field: 'productName', direction: 'Descending' }] },
-                    pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
-                    selectionSettings: { persistSelection: true, type: 'Single' },
-                    autoFit: false,
-                    showColumnMenu: false,
-                    gridLines: 'Horizontal',
-                    columns: [
-                        { type: 'checkbox', width: 60 },
-                        {
-                            field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
-                        },
-                        {
-                            field: 'productId',
-                            headerText: 'Product',
-                            width: 250,
-                            validationRules: { required: true },
-                            valueAccessor: (field, data, column) => {
-                                const product = state.productListLookupData.find(item => item.id === data[field]);
-                                return product ? `${product.name}` : '';
-                            },
-                            editType: 'dropdownedit',
-                            edit: {
-                                create: () => {
-                                    let productElem = document.createElement('input');
-                                    return productElem;
-                                },
-                                read: () => {
-                                    return productObj.value;
-                                },
-                                destroy: () => {
-                                    productObj.destroy();
-                                },
-                                write: (args) => {
-                                    const initProduct = state.productListLookupData.find(p => p.id === args.rowData.productId);
-                                    if (initProduct) {
-                                        currentEditAvailableStock = initProduct.physical ? (initProduct.availableStock ?? 0) : Infinity;
-                                        currentEditProductPhysical = initProduct.physical ?? false;
-                                        currentEditProductName = initProduct.name;
-                                        currentEditMinSellingPrice = initProduct.minSellingPrice ?? null;
-                                        currentEditMaxSellingPrice = initProduct.maxSellingPrice ?? null;
-                                    }
+            create: () => {
+                if (!Array.isArray(state.productListLookupData)) return;
 
-                                    productObj = new ej.dropdowns.DropDownList({
-                                        dataSource: state.productListLookupData,
-                                        fields: { value: 'id', text: 'name' },
-                                        value: args.rowData.productId,
-                                        change: (e) => {
-                                            const selectedProduct = state.productListLookupData.find(item => item.id === e.value);
-                                            if (selectedProduct) {
-                                                currentEditAvailableStock = selectedProduct.physical ? (selectedProduct.availableStock ?? 0) : Infinity;
-                                                currentEditProductPhysical = selectedProduct.physical ?? false;
-                                                currentEditProductName = selectedProduct.name;
-                                                currentEditMinSellingPrice = selectedProduct.minSellingPrice ?? null;
-                                                currentEditMaxSellingPrice = selectedProduct.maxSellingPrice ?? null;
-
-                                                if (quantityObj) {
-                                                    const qty = quantityObj.value ?? 0;
-                                                    const exceeded = currentEditProductPhysical && currentEditAvailableStock !== Infinity && qty > currentEditAvailableStock;
-                                                    const inputEl = quantityObj.element;
-                                                    if (inputEl) {
-                                                        inputEl.style.border = exceeded ? '2px solid #dc3545' : '';
-                                                        inputEl.title = exceeded
-                                                            ? `Insufficient stock. Available: ${currentEditAvailableStock.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                                            : '';
-                                                    }
-                                                }
-
-                                                args.rowData.productId = selectedProduct.id;
-                                                if (numberObj) {
-                                                    numberObj.value = selectedProduct.number;
-                                                }
-                                                if (priceObj) {
-                                                    priceObj.value = selectedProduct.unitPrice;
-                                                    applyPriceBandHint();
-                                                }
-                                                if (remarkObj) {
-                                                    remarkObj.value = selectedProduct.description;
-                                                }
-                                                if (quantityObj) {
-                                                    quantityObj.value = 1;
-                                                    quantityObj.placeholder = selectedProduct.physical
-                                                        ? `Max available: ${selectedProduct.availableStock ?? 0}`
-                                                        : '';
-                                                    const total = selectedProduct.unitPrice * quantityObj.value;
-                                                    if (totalObj) {
-                                                        totalObj.value = total;
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        placeholder: 'Select a Product',
-                                        floatLabelType: 'Never'
-                                    });
-                                    productObj.appendTo(args.element);
-                                }
-                            }
-                        },
-                        {
-                            field: 'unitPrice',
-                            headerText: 'Unit Price',
-                            width: 200, validationRules: { required: true }, type: 'number', format: 'N2', textAlign: 'Right',
-                            edit: {
-                                create: () => {
-                                    let priceElem = document.createElement('input');
-                                    return priceElem;
-                                },
-                                read: () => {
-                                    return priceObj.value;
-                                },
-                                destroy: () => {
-                                    priceObj.destroy();
-                                },
-                                write: (args) => {
-                                    priceObj = new ej.inputs.NumericTextBox({
-                                        value: args.rowData.unitPrice ?? 0,
-                                        change: (e) => {
-                                            if (quantityObj && totalObj) {
-                                                const total = e.value * quantityObj.value;
-                                                totalObj.value = total;
-                                            }
-                                            applyPriceBandHint();
-                                        }
-                                    });
-                                    priceObj.appendTo(args.element);
-                                    applyPriceBandHint();
-                                }
-                            }
-                        },
-                        {
-                            field: 'quantity',
-                            headerText: 'Quantity',
-                            width: 200,
-                            validationRules: {
-                                required: true,
-                                custom: [(args) => {
-                                    return args['value'] > 0;
-                                }, 'Must be a positive number and not zero']
-                            },
-                            type: 'number', format: 'N2', textAlign: 'Right',
-                            edit: {
-                                create: () => {
-                                    let quantityElem = document.createElement('input');
-                                    return quantityElem;
-                                },
-                                read: () => {
-                                    return quantityObj.value;
-                                },
-                                destroy: () => {
-                                    quantityObj.destroy();
-                                },
-                                write: (args) => {
-                                    const product = state.productListLookupData.find(p => p.id === args.rowData.productId);
-                                    const stockHint = product?.physical ? `Max: ${product.availableStock ?? 0}` : '';
-
-                                    quantityObj = new ej.inputs.NumericTextBox({
-                                        value: args.rowData.quantity ?? 0,
-                                        placeholder: stockHint,
-                                        change: (e) => {
-                                            if (priceObj && totalObj) {
-                                                const total = e.value * priceObj.value;
-                                                totalObj.value = total;
-                                            }
-                                            if (currentEditProductPhysical && currentEditAvailableStock !== Infinity) {
-                                                const exceeded = (e.value ?? 0) > currentEditAvailableStock;
-                                                const inputEl = quantityObj.element;
-                                                if (inputEl) {
-                                                    inputEl.style.border = exceeded ? '2px solid #dc3545' : '';
-                                                    inputEl.title = exceeded
-                                                        ? `Insufficient stock. Available: ${currentEditAvailableStock.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                                        : '';
-                                                }
-                                            }
-                                        }
-                                    });
-                                    quantityObj.appendTo(args.element);
-                                    if (currentEditProductPhysical && currentEditAvailableStock !== Infinity) {
-                                        const initialQty = args.rowData.quantity ?? 0;
-                                        if (initialQty > currentEditAvailableStock) {
-                                            const inputEl = quantityObj.element;
-                                            if (inputEl) {
-                                                inputEl.style.border = '2px solid #dc3545';
-                                                inputEl.title = `Insufficient stock. Available: ${currentEditAvailableStock.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            field: 'total',
-                            headerText: 'Total',
-                            width: 200, validationRules: { required: false }, type: 'number', format: 'N2', textAlign: 'Right',
-                            edit: {
-                                create: () => {
-                                    let totalElem = document.createElement('input');
-                                    return totalElem;
-                                },
-                                read: () => {
-                                    return totalObj.value;
-                                },
-                                destroy: () => {
-                                    totalObj.destroy();
-                                },
-                                write: (args) => {
-                                    totalObj = new ej.inputs.NumericTextBox({
-                                        value: args.rowData.total ?? 0,
-                                        readonly: true
-                                    });
-                                    totalObj.appendTo(args.element);
-                                }
-                            }
-                        },
-                        {
-                            field: 'productNumber',
-                            headerText: 'Product Number',
-                            allowEditing: false,
-                            width: 180,
-                            edit: {
-                                create: () => {
-                                    let numberElem = document.createElement('input');
-                                    return numberElem;
-                                },
-                                read: () => {
-                                    return numberObj.value;
-                                },
-                                destroy: () => {
-                                    numberObj.destroy();
-                                },
-                                write: (args) => {
-                                    numberObj = new ej.inputs.TextBox();
-                                    numberObj.value = args.rowData.productNumber;
-                                    numberObj.readonly = true;
-                                    numberObj.appendTo(args.element);
-                                }
-                            }
-                        },
-                        {
-                            field: 'availableStock',
-                            headerText: 'Available Stock',
-                            width: 160,
-                            allowEditing: false,
-                            type: 'number',
-                            format: 'N2',
-                            textAlign: 'Right',
-                            valueAccessor: (field, data) => {
-                                if (!data.productId) return '—';
-                                const product = state.productListLookupData.find(p => p.id === data.productId);
-                                if (!product || !product.physical) return 'N/A';
-                                return product.availableStock ?? 0;
-                            }
-                        },
-                        {
-                            field: 'remark',
-                            headerText: 'Remark',
-                            width: 200,
-                            edit: {
-                                create: () => {
-                                    let remarkElem = document.createElement('input');
-                                    return remarkElem;
-                                },
-                                read: () => {
-                                    return remarkObj.value;
-                                },
-                                destroy: () => {
-                                    remarkObj.destroy();
-                                },
-                                write: (args) => {
-                                    remarkObj = new ej.inputs.TextBox();
-                                    remarkObj.value = args.rowData.remark;
-                                    remarkObj.appendTo(args.element);
-                                }
-                            }
-                        },
-                    ],
-                    toolbar: [
-                        'ExcelExport',
-                        { type: 'Separator' },
-                        'Add', 'Edit', 'Delete', 'Update', 'Cancel',
-                    ],
-                    actionBegin: (args) => {
-                        if (args.requestType === 'save') {
-                            const data = args.data;
-                            // Fall back to the live edit controls when args.data fields are not yet
-                            // populated (Syncfusion reads custom templates AFTER actionBegin in some cases)
-                            const productId = (data.productId) || (typeof productObj !== 'undefined' && productObj?.value);
-                            const product = state.productListLookupData.find(p => p.id === productId);
-
-                            if (product && product.physical) {
-                                const available = product.availableStock ?? 0;
-                                const requested = (data.quantity != null ? data.quantity : (typeof quantityObj !== 'undefined' && quantityObj?.value)) ?? 0;
-
-                                if (requested > available) {
-                                    args.cancel = true;
-                                    saveCancelledByStock = true;
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Insufficient Stock',
-                                        html: `<b>${product.name}</b><br>` +
-                                              `Available Stock: <b>${available.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b><br>` +
-                                              `Requested Quantity: <b>${requested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b><br><br>` +
-                                              `Cannot save. Requested quantity exceeds available stock.`,
-                                        confirmButtonText: 'OK'
-                                    });
-                                }
-                            }
+                productPickLookup.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.productListLookupData,
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'Search a product to add',
+                    filterBarPlaceholder: 'Search',
+                    sortOrder: 'Ascending',
+                    allowFiltering: true,
+                    filtering: (e) => {
+                        e.preventDefaultAction = true;
+                        let query = new ej.data.Query();
+                        if (e.text !== '') {
+                            query = query.where('name', 'contains', e.text, true);
                         }
+                        e.updateData(state.productListLookupData, query);
                     },
-                    beforeDataBound: () => { },
-                    dataBound: function () { },
-                    beforeExcelExport: (args) => {
-                        args.data = args.data.map(function (row) {
-                            var cloned = Object.assign({}, row);
-                            if (cloned.createdAtUtc instanceof Date) {
-                                cloned.createdAtUtc = cloned.createdAtUtc.toLocaleDateString('en-CA') + ' ' + cloned.createdAtUtc.toTimeString().slice(0, 5);
-                            }
-                            return cloned;
-                        });
-                    },
-                    excelExportComplete: () => { },
-                    rowSelected: () => {
-                        if (secondaryGrid.obj.getSelectedRecords().length == 1) {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit'], true);
-                        } else {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit'], false);
-                        }
-                    },
-                    rowDeselected: () => {
-                        if (secondaryGrid.obj.getSelectedRecords().length == 1) {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit'], true);
-                        } else {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit'], false);
-                        }
-                    },
-                    rowSelecting: () => {
-                        if (secondaryGrid.obj.getSelectedRecords().length) {
-                            secondaryGrid.obj.clearSelection();
-                        }
-                    },
-                    toolbarClick: (args) => {
-                        if (args.item.id === 'SecondaryGrid_excelexport') {
-                            const date = new Date().toISOString().slice(0, 10);
-                            secondaryGrid.obj.excelExport({ fileName: `SalesOrderItems_${date}.xlsx` });
-                        }
-                    },
-                    actionComplete: async (args) => {
-                        if (saveCancelledByStock) {
-                            saveCancelledByStock = false;
+                    change: (e) => {
+                        const product = state.productListLookupData.find(item => item.id === e.value);
+                        if (!product) {
+                            state.productHint = { name: '', physical: false, stock: null, minPrice: null, maxPrice: null };
                             return;
                         }
-                        if (args.requestType === 'save' && args.action === 'add') {
-                            const salesOrderId = state.id; 
-                            const userId = StorageManager.getUserId();
-                            const data = args.data;
-
-                            try {
-                                await services.createSecondaryData(data?.unitPrice, data?.quantity, data?.remark, data?.productId, salesOrderId, userId);
-                                await methods.populateSecondaryData(salesOrderId);
-                                secondaryGrid.refresh();
-                                Swal.fire({ icon: 'success', title: 'Save Successful', timer: 2000, showConfirmButton: false });
-                            } catch (error) {
-                                Swal.fire({ icon: 'error', title: 'Save Failed', text: error.response?.data?.message ?? 'An error occurred.', confirmButtonText: 'OK' });
-                            }
-                        }
-                        if (args.requestType === 'save' && args.action === 'edit') {
-                            const salesOrderId = state.id; 
-                            const userId = StorageManager.getUserId();
-                            const data = args.data;
-
-                            try {
-                                await services.updateSecondaryData(data?.id, data?.unitPrice, data?.quantity, data?.remark, data?.productId, salesOrderId, userId);
-                                await methods.populateSecondaryData(salesOrderId);
-                                secondaryGrid.refresh();
-                                Swal.fire({ icon: 'success', title: 'Save Successful', timer: 2000, showConfirmButton: false });
-                            } catch (error) {
-                                Swal.fire({ icon: 'error', title: 'Save Failed', text: error.response?.data?.message ?? 'An error occurred.', confirmButtonText: 'OK' });
-                            }
-                        }
-                        if (args.requestType === 'delete') {
-                            const salesOrderId = state.id; 
-                            const userId = StorageManager.getUserId();
-                            const data = args.data[0];
-
-                            try {
-                                await services.deleteSecondaryData(data?.id, userId);
-                                await methods.populateSecondaryData(salesOrderId);
-                                secondaryGrid.refresh();
-                                Swal.fire({ icon: 'success', title: 'Delete Successful', timer: 2000, showConfirmButton: false });
-                            } catch (error) {
-                                Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.response?.data?.message ?? 'An error occurred.', confirmButtonText: 'OK' });
-                            }
-                        }
-
-                        await methods.populateMainData();
-                        mainGrid.refresh();
-                        await methods.refreshPaymentSummary(state.id);
+                        state.productPick.productId = product.id;
+                        state.productPick.unitPrice = product.unitPrice ?? 0;
+                        state.productPick.quantity = 1;
+                        state.productHint = {
+                            name: product.name,
+                            physical: product.physical ?? false,
+                            stock: product.physical ? (product.availableStock ?? 0) : null,
+                            minPrice: product.minSellingPrice ?? null,
+                            maxPrice: product.maxSellingPrice ?? null
+                        };
                     }
                 });
-                secondaryGrid.obj.appendTo(secondaryGridRef.value);
-                GridHeightManager.apply(secondaryGrid.obj, secondaryGridRef.value);
+                productPickLookup.obj.appendTo(productPickRef.value);
+            }
+        };
+
+        // The POS screen adds line items against a saved header. If the cashier starts by picking
+        // a product before saving, create the header on the fly from the order bar fields.
+        const ensureHeaderSaved = async () => {
+            if (state.id) return true;
+
+            if (!validateForm()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Complete the order details',
+                    text: 'Customer, tax, status and order date are required before adding products.'
+                });
+                return false;
+            }
+
+            try {
+                const response = await services.createMainData(
+                    state.orderDate, state.description, state.orderStatus, state.taxId, state.customerId, StorageManager.getUserId());
+
+                if (response.data.code === 200) {
+                    const data = response.data.content.data;
+                    state.id = data.id ?? '';
+                    state.number = data.number ?? '';
+                    state.mainTitle = `Sales Order ${state.number}`;
+                    taxListLookup.trackingChange = true;
+                    await methods.populateMainData();
+                    mainGrid.refresh();
+                    return true;
+                }
+
+                Swal.fire({ icon: 'error', title: 'Save Failed', text: response.data.message ?? 'Could not create the sales order.' });
+                return false;
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.' });
+                return false;
+            }
+        };
+
+        // Refresh everything that depends on the line items after a cart change.
+        const refreshAfterCartChange = async () => {
+            await methods.populateSecondaryData(state.id);
+            await methods.populateMainData();
+            mainGrid.refresh();
+            await methods.refreshPaymentSummary(state.id);
+        };
+
+        const persistLine = async (line, changes) => {
+            try {
+                const unitPrice = changes.unitPrice ?? line.unitPrice;
+                const quantity = changes.quantity ?? line.quantity;
+                await services.updateSecondaryData(
+                    line.id, unitPrice, quantity, line.remark, line.productId, state.id, StorageManager.getUserId());
+                await refreshAfterCartChange();
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Update Failed', text: error.response?.data?.message ?? 'An error occurred.' });
+                await methods.populateSecondaryData(state.id);
+            }
+        };
+
+        const cart = {
+            addLine: async () => {
+                const product = state.productListLookupData.find(p => p.id === state.productPick.productId);
+                if (!product) {
+                    Swal.fire({ icon: 'warning', title: 'Select a product first' });
+                    return;
+                }
+
+                const quantity = Number(state.productPick.quantity);
+                const unitPrice = Number(state.productPick.unitPrice);
+
+                if (!quantity || quantity <= 0) {
+                    Swal.fire({ icon: 'warning', title: 'Enter a quantity greater than zero' });
+                    return;
+                }
+                if (isNaN(unitPrice) || unitPrice < 0) {
+                    Swal.fire({ icon: 'warning', title: 'Enter a valid unit price' });
+                    return;
+                }
+
+                if (product.physical) {
+                    const available = product.availableStock ?? 0;
+                    const alreadyInCart = quantityInCart(product.id);
+                    if (quantity + alreadyInCart > available) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Insufficient Stock',
+                            html: `<b>${product.name}</b><br>` +
+                                  `Available: <b>${formatQty(available)}</b><br>` +
+                                  `Already in cart: <b>${formatQty(alreadyInCart)}</b><br>` +
+                                  `Requested: <b>${formatQty(quantity)}</b>`
+                        });
+                        return;
+                    }
+                }
+
+                try {
+                    state.isAddingLine = true;
+
+                    if (!(await ensureHeaderSaved())) return;
+
+                    await services.createSecondaryData(unitPrice, quantity, null, product.id, state.id, StorageManager.getUserId());
+                    await refreshAfterCartChange();
+
+                    resetProductPick();
+                    Swal.fire({ icon: 'success', title: `Added: ${product.name}`, timer: 1000, showConfirmButton: false });
+                    if (productPickLookup.obj) productPickLookup.obj.focusIn();
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Could not add item', text: error.response?.data?.message ?? 'An error occurred.' });
+                } finally {
+                    state.isAddingLine = false;
+                }
             },
-            refresh: () => {
-                secondaryGrid.obj.setProperties({ dataSource: state.secondaryData });
+            stepLineQty: (line, delta) => {
+                const next = Math.max(0, (Number(line.quantity) || 0) + delta);
+                cart.commitLineQty(line, next);
+            },
+            commitLineQty: async (line, value) => {
+                const quantity = Number(value);
+                if (!quantity || quantity <= 0) {
+                    Swal.fire({ icon: 'warning', title: 'Quantity must be greater than zero' });
+                    await methods.populateSecondaryData(state.id);
+                    return;
+                }
+
+                const product = state.productListLookupData.find(p => p.id === line.productId);
+                if (product && product.physical) {
+                    const available = product.availableStock ?? 0;
+                    const otherInCart = quantityInCart(line.productId, line.id);
+                    if (quantity + otherInCart > available) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Insufficient Stock',
+                            html: `<b>${product.name}</b><br>Available: <b>${formatQty(available)}</b>`
+                        });
+                        await methods.populateSecondaryData(state.id);
+                        return;
+                    }
+                }
+
+                await persistLine(line, { quantity });
+            },
+            commitLinePrice: async (line, value) => {
+                const unitPrice = Number(value);
+                if (isNaN(unitPrice) || unitPrice < 0) {
+                    Swal.fire({ icon: 'warning', title: 'Enter a valid unit price' });
+                    await methods.populateSecondaryData(state.id);
+                    return;
+                }
+                await persistLine(line, { unitPrice });
+            },
+            removeLine: async (line) => {
+                const confirmed = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Remove this item?',
+                    text: line.productName,
+                    showCancelButton: true,
+                    confirmButtonText: 'Remove',
+                    confirmButtonColor: '#dc3545'
+                });
+                if (!confirmed.isConfirmed) return;
+
+                try {
+                    await services.deleteSecondaryData(line.id, StorageManager.getUserId());
+                    await refreshAfterCartChange();
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.response?.data?.message ?? 'An error occurred.' });
+                }
+            },
+            clearAll: async () => {
+                if (!state.secondaryData.length) return;
+
+                const confirmed = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Clear all items?',
+                    text: `This removes all ${state.secondaryData.length} line item(s) from this order.`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Clear All',
+                    confirmButtonColor: '#dc3545'
+                });
+                if (!confirmed.isConfirmed) return;
+
+                try {
+                    const userId = StorageManager.getUserId();
+                    for (const line of [...state.secondaryData]) {
+                        await services.deleteSecondaryData(line.id, userId);
+                    }
+                    await refreshAfterCartChange();
+                    Swal.fire({ icon: 'success', title: 'Cart Cleared', timer: 1200, showConfirmButton: false });
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message ?? 'Some items could not be removed.' });
+                    await methods.populateSecondaryData(state.id);
+                }
             }
         };
 
@@ -1465,7 +1287,6 @@ const App = {
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
                 orderDatePicker.create();
                 numberText.create();
-                await secondaryGrid.create(state.secondaryData);
 
                 Promise.all([
                     methods.populateCustomerListLookupData(),
@@ -1479,6 +1300,7 @@ const App = {
                     customerListLookup.create();
                     taxListLookup.create();
                     salesOrderStatusListLookup.create();
+                    productPickLookup.create();
                     customerQuickGroupListLookup.create();
                     customerQuickCategoryListLookup.create();
                     customerQuickModal.create();
@@ -1504,7 +1326,10 @@ const App = {
             customerIdRef,
             taxIdRef,
             orderStatusRef,
-            secondaryGridRef,
+            productPickRef,
+            posLineTotal,
+            posStockExceeded,
+            posPriceOutOfBand,
             customerQuickModalRef,
             customerGroupQuickModalRef,
             customerCategoryQuickModalRef,
@@ -1516,6 +1341,18 @@ const App = {
             handler: {
                 handleSubmit: methods.handleFormSubmit,
                 formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
+                formatQty: formatQty,
+                stepQty: (delta) => {
+                    const next = Math.max(0, (Number(state.productPick.quantity) || 0) + delta);
+                    state.productPick.quantity = Number(next.toFixed(4));
+                },
+                clearProductPick: resetProductPick,
+                addLineToCart: cart.addLine,
+                stepLineQty: cart.stepLineQty,
+                commitLineQty: cart.commitLineQty,
+                commitLinePrice: cart.commitLinePrice,
+                removeLine: cart.removeLine,
+                clearCart: cart.clearAll,
                 formatPaymentDate: (value) => {
                     if (!value) return '';
                     const d = new Date(value);
@@ -1762,11 +1599,6 @@ const App = {
                     const barcode = (state.barcodeInput ?? '').trim();
                     if (!barcode) return;
 
-                    if (!state.id) {
-                        Swal.fire({ icon: 'warning', title: 'Save the order first', text: 'Please save the Sales Order header before adding items via barcode.' });
-                        return;
-                    }
-
                     try {
                         const response = await services.getProductByBarcode(barcode);
                         const product = response?.data?.content?.data;
@@ -1783,20 +1615,27 @@ const App = {
 
                         if (product.physical) {
                             const available = matchedProduct?.availableStock ?? 0;
-                            if (quantity > available) {
+                            const alreadyInCart = quantityInCart(product.id);
+                            if (quantity + alreadyInCart > available) {
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Insufficient Stock',
-                                    html: `<b>${product.name}</b><br>Available: <b>${available}</b>`
+                                    html: `<b>${product.name}</b><br>` +
+                                          `Available: <b>${formatQty(available)}</b><br>` +
+                                          `Already in cart: <b>${formatQty(alreadyInCart)}</b>`
                                 });
                                 state.barcodeInput = '';
                                 return;
                             }
                         }
 
+                        if (!(await ensureHeaderSaved())) {
+                            state.barcodeInput = '';
+                            return;
+                        }
+
                         await services.createSecondaryData(unitPrice, quantity, null, product.id, state.id, StorageManager.getUserId());
                         await methods.populateSecondaryData(state.id);
-                        secondaryGrid.refresh();
                         await methods.populateMainData();
                         mainGrid.refresh();
                         await methods.refreshPaymentSummary(state.id);

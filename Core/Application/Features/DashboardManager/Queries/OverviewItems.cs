@@ -15,6 +15,9 @@ public class OverviewKpiItem
     public int LowStockCount { get; init; }
     public double? LowStockDeltaPct { get; init; }
     public double LowStockThreshold { get; init; }
+    public double TodayPurchaseAmount { get; init; }
+    public double TodaySalesAmount { get; init; }
+    public double TodayDueAmount { get; init; }
 }
 
 /// <summary>

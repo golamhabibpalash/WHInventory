@@ -29,7 +29,10 @@ const App = {
                 outboundDeltaPct: null,
                 lowStockCount: 0,
                 lowStockDeltaPct: null,
-                lowStockThreshold: 0
+                lowStockThreshold: 0,
+                todayPurchaseAmount: 0,
+                todaySalesAmount: 0,
+                todayDueAmount: 0
             },
             inventoryStatus: [],
             statusTotal: 0,
@@ -146,6 +149,10 @@ const App = {
             formatQty: (value) => {
                 const number = Number(value) || 0;
                 return number.toLocaleString(undefined, { maximumFractionDigits: 0 });
+            },
+            formatCurrency: (value) => {
+                const number = Number(value) || 0;
+                return number.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             },
             formatDelta: (value) => {
                 if (value === null || value === undefined) return 'n/a';
