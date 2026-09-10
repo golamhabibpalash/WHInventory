@@ -1,5 +1,6 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
+using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
 using MediatR;
@@ -31,7 +32,7 @@ public class GetOverviewDashboardRequest : IRequest<GetOverviewDashboardResult>
 public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardRequest, GetOverviewDashboardResult>
 {
     /// <summary>On-hand quantity at or below this counts as low stock.</summary>
-    private const double LowStockThreshold = 10;
+    private const double LowStockThreshold = Constants.InventoryConsts.LowStockThreshold;
 
     /// <summary>Days shown on the inbound/outbound trend chart, today inclusive.</summary>
     private const int TrendDays = 7;

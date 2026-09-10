@@ -59,5 +59,15 @@ public static class Constants
         public const int Min = 1;
         public const int Max = 1440;
     }
+
+    /// <summary>
+    /// Inventory thresholds shared by the dashboard KPI and the low-stock report so
+    /// the headline count and the drill-down list always agree.
+    /// </summary>
+    public static class InventoryConsts
+    {
+        /// <summary>On-hand quantity at or below this counts as low stock.</summary>
+        public const double LowStockThreshold = 10;
+    }
 }
 

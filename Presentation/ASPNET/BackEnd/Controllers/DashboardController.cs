@@ -54,6 +54,25 @@ public class DashboardController : BaseApiController
 
 
     [Authorize]
+    [HttpGet("GetLowStockProductList")]
+    public async Task<ActionResult<ApiSuccessResult<GetLowStockProductListResult>>> GetLowStockProductListAsync(
+        CancellationToken cancellationToken,
+        [FromQuery] string? warehouseId = null
+        )
+    {
+        var request = new GetLowStockProductListRequest { WarehouseId = warehouseId };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetLowStockProductListResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetLowStockProductListAsync)}",
+            Content = response
+        });
+    }
+
+
+    [Authorize]
     [HttpGet("GetSalesDashboard")]
     public async Task<ActionResult<ApiSuccessResult<GetSalesDashboardResult>>> GetSalesDashboardAsync(
         CancellationToken cancellationToken
