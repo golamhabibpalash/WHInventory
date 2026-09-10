@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
-# Pull latest code, rebuild image, restart app.
+# Pull latest code, rebuild image, recreate container.
 # Run as root on the VPS: bash /opt/platform/apps/ustock/update.sh
 set -euo pipefail
 
 APP_DIR="/opt/platform/apps/ustock"
+COMPOSE_DIR="/opt/platform/docker/apps/ustock"
 
 echo "▶ Pulling latest code…"
 git -C "$APP_DIR" pull --autostash
 
-echo "▶ Building image…"
-docker build -t ustock-app:latest "$APP_DIR"
-
-echo "▶ Restarting app…"
-docker restart ustock-app
+echo "▶ Rebuilding and restarting…"
+cd "$COMPOSE_DIR"
+docker compose up -d --build app
 
 echo "▶ Waiting for app to respond…"
 timeout 120 bash -c \
