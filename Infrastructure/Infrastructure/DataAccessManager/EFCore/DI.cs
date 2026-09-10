@@ -318,7 +318,6 @@ public static class DI
                     ""UpdatedById""   varchar(450)  NULL
                 );
                 CREATE INDEX IF NOT EXISTS ""IX_Brand_IsDeleted"" ON core.""Brand"" (""IsDeleted"");
-                CREATE UNIQUE INDEX IF NOT EXISTS ""IX_Brand_Name"" ON core.""Brand"" (""Name"");
                 CREATE INDEX IF NOT EXISTS ""IX_Brand_Number"" ON core.""Brand"" (""Number"");
             ");
 
@@ -664,7 +663,6 @@ public static class DI
                         [UpdatedById]   nvarchar(450)  NULL
                     );
                     CREATE INDEX [IX_Brand_IsDeleted] ON [Brand] ([IsDeleted]);
-                    CREATE UNIQUE INDEX [IX_Brand_Name] ON [Brand] ([Name]);
                     CREATE INDEX [IX_Brand_Number] ON [Brand] ([Number]);
                 END
             ");
