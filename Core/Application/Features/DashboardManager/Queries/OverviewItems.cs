@@ -18,6 +18,22 @@ public class OverviewKpiItem
     public double TodayPurchaseAmount { get; init; }
     public double TodaySalesAmount { get; init; }
     public double TodayDueAmount { get; init; }
+
+    /// <summary>
+    /// Units still owed to customers: ordered on a confirmed Sales Order but not yet covered by a
+    /// Delivery Order, per product line. A partially delivered order only contributes its remainder,
+    /// not its full original quantity. Company-wide only (Sales Orders carry no WarehouseId).
+    /// </summary>
+    public double PendingDeliveryCount { get; init; }
+    public int PendingDeliveryOrderCount { get; init; }
+
+    /// <summary>
+    /// Units still owed by vendors: ordered on a confirmed Purchase Order but not yet covered by a
+    /// Goods Receive, per product line. A partially received order only contributes its remainder,
+    /// not its full original quantity. Company-wide only (Purchase Orders carry no WarehouseId).
+    /// </summary>
+    public double PendingGoodsReceiveCount { get; init; }
+    public int PendingGoodsReceiveOrderCount { get; init; }
 }
 
 /// <summary>

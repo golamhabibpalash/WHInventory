@@ -32,7 +32,11 @@ const App = {
                 lowStockThreshold: 0,
                 todayPurchaseAmount: 0,
                 todaySalesAmount: 0,
-                todayDueAmount: 0
+                todayDueAmount: 0,
+                pendingDeliveryCount: 0,
+                pendingDeliveryOrderCount: 0,
+                pendingGoodsReceiveCount: 0,
+                pendingGoodsReceiveOrderCount: 0
             },
             inventoryStatus: [],
             statusTotal: 0,

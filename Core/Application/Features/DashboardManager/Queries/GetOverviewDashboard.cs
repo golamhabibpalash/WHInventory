@@ -112,16 +112,23 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             .Where(x => x.ModuleName == nameof(TransferIn))
             .SumAsync(x => (double?)x.Movement, cancellationToken) ?? 0.0;
 
-        // Confirmed sales orders with no confirmed delivery yet are committed but still on the shelf.
-        // Sales and purchase orders carry no warehouse, so Reserved and On Order cannot be
-        // attributed to one branch. Under a warehouse filter they are left out rather than
-        // repeated unchanged, which would overstate that branch's pipeline.
+        // Confirmed sales orders with outstanding (undelivered) quantity are committed but still on
+        // the shelf. Sales and purchase orders carry no warehouse, so Reserved/On Order and the new
+        // Pending Delivery/Pending Goods Received tiles cannot be attributed to one branch. Under a
+        // warehouse filter they are left out rather than repeated unchanged, which would overstate
+        // that branch's pipeline.
         var reserved = 0.0;
+        var reservedOrderCount = 0;
         var onOrder = 0.0;
+        var onOrderCount = 0;
 
         if (!scopedToWarehouse)
         {
-            (reserved, onOrder) = await GetPipelineTotalsAsync(cancellationToken);
+            var pipeline = await GetPipelineTotalsAsync(cancellationToken);
+            reserved = pipeline.Reserved;
+            reservedOrderCount = pipeline.ReservedOrderCount;
+            onOrder = pipeline.OnOrder;
+            onOrderCount = pipeline.OnOrderOrderCount;
         }
 
         // Financial KPIs: orders carry no WarehouseId, so these are always company-wide.
@@ -212,7 +219,11 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             LowStockThreshold = LowStockThreshold,
             TodayPurchaseAmount = todayPurchaseAmount,
             TodaySalesAmount = todaySalesAmount,
-            TodayDueAmount = todayDueAmount
+            TodayDueAmount = todayDueAmount,
+            PendingDeliveryCount = reserved,
+            PendingDeliveryOrderCount = reservedOrderCount,
+            PendingGoodsReceiveCount = onOrder,
+            PendingGoodsReceiveOrderCount = onOrderCount
         };
 
         // Reserved units are still physically on hand, so subtract them out of the In Stock slice
@@ -316,44 +327,113 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
     }
 
     /// <summary>
-    /// Company-wide committed quantities: confirmed sales orders not yet delivered (Reserved) and
-    /// confirmed purchase orders not yet received (On Order).
+    /// Company-wide committed quantities, counted per order line so a partially fulfilled order only
+    /// contributes its outstanding remainder rather than being skipped once any delivery/receipt
+    /// exists against it: confirmed sales orders not yet fully delivered (Reserved / Pending
+    /// Delivery) and confirmed purchase orders not yet fully received (On Order / Pending Goods
+    /// Receive).
     /// </summary>
-    private async Task<(double Reserved, double OnOrder)> GetPipelineTotalsAsync(CancellationToken cancellationToken)
+    private async Task<(double Reserved, int ReservedOrderCount, double OnOrder, int OnOrderOrderCount)> GetPipelineTotalsAsync(CancellationToken cancellationToken)
     {
-        // The null guard matters: a NULL inside a SQL NOT IN list makes the whole predicate NULL,
-        // which would silently zero out the result.
-        var deliveredSalesOrderIds = _context.DeliveryOrder
+        // --- Sales: outstanding quantity awaiting delivery, per (order, physical product) line.
+        // Non-physical lines are excluded because DeliveryOrderCreateInvenTrans (see
+        // CreateDeliveryOrder) only ever moves physical products, so a service line would never
+        // gain a matching ledger row and would look permanently pending.
+        var salesOrderedLines = await _context.SalesOrderItem
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
-            .Where(x => x.Status == DeliveryOrderStatus.Confirmed && x.SalesOrderId != null)
-            .Select(x => x.SalesOrderId!);
+            .Where(x => x.SalesOrder!.OrderStatus == SalesOrderStatus.Confirmed && x.Product!.Physical == true)
+            .Select(x => new { x.SalesOrderId, x.ProductId, Quantity = x.Quantity ?? 0.0 })
+            .ToListAsync(cancellationToken);
 
-        var reserved = await _context.SalesOrderItem
+        var deliveryOrderToSalesOrder = await _context.DeliveryOrder
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
-            .Where(x =>
-                x.SalesOrder!.OrderStatus == SalesOrderStatus.Confirmed &&
-                x.SalesOrderId != null &&
-                !deliveredSalesOrderIds.Contains(x.SalesOrderId))
-            .SumAsync(x => (double?)x.Quantity, cancellationToken) ?? 0.0;
+            .Where(x => x.SalesOrderId != null)
+            .Select(x => new { x.Id, x.SalesOrderId })
+            .ToDictionaryAsync(x => x.Id!, x => x.SalesOrderId, cancellationToken);
 
-        var receivedPurchaseOrderIds = _context.GoodsReceive
+        var deliveredRows = deliveryOrderToSalesOrder.Count == 0
+            ? new List<(string ModuleId, string? ProductId, double Movement)>()
+            : (await _context.InventoryTransaction
+                .AsNoTracking()
+                .ApplyIsDeletedFilter(false)
+                .Where(x => x.ModuleName == nameof(DeliveryOrder) && x.ModuleId != null)
+                .Select(x => new { x.ModuleId, x.ProductId, Movement = x.Movement ?? 0.0 })
+                .ToListAsync(cancellationToken))
+                .Select(x => (ModuleId: x.ModuleId!, x.ProductId, x.Movement))
+                .ToList();
+
+        var deliveredByOrderProduct = deliveredRows
+            .Where(x => deliveryOrderToSalesOrder.ContainsKey(x.ModuleId))
+            .GroupBy(x => (SalesOrderId: deliveryOrderToSalesOrder[x.ModuleId], x.ProductId))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Movement));
+
+        var reserved = 0.0;
+        var reservedOrderIds = new HashSet<string>();
+
+        foreach (var line in salesOrderedLines
+            .GroupBy(x => (x.SalesOrderId, x.ProductId))
+            .Select(g => new { g.Key.SalesOrderId, g.Key.ProductId, Ordered = g.Sum(x => x.Quantity) }))
+        {
+            var delivered = deliveredByOrderProduct.GetValueOrDefault((line.SalesOrderId, line.ProductId), 0.0);
+            var remaining = Math.Max(line.Ordered - delivered, 0.0);
+            if (remaining <= 0) continue;
+
+            reserved += remaining;
+            if (line.SalesOrderId != null) reservedOrderIds.Add(line.SalesOrderId);
+        }
+
+        // --- Purchase: outstanding quantity awaiting receipt, per (order, product) line. Mirrors
+        // PurchaseOrderService.RecalculatePOStatus's own definition of "received" exactly (no
+        // Physical filter, no GoodsReceive/transaction status filter) so this tile always agrees
+        // with the Open/Partially Received/Closed status already shown on the Purchase Order list.
+        var purchaseOrderedLines = await _context.PurchaseOrderItem
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
-            .Where(x => x.Status == GoodsReceiveStatus.Confirmed && x.PurchaseOrderId != null)
-            .Select(x => x.PurchaseOrderId!);
+            .Where(x => x.PurchaseOrder!.OrderStatus == PurchaseOrderStatus.Confirmed)
+            .Select(x => new { x.PurchaseOrderId, x.ProductId, Quantity = x.Quantity ?? 0.0 })
+            .ToListAsync(cancellationToken);
 
-        var onOrder = await _context.PurchaseOrderItem
+        var goodsReceiveToPurchaseOrder = await _context.GoodsReceive
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
-            .Where(x =>
-                x.PurchaseOrder!.OrderStatus == PurchaseOrderStatus.Confirmed &&
-                x.PurchaseOrderId != null &&
-                !receivedPurchaseOrderIds.Contains(x.PurchaseOrderId))
-            .SumAsync(x => (double?)x.Quantity, cancellationToken) ?? 0.0;
+            .Where(x => x.PurchaseOrderId != null)
+            .Select(x => new { x.Id, x.PurchaseOrderId })
+            .ToDictionaryAsync(x => x.Id!, x => x.PurchaseOrderId, cancellationToken);
 
-        return (reserved, onOrder);
+        var receivedRows = goodsReceiveToPurchaseOrder.Count == 0
+            ? new List<(string ModuleId, string? ProductId, double Movement)>()
+            : (await _context.InventoryTransaction
+                .AsNoTracking()
+                .ApplyIsDeletedFilter(false)
+                .Where(x => x.ModuleName == nameof(GoodsReceive) && x.ModuleId != null)
+                .Select(x => new { x.ModuleId, x.ProductId, Movement = x.Movement ?? 0.0 })
+                .ToListAsync(cancellationToken))
+                .Select(x => (ModuleId: x.ModuleId!, x.ProductId, x.Movement))
+                .ToList();
+
+        var receivedByOrderProduct = receivedRows
+            .Where(x => goodsReceiveToPurchaseOrder.ContainsKey(x.ModuleId))
+            .GroupBy(x => (PurchaseOrderId: goodsReceiveToPurchaseOrder[x.ModuleId], x.ProductId))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Movement));
+
+        var onOrder = 0.0;
+        var onOrderIds = new HashSet<string>();
+
+        foreach (var line in purchaseOrderedLines
+            .GroupBy(x => (x.PurchaseOrderId, x.ProductId))
+            .Select(g => new { g.Key.PurchaseOrderId, g.Key.ProductId, Ordered = g.Sum(x => x.Quantity) }))
+        {
+            var received = receivedByOrderProduct.GetValueOrDefault((line.PurchaseOrderId, line.ProductId), 0.0);
+            var remaining = Math.Max(line.Ordered - received, 0.0);
+            if (remaining <= 0) continue;
+
+            onOrder += remaining;
+            if (line.PurchaseOrderId != null) onOrderIds.Add(line.PurchaseOrderId);
+        }
+
+        return (reserved, reservedOrderIds.Count, onOrder, onOrderIds.Count);
     }
 
     private static double? CalculateDeltaPct(double current, double baseline)
