@@ -474,7 +474,7 @@ const App = {
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
                     pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
-                    autoFit: true,
+                    autoFit: false,
                     showColumnMenu: true,
                     gridLines: 'Horizontal',
                     columns: [
@@ -486,6 +486,12 @@ const App = {
                         { field: 'deliveryDate', headerText: 'Delivery Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'salesOrderNumber', headerText: 'Sales Order', width: 150, minWidth: 150 },
                         { field: 'statusName', headerText: 'Status', width: 150, minWidth: 150 },
+                        { field: 'totalOrderedQty', headerText: 'Ordered Qty', width: 110, format: 'N2', textAlign: 'Right', type: 'number' },
+                        { field: 'totalDeliveredQty', headerText: 'Delivered Qty', width: 120, format: 'N2', textAlign: 'Right', type: 'number' },
+                        {
+                            field: 'deliveryStatus', headerText: 'Delivery Status', width: 130, minWidth: 130,
+                            template: '#deliveryStatusTemplate'
+                        },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
@@ -500,7 +506,6 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
-                        mainGrid.obj.autoFitColumns(['number', 'deliveryDate', 'salesOrderNumber', 'statusName', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
