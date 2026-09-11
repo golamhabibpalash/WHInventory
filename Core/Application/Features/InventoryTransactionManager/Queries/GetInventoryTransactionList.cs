@@ -71,6 +71,8 @@ public class GetInventoryTransactionListRequest : IRequest<GetInventoryTransacti
     public bool IsDeleted { get; init; } = false;
     public string? WarehouseId { get; init; }
     public string? TransType { get; init; }
+    public DateTime? FromDate { get; init; }
+    public DateTime? ToDate { get; init; }
 }
 
 
@@ -111,6 +113,16 @@ public class GetInventoryTransactionListHandler : IRequestHandler<GetInventoryTr
             && Enum.TryParse<Domain.Enums.InventoryTransType>(request.TransType, true, out var transType))
         {
             query = query.Where(x => x.TransType == transType);
+        }
+
+        if (request.FromDate.HasValue)
+        {
+            query = query.Where(x => x.MovementDate >= request.FromDate.Value);
+        }
+
+        if (request.ToDate.HasValue)
+        {
+            query = query.Where(x => x.MovementDate <= request.ToDate.Value);
         }
 
         var entities = await query

@@ -22,13 +22,17 @@ public class InventoryTransactionController : BaseApiController
     public async Task<ActionResult<ApiSuccessResult<GetInventoryTransactionListResult>>> GetInventoryTransactionListAsync(
         CancellationToken cancellationToken,
         [FromQuery] string? warehouseId = null,
-        [FromQuery] string? transType = null
+        [FromQuery] string? transType = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null
         )
     {
         var request = new GetInventoryTransactionListRequest
         {
             WarehouseId = warehouseId,
-            TransType = transType
+            TransType = transType,
+            FromDate = fromDate,
+            ToDate = toDate
         };
         var response = await _sender.Send(request, cancellationToken);
 

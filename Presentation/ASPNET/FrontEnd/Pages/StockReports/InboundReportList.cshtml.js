@@ -2,18 +2,52 @@ const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
-            scopeLabel: 'All warehouses'
+            scopeLabel: 'All warehouses',
+            filterFromDate: '',
+            filterToDate: ''
         });
 
         const mainGridRef = Vue.ref(null);
+        const filterFromDateRef = Vue.ref(null);
+        const filterToDateRef = Vue.ref(null);
 
         const warehouseId = new URLSearchParams(window.location.search).get('warehouseId') ?? '';
 
+        const filterDatePickers = {
+            from: null,
+            to: null,
+            create: () => {
+                // EJ2 rather than <input type="date">, whose rendering follows the browser's
+                // own locale and cannot be pinned to the dd/MM/yyyy this application uses.
+                filterDatePickers.from = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'From',
+                    showClearButton: true,
+                    change: (e) => { state.filterFromDate = DateFormatManager.toApiDate(e.value) ?? ''; }
+                });
+                filterDatePickers.from.appendTo(filterFromDateRef.value);
+
+                filterDatePickers.to = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'To',
+                    showClearButton: true,
+                    change: (e) => { state.filterToDate = DateFormatManager.toApiDate(e.value) ?? ''; }
+                });
+                filterDatePickers.to.appendTo(filterToDateRef.value);
+            },
+            clear: () => {
+                if (filterDatePickers.from) filterDatePickers.from.value = null;
+                if (filterDatePickers.to) filterDatePickers.to.value = null;
+            }
+        };
+
         const services = {
-            getMainData: async () => {
+            getMainData: async (fromDate, toDate) => {
                 try {
                     const params = new URLSearchParams({ transType: 'In' });
                     if (warehouseId) params.set('warehouseId', warehouseId);
+                    if (fromDate) params.set('fromDate', fromDate);
+                    if (toDate) params.set('toDate', toDate + 'T23:59:59');
                     const response = await AxiosManager.get(`/InventoryTransaction/GetInventoryTransactionList?${params}`, {});
                     return response;
                 } catch (error) {
@@ -42,12 +76,27 @@ const App = {
                 state.scopeLabel = match ? `Warehouse: ${match.name}` : 'Selected warehouse';
             },
             populateMainData: async () => {
-                const response = await services.getMainData();
+                const response = await services.getMainData(state.filterFromDate, state.filterToDate);
                 state.mainData = response?.data?.content?.data ?? [];
+                // Guarded: the initial load populates data before the grid exists (mainGrid.create
+                // consumes state.mainData directly); Search/Clear run after, when it needs a refresh.
+                if (mainGrid.obj) mainGrid.refresh();
             },
             formatQty: (value) => {
                 const number = Number(value) || 0;
                 return number.toLocaleString(undefined, { maximumFractionDigits: 2 });
+            }
+        };
+
+        const handler = {
+            applyFilter: async () => {
+                await methods.populateMainData();
+            },
+            clearFilter: async () => {
+                state.filterFromDate = '';
+                state.filterToDate = '';
+                filterDatePickers.clear();
+                await methods.populateMainData();
             }
         };
 
@@ -61,6 +110,7 @@ const App = {
                 });
                 await methods.populateMainData();
                 await mainGrid.create(state.mainData);
+                filterDatePickers.create();
 
             } catch (e) {
             } finally {
@@ -161,7 +211,10 @@ const App = {
 
         return {
             mainGridRef,
+            filterFromDateRef,
+            filterToDateRef,
             state,
+            handler
         };
     }
 };

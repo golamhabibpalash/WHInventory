@@ -10,6 +10,33 @@
                 All confirmed inbound (goods receive, sales return, transfer in, positive adjustment)
                 transactions &mdash; {{ state.scopeLabel }}.
             </p>
+            <div class="card mb-3">
+                <div class="card-header">
+                    <span class="fw-semibold"><i class="fas fa-calendar-alt me-2 text-primary"></i>Date Range</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-6 col-md-3">
+                            <label class="form-label mb-1">From</label>
+                            <input ref="filterFromDateRef" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label mb-1">To</label>
+                            <input ref="filterToDateRef" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <button type="button" class="btn btn-sm btn-primary w-100" v-on:click="handler.applyFilter">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-100" v-on:click="handler.clearFilter">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="grid-container">
                 <div ref="mainGridRef" id="MainGrid"></div>
             </div>
