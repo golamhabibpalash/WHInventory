@@ -553,6 +553,12 @@ const App = {
                         { field: 'number', headerText: 'Number', width: 150, minWidth: 150 },
                         { field: 'receiveDate', headerText: 'Receive Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'purchaseOrderNumber', headerText: 'Purchase Order', width: 150, minWidth: 150 },
+                        { field: 'totalOrderedQty', headerText: 'Ordered Qty', width: 110, minWidth: 110, textAlign: 'Right', format: 'N2' },
+                        { field: 'totalReceivedQty', headerText: 'Received Qty', width: 120, minWidth: 120, textAlign: 'Right', format: 'N2' },
+                        {
+                            field: 'receivingStatus', headerText: 'Receiving Status', width: 150, minWidth: 150,
+                            template: '<span class="badge" style="font-size:.75rem;font-weight:600;" v-bind:class="{"bg-success": data.receivingStatus === "Complete", "bg-warning text-dark": data.receivingStatus === "Partial", "bg-secondary": data.receivingStatus === "Not Started" || data.receivingStatus === "N/A"}">${receivingStatus}</span>'
+                        },
                         { field: 'statusName', headerText: 'Status', width: 150, minWidth: 150 },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
@@ -568,7 +574,7 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
-                        mainGrid.obj.autoFitColumns(['number', 'receiveDate', 'purchaseOrderNumber', 'statusName', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['number', 'receiveDate', 'purchaseOrderNumber', 'totalOrderedQty', 'totalReceivedQty', 'receivingStatus', 'statusName', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
