@@ -61,7 +61,27 @@ const App = {
             brandQuickErrors: { name: '' },
             bulkUploadFile: null,
             bulkUploadSubmitting: false,
-            bulkUploadResult: null
+            bulkUploadResult: null,
+            view: {
+                id: '',
+                number: '',
+                name: '',
+                description: '',
+                unitPrice: 0,
+                minSellingPrice: null,
+                maxSellingPrice: null,
+                unitMeasureName: '',
+                productGroupName: '',
+                brandName: '',
+                physical: false,
+                isWarrantyApplicable: false,
+                warrantyDays: null,
+                barcode: '',
+                imageName: '',
+                imagePreviewUrl: '',
+                documents: [],
+                createdAtUtc: null
+            }
         });
 
         const mainGridRef = Vue.ref(null);
@@ -84,6 +104,16 @@ const App = {
         const maxSellingPriceRef = Vue.ref(null);
         const bulkFileInputRef = Vue.ref(null);
         const bulkUploadModalRef = Vue.ref(null);
+        const viewModalRef = Vue.ref(null);
+        const viewBarcodeRef = Vue.ref(null);
+
+        // The View Product modal is read from the grid row only (no re-fetch); this holds that
+        // row so the modal's own "Edit Product" shortcut can hand it straight to openEditForRecord.
+        let viewRecordRaw = null;
+
+        // Object URLs for grid-row thumbnails, keyed by imageName so paging/sorting/filtering back
+        // to an already-seen row doesn't re-fetch its image blob.
+        const thumbnailUrlCache = new Map();
 
         const validateForm = function () {
             state.errors.name = '';
@@ -332,6 +362,37 @@ const App = {
                     createdAtUtc: new Date(item.createdAtUtc)
                 }));
             },
+            // Fetches the image blob for every thumbnail cell currently rendered by the grid
+            // (i.e. the current page only) and swaps it in; GetImage requires a JWT, so a plain
+            // <img src="..."> can't be used directly. Cached per imageName across grid re-renders.
+            loadVisibleThumbnails: async () => {
+                const cells = mainGridRef.value?.querySelectorAll('.product-thumb-img[data-image-name]') ?? [];
+                await Promise.all(Array.from(cells).map(async (img) => {
+                    const imageName = img.getAttribute('data-image-name');
+                    if (!imageName) return;
+
+                    const cached = thumbnailUrlCache.get(imageName);
+                    if (cached) {
+                        img.src = cached;
+                        return;
+                    }
+
+                    try {
+                        const response = await services.getProductImage(imageName);
+                        const url = URL.createObjectURL(response.data);
+                        thumbnailUrlCache.set(imageName, url);
+                        img.src = url;
+                    } catch {
+                        // Fall back to the same "no image" placeholder used when there's no
+                        // imageName at all, rather than a broken-image icon.
+                        const cell = img.closest('.product-thumb');
+                        if (cell) {
+                            cell.classList.add('product-thumb-empty');
+                            cell.innerHTML = '<i class="fas fa-box"></i>';
+                        }
+                    }
+                }));
+            },
             loadImagePreview: async (imageName) => {
                 if (!imageName) {
                     state.imagePreviewUrl = '';
@@ -351,6 +412,32 @@ const App = {
                 } catch {
                     state.documents = [];
                 }
+            },
+            // Shared by the toolbar's Edit button and the View Product modal's "Edit Product"
+            // shortcut, so both open the exact same populated form.
+            openEditForRecord: async (record) => {
+                state.deleteMode = false;
+                state.mainTitle = 'Edit Product';
+                state.id = record.id ?? '';
+                state.number = record.number ?? '';
+                state.name = record.name ?? '';
+                state.unitPrice = record.unitPrice ?? '';
+                state.minSellingPrice = record.minSellingPrice ?? null;
+                state.maxSellingPrice = record.maxSellingPrice ?? null;
+                state.description = record.description ?? '';
+                state.productGroupId = record.productGroupId ?? '';
+                state.unitMeasureId = record.unitMeasureId ?? '';
+                state.brandId = record.brandId ?? '';
+                state.physical = record.physical ?? false;
+                state.isWarrantyApplicable = record.isWarrantyApplicable ?? false;
+                state.warrantyDays = record.warrantyDays ?? null;
+                state.barcode = record.barcode ?? '';
+                state.imageName = record.imageName ?? '';
+                await Promise.all([
+                    methods.loadImagePreview(state.imageName),
+                    methods.loadDocuments(state.id)
+                ]);
+                mainModal.obj.show();
             },
         };
 
@@ -967,6 +1054,66 @@ const App = {
                     state.bulkUploadSubmitting = false;
                 }
             },
+            openViewProduct: async (rowData) => {
+                viewRecordRaw = rowData;
+                state.view = {
+                    id: rowData.id ?? '',
+                    number: rowData.number ?? '',
+                    name: rowData.name ?? '',
+                    description: rowData.description ?? '',
+                    unitPrice: rowData.unitPrice ?? 0,
+                    minSellingPrice: rowData.minSellingPrice ?? null,
+                    maxSellingPrice: rowData.maxSellingPrice ?? null,
+                    unitMeasureName: rowData.unitMeasureName ?? '',
+                    productGroupName: rowData.productGroupName ?? '',
+                    brandName: rowData.brandName ?? '',
+                    physical: rowData.physical ?? false,
+                    isWarrantyApplicable: rowData.isWarrantyApplicable ?? false,
+                    warrantyDays: rowData.warrantyDays ?? null,
+                    barcode: rowData.barcode ?? '',
+                    imageName: rowData.imageName ?? '',
+                    imagePreviewUrl: '',
+                    documents: [],
+                    createdAtUtc: rowData.createdAtUtc ?? null
+                };
+                viewModal.obj.show();
+
+                await Vue.nextTick();
+                if (state.view.barcode && viewBarcodeRef.value) {
+                    try {
+                        JsBarcode(viewBarcodeRef.value, state.view.barcode, {
+                            format: 'CODE128',
+                            displayValue: true,
+                            fontSize: 13,
+                            height: 45,
+                            margin: 6
+                        });
+                    } catch {
+                        // Malformed barcode value: leave the row blank rather than fail the modal.
+                    }
+                }
+
+                const tasks = [
+                    services.getDocumentsByModule(state.view.id)
+                        .then((response) => { state.view.documents = response?.data?.content?.data ?? []; })
+                        .catch(() => { state.view.documents = []; })
+                ];
+                if (state.view.imageName) {
+                    tasks.push(
+                        services.getProductImage(state.view.imageName)
+                            .then((response) => { state.view.imagePreviewUrl = URL.createObjectURL(response.data); })
+                            .catch(() => { state.view.imagePreviewUrl = ''; })
+                    );
+                }
+                await Promise.all(tasks);
+            },
+            editFromView: async () => {
+                if (!viewRecordRaw) return;
+                viewModal.obj.hide();
+                await methods.openEditForRecord(viewRecordRaw);
+            },
+            formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
+            formatDate: (value) => value ? DateFormatManager.formatToLocale(value) : '—',
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -1077,6 +1224,7 @@ const App = {
                 warrantyDaysNumber.create();
 
                 mainModal.create();
+                viewModal.create();
                 productGroupQuickModal.create();
                 productGroupQuickParentListLookup.create();
                 unitMeasureQuickModal.create();
@@ -1090,7 +1238,7 @@ const App = {
 
             } catch (e) {
             } finally {
-                
+
             }
         });
 
@@ -1128,7 +1276,18 @@ const App = {
                         {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
-                        { field: 'number', headerText: 'Number', width: 200, minWidth: 200 },
+                        // No column `template` here — filled in by queryCellInfo below instead,
+                        // via direct cell DOM patching (a column `template` reproducibly broke
+                        // this grid's render pass entirely; queryCellInfo is the standard EJ2
+                        // fallback for the same result).
+                        {
+                            field: 'imageName', headerText: 'Image', width: 70, minWidth: 70, maxWidth: 70,
+                            textAlign: 'Center', allowFiltering: false, allowSorting: false, allowResizing: false
+                        },
+                        {
+                            field: 'number', headerText: 'Number', width: 200, minWidth: 200,
+                            customAttributes: { class: 'product-number-cell' }
+                        },
                         { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
                         { field: 'productGroupName', headerText: 'Product Group', width: 150, minWidth: 150 },
                         { field: 'brandName', headerText: 'Brand', width: 150, minWidth: 150 },
@@ -1154,6 +1313,7 @@ const App = {
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
                         mainGrid.obj.autoFitColumns(['number', 'name', 'productGroupName', 'brandName', 'unitPrice', 'unitMeasureName', 'physical', 'isWarrantyApplicable', 'createdAtUtc']);
+                        methods.loadVisibleThumbnails();
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -1175,6 +1335,20 @@ const App = {
                             mainGrid.obj.clearSelection();
                         }
                     },
+                    recordClick: (args) => {
+                        if (args.column && (args.column.field === 'number' || args.column.field === 'imageName')) {
+                            handler.openViewProduct(args.rowData);
+                        }
+                    },
+                    // Cell-level DOM patch rather than a column template — see the comment on
+                    // the Image column definition for why.
+                    queryCellInfo: (args) => {
+                        if (args.column && args.column.field === 'imageName') {
+                            args.cell.innerHTML = args.data.imageName
+                                ? `<div class="product-thumb"><img class="product-thumb-img" data-image-name="${args.data.imageName}" alt="" /></div>`
+                                : `<div class="product-thumb product-thumb-empty"><i class="fas fa-box"></i></div>`;
+                        }
+                    },
                     toolbarClick: async (args) => {
                         if (args.item.id === 'MainGrid_excelexport') {
                             mainGrid.obj.excelExport();
@@ -1188,30 +1362,8 @@ const App = {
                         }
 
                         if (args.item.id === 'EditCustom') {
-                            state.deleteMode = false;
                             if (mainGrid.obj.getSelectedRecords().length) {
-                                const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Edit Product';
-                                state.id = selectedRecord.id ?? '';
-                                state.number = selectedRecord.number ?? '';
-                                state.name = selectedRecord.name ?? '';
-                                state.unitPrice = selectedRecord.unitPrice ?? '';
-                                state.minSellingPrice = selectedRecord.minSellingPrice ?? null;
-                                state.maxSellingPrice = selectedRecord.maxSellingPrice ?? null;
-                                state.description = selectedRecord.description ?? '';
-                                state.productGroupId = selectedRecord.productGroupId ?? '';
-                                state.unitMeasureId = selectedRecord.unitMeasureId ?? '';
-                                state.brandId = selectedRecord.brandId ?? '';
-                                state.physical = selectedRecord.physical ?? false;
-                                state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
-                                state.warrantyDays = selectedRecord.warrantyDays ?? null;
-                                state.barcode = selectedRecord.barcode ?? '';
-                                state.imageName = selectedRecord.imageName ?? '';
-                                await Promise.all([
-                                    methods.loadImagePreview(state.imageName),
-                                    methods.loadDocuments(state.id)
-                                ]);
-                                mainModal.obj.show();
+                                await methods.openEditForRecord(mainGrid.obj.getSelectedRecords()[0]);
                             }
                         }
 
@@ -1277,6 +1429,32 @@ const App = {
             }
         };
 
+        const viewModal = {
+            obj: null,
+            create: () => {
+                // Purely informational — unlike the data-entry modals, backdrop click and Esc
+                // are safe ways to dismiss it since there's nothing to lose.
+                viewModal.obj = new bootstrap.Modal(viewModalRef.value, {
+                    backdrop: true,
+                    keyboard: true
+                });
+                viewModalRef.value?.addEventListener('hidden.bs.modal', () => {
+                    if (state.view.imagePreviewUrl) {
+                        URL.revokeObjectURL(state.view.imagePreviewUrl);
+                    }
+                    state.view = {
+                        id: '', number: '', name: '', description: '',
+                        unitPrice: 0, minSellingPrice: null, maxSellingPrice: null,
+                        unitMeasureName: '', productGroupName: '', brandName: '',
+                        physical: false, isWarrantyApplicable: false, warrantyDays: null,
+                        barcode: '', imageName: '', imagePreviewUrl: '',
+                        documents: [], createdAtUtc: null
+                    };
+                    viewRecordRaw = null;
+                });
+            }
+        };
+
         return {
             mainGridRef,
             mainModalRef,
@@ -1286,6 +1464,8 @@ const App = {
             brandQuickModalRef,
             bulkUploadModalRef,
             bulkFileInputRef,
+            viewModalRef,
+            viewBarcodeRef,
             productGroupIdRef,
             unitMeasureIdRef,
             brandIdRef,

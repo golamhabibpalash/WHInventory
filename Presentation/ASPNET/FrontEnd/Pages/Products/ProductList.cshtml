@@ -3,6 +3,10 @@
     ViewData["Title"] = "Product List";
 }
 
+@section styles {
+    <link rel="stylesheet" href="~/css/product-list-modal.css" asp-append-version="true" />
+}
+
 <div id="app" v-cloak>
     <div class="row">
         <div class="col-12">
@@ -230,6 +234,121 @@
                         <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
                         <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
                         <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Product Modal -->
+    <div class="modal fade product-view-modal" ref="viewModalRef" id="ViewProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-box-open me-2 text-primary"></i>{{ state.view.name || 'Product Details' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="pv-image-frame">
+                                <img v-if="state.view.imagePreviewUrl" v-bind:src="state.view.imagePreviewUrl" alt="Product image" />
+                                <div v-else class="pv-image-placeholder">
+                                    <i class="fas fa-box fa-3x"></i>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3" v-if="state.view.barcode">
+                                <svg ref="viewBarcodeRef"></svg>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="pv-title-row">
+                                <h4>{{ state.view.name }}</h4>
+                                <span class="badge pv-number-badge">{{ state.view.number }}</span>
+                            </div>
+                            <div class="pv-badges mb-2">
+                                <span class="badge" v-bind:class="state.view.physical ? 'text-bg-primary' : 'text-bg-secondary'">
+                                    <i class="fas me-1" v-bind:class="state.view.physical ? 'fa-warehouse' : 'fa-cloud'"></i>{{ state.view.physical ? 'Physical' : 'Non-Physical' }}
+                                </span>
+                                <span class="badge text-bg-success" v-if="state.view.isWarrantyApplicable">
+                                    <i class="fas fa-shield-alt me-1"></i>{{ state.view.warrantyDays }} day(s) warranty
+                                </span>
+                            </div>
+                            <div class="pv-facts">
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Unit Price</span>
+                                    <span class="pv-fact-value">{{ handler.formatAmount(state.view.unitPrice) }}</span>
+                                </div>
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Min Selling Price</span>
+                                    <span class="pv-fact-value">{{ state.view.minSellingPrice !== null ? handler.formatAmount(state.view.minSellingPrice) : 'No floor' }}</span>
+                                </div>
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Max Selling Price</span>
+                                    <span class="pv-fact-value">{{ state.view.maxSellingPrice !== null ? handler.formatAmount(state.view.maxSellingPrice) : 'No ceiling' }}</span>
+                                </div>
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Unit Measure</span>
+                                    <span class="pv-fact-value">{{ state.view.unitMeasureName || '—' }}</span>
+                                </div>
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Product Group</span>
+                                    <span class="pv-fact-value">{{ state.view.productGroupName || '—' }}</span>
+                                </div>
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Brand</span>
+                                    <span class="pv-fact-value">{{ state.view.brandName || '—' }}</span>
+                                </div>
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Barcode / SKU</span>
+                                    <span class="pv-fact-value">{{ state.view.barcode || '—' }}</span>
+                                </div>
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Created</span>
+                                    <span class="pv-fact-value">{{ handler.formatDate(state.view.createdAtUtc) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4" v-if="state.view.description">
+                        <h6 class="pv-section-title"><i class="fas fa-align-left me-2"></i>Description</h6>
+                        <p class="text-muted mb-0">{{ state.view.description }}</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6 class="pv-section-title"><i class="fas fa-paperclip me-2"></i>Attachments</h6>
+                        <div class="table-responsive" v-if="state.view.documents.length">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>File Name</th>
+                                        <th>Type</th>
+                                        <th>Size</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="doc in state.view.documents" v-bind:key="doc.id">
+                                        <td>
+                                            <a v-bind:href="'api/FileDocument/GetDocument?documentName=' + doc.generatedName" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-file me-2"></i>{{ doc.originalName }}
+                                            </a>
+                                        </td>
+                                        <td><span class="badge bg-secondary">{{ (doc.extension || '').toUpperCase() }}</span></td>
+                                        <td>{{ handler.formatFileSize(doc.fileSize) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p v-else class="text-muted small mb-0">No attachments.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" v-on:click="handler.editFromView">
+                        <i class="fas fa-edit me-2"></i>Edit Product
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
                     </button>
                 </div>
             </div>

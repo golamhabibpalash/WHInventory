@@ -1,0 +1,168 @@
+/*
+ * Styles for /Products/ProductList: the clickable Number column and the View Product modal.
+ */
+
+/*
+ * Bootstrap 5 spacing-utility polyfill, scoped to this stylesheet.
+ *
+ * The app's CSS stack is AdminLTE 3, which bundles Bootstrap 4 (adminlte.min.css defines
+ * .mr-2/.ml-2, never .me-2/.ms-2 — the logical-property names only exist from Bootstrap 5
+ * onward). This page's markup (including the pre-existing Add/Edit Product modal) uses the
+ * BS5 names, which otherwise silently compute to zero margin — see the identical fix and
+ * root-cause writeup on wwwroot/css/pos-order-modal.css. Copied verbatim from Bootstrap 5's
+ * own values, so it becomes redundant rather than conflicting if real Bootstrap 5 CSS is ever
+ * loaded app-wide.
+ */
+.me-0 { margin-right: 0 !important; }
+.me-1 { margin-right: .25rem !important; }
+.me-2 { margin-right: .5rem !important; }
+.me-3 { margin-right: 1rem !important; }
+.ms-0 { margin-left: 0 !important; }
+.ms-1 { margin-left: .25rem !important; }
+.ms-2 { margin-left: .5rem !important; }
+.ms-3 { margin-left: 1rem !important; }
+.gap-0 { gap: 0 !important; }
+.gap-1 { gap: .25rem !important; }
+.gap-2 { gap: .5rem !important; }
+.gap-3 { gap: 1rem !important; }
+
+/* Image column: fixed-size thumbnail, opens the View Product modal like the Number link does */
+.product-thumb {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.product-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-thumb-empty {
+    color: #adb5bd;
+    font-size: 1rem;
+}
+
+/* Number column: reads as a link, opens the View Product modal. The class is applied to the
+   cell itself via the column's customAttributes, not a column template (see ProductList.cshtml.js). */
+.e-rowcell.product-number-cell {
+    color: #1b84ff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.e-rowcell.product-number-cell:hover {
+    text-decoration: underline;
+}
+
+/* ── View Product modal ──────────────────────────────────────────────── */
+
+/* Deeper, softer elevation than the app's default modal shadow, so the panel
+   reads as a card floating above the page rather than a flat sheet. */
+.product-view-modal .modal-content {
+    border: none;
+    border-radius: .75rem;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, .35), 0 10px 20px -8px rgba(15, 23, 42, .15);
+}
+
+.product-view-modal .modal-header,
+.product-view-modal .modal-footer {
+    border-color: #dee2e6;
+}
+
+.pv-image-frame {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: .5rem;
+    box-shadow: 0 10px 25px -10px rgba(15, 23, 42, .2);
+    overflow: hidden;
+    padding: 1rem;
+}
+
+.pv-image-frame img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.pv-image-placeholder {
+    color: #adb5bd;
+}
+
+.pv-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem .75rem;
+    margin-bottom: .5rem;
+}
+
+.pv-title-row h4 {
+    margin: 0;
+    font-weight: 700;
+}
+
+.pv-number-badge {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: .75rem;
+}
+
+.pv-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.pv-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem 1.5rem;
+    margin-top: 1rem;
+}
+
+.pv-fact {
+    display: flex;
+    flex-direction: column;
+    gap: .125rem;
+}
+
+.pv-fact-label {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.pv-fact-value {
+    font-size: .95rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.pv-section-title {
+    font-size: .8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: .5rem;
+    margin-bottom: .75rem;
+}
