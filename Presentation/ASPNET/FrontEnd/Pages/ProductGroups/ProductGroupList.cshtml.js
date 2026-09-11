@@ -284,7 +284,6 @@
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
                     pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
-                    autoFit: true,
                     showColumnMenu: true,
                     gridLines: 'Horizontal',
                     columns: [
@@ -294,7 +293,7 @@
                         },
                         { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
                         { field: 'parentName', headerText: 'Parent Group', width: 200, minWidth: 200 },
-                        { field: 'description', headerText: 'Description', width: 400, minWidth: 400 },
+                        { field: 'description', headerText: 'Description', width: 350, minWidth: 200, clipMode: 'EllipsisWithTooltip', template: '<div class="grid-cell-desc">${description}</div>' },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
@@ -308,7 +307,7 @@
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
-                        mainGrid.obj.autoFitColumns(['name', 'parentName', 'description', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['name', 'parentName', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {

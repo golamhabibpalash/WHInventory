@@ -331,7 +331,6 @@ const App = {
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
                     pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
-                    autoFit: true,
                     showColumnMenu: true,
                     gridLines: 'Horizontal',
                     columns: [
@@ -342,7 +341,7 @@ const App = {
                         { field: 'number', headerText: 'Code', width: 150, minWidth: 150 },
                         { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
                         { field: 'status', headerText: 'Status', width: 120, minWidth: 120 },
-                        { field: 'description', headerText: 'Description', width: 400, minWidth: 400 },
+                        { field: 'description', headerText: 'Description', width: 350, minWidth: 200, clipMode: 'EllipsisWithTooltip', template: '<div class="grid-cell-desc">${description}</div>' },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
@@ -359,7 +358,7 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'ToggleStatusCustom'], false);
-                        mainGrid.obj.autoFitColumns(['number', 'name', 'status', 'description', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['number', 'name', 'status', 'createdAtUtc']);
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {

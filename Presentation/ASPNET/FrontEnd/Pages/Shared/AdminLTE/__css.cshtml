@@ -259,16 +259,24 @@
         margin: 10px;
     }
 
-        .small-italic::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            border-bottom: 1px solid #dee2e6;
-        }
+    .small-italic::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        border-bottom: 1px solid #dee2e6;
+    }
 
-
+    /* Description cell template for Syncfusion Grid — clips long text with vertical scroll */
+    .grid-cell-desc {
+        max-height: 5rem;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.4;
+        font-size: .875rem;
+    }
 
 </style>
 <style>
