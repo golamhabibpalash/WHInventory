@@ -651,8 +651,7 @@
                         },
                         { field: 'roleName', headerText: 'Role', width: 200, minWidth: 200 },
                         {
-                            field: 'accessGranted', headerText: 'Access Granted', textAlign: 'Center', width: 150, minWidth: 150,
-                            template: '<input type="checkbox" class="role-access-toggle" data-role-name="${roleName}" ${accessGranted ? "checked" : ""} />'
+                            field: 'accessGranted', headerText: 'Access Granted', textAlign: 'Center', width: 150, minWidth: 150
                         },
                     ],
                     toolbar: [
@@ -663,6 +662,19 @@
                         { text: 'Grant All', tooltipText: 'Grant all roles to this user', prefixIcon: 'e-check', id: 'GrantAllRoles' },
                         { text: 'Revoke All', tooltipText: 'Revoke all roles from this user', prefixIcon: 'e-close', id: 'RevokeAllRoles' },
                     ],
+                    // The Access Granted column used to render its checkbox via a string `template`
+                    // with multiple ${...} placeholders mixed into HTML — Syncfusion's vanilla-JS
+                    // Grid template compiler collapses that down to just the last expression's
+                    // result (the literal text "checked"/""), never producing an actual <input>.
+                    // That silently broke the whole feature: with no checkbox in the DOM, nothing
+                    // could fire the `change` listener that enables "Save Changes" below, so the
+                    // button looked permanently hidden/disabled. queryCellInfo (direct cell DOM
+                    // patch) is the proven-safe alternative — same fix used on Products/ProductList.
+                    queryCellInfo: (args) => {
+                        if (args.column.field === 'accessGranted') {
+                            args.cell.innerHTML = `<input type="checkbox" class="role-access-toggle" data-role-name="${args.data.roleName}" ${args.data.accessGranted ? 'checked' : ''} />`;
+                        }
+                    },
                     beforeDataBound: () => { },
                     dataBound: function () {
                         secondaryGrid.obj.toolbarModule.enableItems(['SaveRoleChanges'], false);
