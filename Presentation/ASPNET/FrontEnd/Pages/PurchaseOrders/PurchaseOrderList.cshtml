@@ -30,7 +30,7 @@
                     <form id="MainForm" class="card pos-orderbar mb-3">
                         <div class="card-body">
                             <div class="row g-3">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="VendorId" class="form-label">Vendor <span class="text-danger">*</span></label>
                                     <div class="d-flex align-items-center gap-2">
                                         <div ref="vendorIdRef" class="flex-grow-1"></div>
@@ -53,9 +53,18 @@
                                     <label for="Number" class="form-label">Number</label>
                                     <input ref="numberRef" v-model="state.number" readonly>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-3">
                                     <label for="TaxId" class="form-label">Tax <span class="text-danger">*</span></label>
-                                    <div ref="taxIdRef"></div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div ref="taxIdRef" class="flex-grow-1"></div>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary flex-shrink-0"
+                                                v-on:click="handler.openTaxQuickCreate"
+                                                v-bind:disabled="state.deleteMode"
+                                                title="Quick-create a new tax">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
                                     <div class="text-danger small mt-1" v-if="state.errors.taxId">{{ state.errors.taxId }}</div>
                                 </div>
                                 <div class="col-md-2">
@@ -404,6 +413,51 @@
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.vendorQuickIsSubmitting"></span>
                         <i class="fas fa-store me-1" v-else></i>
                         {{ state.vendorQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Quick Create Modal -->
+    <div class="modal fade" ref="taxQuickModalRef" id="TaxQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-percent me-2"></i>Quick Create Tax</h5>
+                    <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeTaxQuickCreate" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new tax will be automatically selected after creation.</p>
+                    <div class="row mb-2">
+                        <div class="col-md-8">
+                            <label>Name <span class="text-danger">*</span></label>
+                            <input v-model="state.taxQuickName" type="text" class="form-control" placeholder="e.g. VAT 15%" />
+                            <span class="text-danger small">{{ state.taxQuickErrors.name }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Percentage <span class="text-danger">*</span></label>
+                            <input v-model.number="state.taxQuickPercentage" type="number" step="0.01" min="0" max="100" class="form-control" placeholder="e.g. 15" />
+                            <span class="text-danger small">{{ state.taxQuickErrors.percentage }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                            <label>Description</label>
+                            <textarea v-model="state.taxQuickDescription" class="form-control" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeTaxQuickCreate">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary"
+                            v-on:click="handler.submitTaxQuickCreate"
+                            v-bind:disabled="state.taxQuickIsSubmitting">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.taxQuickIsSubmitting"></span>
+                        <i class="fas fa-percent me-1" v-else></i>
+                        {{ state.taxQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
             </div>

@@ -71,6 +71,11 @@ const App = {
             vendorCategoryQuickDescription: '',
             vendorCategoryQuickIsSubmitting: false,
             vendorCategoryQuickErrors: { name: '' },
+            taxQuickName: '',
+            taxQuickPercentage: null,
+            taxQuickDescription: '',
+            taxQuickIsSubmitting: false,
+            taxQuickErrors: { name: '', percentage: '' },
         });
 
         const mainGridRef = Vue.ref(null);
@@ -86,6 +91,7 @@ const App = {
         const vendorQuickCategoryIdRef = Vue.ref(null);
         const vendorGroupQuickModalRef = Vue.ref(null);
         const vendorCategoryQuickModalRef = Vue.ref(null);
+        const taxQuickModalRef = Vue.ref(null);
 
         // Running line total for the "Select Product" form.
         const posLineTotal = Vue.computed(() => (state.productPick.unitPrice || 0) * (state.productPick.quantity || 0));
@@ -300,6 +306,14 @@ const App = {
             createVendorCategory: async (name, description, createdById) => {
                 try {
                     const response = await AxiosManager.post('/VendorCategory/CreateVendorCategory', { name, description, createdById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createTax: async (name, percentage, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/Tax/CreateTax', { name, percentage, description, createdById });
                     return response;
                 } catch (error) {
                     throw error;
@@ -694,6 +708,16 @@ const App = {
             }
         };
 
+        const taxQuickModal = {
+            obj: null,
+            create: () => {
+                taxQuickModal.obj = new bootstrap.Modal(taxQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         const vendorQuickHandler = {
             resetForm: () => {
                 state.vendorQuickName = '';
@@ -883,6 +907,80 @@ const App = {
                     state.vendorCategoryQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
                 } finally {
                     state.vendorCategoryQuickIsSubmitting = false;
+                }
+            }
+        };
+
+        const taxQuickHandler = {
+            open: () => {
+                state.taxQuickName = '';
+                state.taxQuickPercentage = null;
+                state.taxQuickDescription = '';
+                state.taxQuickErrors = { name: '', percentage: '' };
+                taxQuickModal.obj.show();
+            },
+            close: () => {
+                taxQuickModal.obj.hide();
+            },
+            submit: async () => {
+                const errors = { name: '', percentage: '' };
+                let isValid = true;
+
+                if (!state.taxQuickName?.trim()) { errors.name = 'Name is required.'; isValid = false; }
+                if (state.taxQuickPercentage === null || state.taxQuickPercentage === '' || isNaN(Number(state.taxQuickPercentage))) {
+                    errors.percentage = 'Percentage is required.';
+                    isValid = false;
+                }
+
+                state.taxQuickErrors = errors;
+                if (!isValid) return;
+
+                try {
+                    state.taxQuickIsSubmitting = true;
+
+                    const response = await services.createTax(
+                        state.taxQuickName.trim(),
+                        Number(state.taxQuickPercentage),
+                        state.taxQuickDescription,
+                        StorageManager.getUserId()
+                    );
+
+                    if (response.data.code === 200) {
+                        const newTax = response.data.content.data;
+
+                        // Refresh tax dropdown data source and auto-select the new tax
+                        await methods.populateTaxListLookupData();
+                        taxListLookup.obj.setProperties({
+                            dataSource: state.taxListLookupData,
+                            value: newTax.id
+                        });
+                        state.taxId = newTax.id;
+
+                        taxQuickModal.obj.hide();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Tax Created',
+                            text: `"${newTax.name}" has been created and selected.`,
+                            timer: 1000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Create Failed',
+                            text: response.data.message ?? 'Please check your data.',
+                            confirmButtonText: 'Try Again'
+                        });
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'An Error Occurred',
+                        text: error.response?.data?.message ?? 'Please try again.',
+                        confirmButtonText: 'OK'
+                    });
+                } finally {
+                    state.taxQuickIsSubmitting = false;
                 }
             }
         };
@@ -1272,6 +1370,7 @@ const App = {
                     vendorQuickModal.create();
                     vendorGroupQuickModal.create();
                     vendorCategoryQuickModal.create();
+                    taxQuickModal.create();
                     vendorGroupListLookupQuick.create();
                     vendorCategoryListLookupQuick.create();
                     vendorListLookup.create();
@@ -1304,6 +1403,7 @@ const App = {
             vendorQuickCategoryIdRef,
             vendorGroupQuickModalRef,
             vendorCategoryQuickModalRef,
+            taxQuickModalRef,
             state,
             methods,
             handler: {
@@ -1330,6 +1430,9 @@ const App = {
                 openVendorCategoryQuickCreate: vendorCategoryQuickHandler.open,
                 closeVendorCategoryQuickCreate: vendorCategoryQuickHandler.close,
                 submitVendorCategoryQuickCreate: vendorCategoryQuickHandler.submit,
+                openTaxQuickCreate: taxQuickHandler.open,
+                closeTaxQuickCreate: taxQuickHandler.close,
+                submitTaxQuickCreate: taxQuickHandler.submit,
             }
         };
     }
