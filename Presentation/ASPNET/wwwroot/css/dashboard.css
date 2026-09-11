@@ -59,8 +59,8 @@
     margin: 0;
 }
 .db-chip i { color: #1b84ff; font-size: .8rem; }
-.db-chip--brand { background: #eef4ff; border-color: #dbe6ff; color: #1e40af; }
-.db-chip--brand i { color: #3b82f6; }
+.db-chip--brand { background: #eef4ff; border-color: #dbe6ff; color: var(--primary); }
+.db-chip--brand i { color: var(--primary); }
 .db-chip--select { padding-right: .75rem; cursor: pointer; }
 .db-chip--select select {
     border: none;
@@ -339,7 +339,7 @@
 .cat-track {
     height: 7px;
     border-radius: .25rem;
-    background: #f1f5f9;
+    background: #f8f9fa;
     overflow: hidden;
 }
 .cat-fill {
@@ -356,7 +356,7 @@
     align-items: center;
     gap: .75rem;
     padding: .68rem 0;
-    border-bottom: 1px solid #f4f6fb;
+    border-bottom: 1px solid #dee2e6;
     font-size: .82rem;
 }
 .act-row:last-child { border-bottom: none; }
