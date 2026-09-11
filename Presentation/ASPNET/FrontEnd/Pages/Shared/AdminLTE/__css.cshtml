@@ -183,6 +183,76 @@
         accent-color: var(--primary);
     }
 
+    /* Quick-access shortcut dock (__quick-shortcuts.cshtml): fixed vertical rail, right-middle
+       of the viewport. Icon-only at rest; hover/focus reveals the full label via a max-width
+       transition rather than a Bootstrap tooltip, since a tooltip this close to the screen edge
+       tends to get clipped or auto-flip awkwardly. */
+    .quick-shortcuts {
+        position: fixed;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        z-index: 1030;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .quick-shortcut-item {
+        display: flex;
+        align-items: center;
+        height: 44px;
+        background: var(--primary);
+        color: #fff;
+        border-radius: .25rem 0 0 .25rem;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, .18);
+        overflow: hidden;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .quick-shortcut-item:hover, .quick-shortcut-item:focus {
+        color: #fff;
+        text-decoration: none;
+        filter: brightness(.92);
+    }
+
+    .quick-shortcut-item.quick-shortcut-active {
+        background: var(--dark);
+    }
+
+    .quick-shortcut-icon {
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+    }
+
+    .quick-shortcut-label {
+        max-width: 0;
+        opacity: 0;
+        font-size: .8125rem;
+        font-weight: 600;
+        padding-right: 0;
+        transition: max-width .2s ease, opacity .2s ease, padding-right .2s ease;
+    }
+
+    .quick-shortcut-item:hover .quick-shortcut-label,
+    .quick-shortcut-item:focus .quick-shortcut-label {
+        max-width: 160px;
+        opacity: 1;
+        padding-right: 1rem;
+    }
+
+    @@media (max-width: 576px) {
+        .quick-shortcuts {
+            display: none;
+        }
+    }
+
     /* Remove up/down spinner arrows from number inputs */
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button {

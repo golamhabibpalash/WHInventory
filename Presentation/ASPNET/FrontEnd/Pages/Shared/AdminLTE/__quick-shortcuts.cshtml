@@ -1,0 +1,57 @@
+@*
+    Quick-access shortcut dock: a fixed vertical rail on the right edge, vertically centered,
+    linking straight to the four order list pages. Icon-only at rest; hovering (or focusing, for
+    keyboard users) reveals the full name. Each item carries the same permission-role name the
+    target page itself checks via SecurityManager.authorizePage, so the script below can hide any
+    shortcut the signed-in user isn't authorized to open — mirrors __sidebar.cshtml's own
+    role-filtering so this never offers a link that would just 403.
+*@
+<div class="quick-shortcuts" id="QuickShortcuts" aria-label="Quick access shortcuts">
+    <a asp-area="" asp-page="/PurchaseOrders/PurchaseOrderList" class="quick-shortcut-item" data-role="PurchaseOrders">
+        <span class="quick-shortcut-icon"><i class="fas fa-file-invoice"></i></span>
+        <span class="quick-shortcut-label">Purchase Order</span>
+    </a>
+    <a asp-area="" asp-page="/SalesOrders/SalesOrderList" class="quick-shortcut-item" data-role="SalesOrders">
+        <span class="quick-shortcut-icon"><i class="fas fa-cash-register"></i></span>
+        <span class="quick-shortcut-label">Sales Order</span>
+    </a>
+    <a asp-area="" asp-page="/DeliveryOrders/DeliveryOrderList" class="quick-shortcut-item" data-role="DeliveryOrders">
+        <span class="quick-shortcut-icon"><i class="fas fa-truck"></i></span>
+        <span class="quick-shortcut-label">Delivery Order</span>
+    </a>
+    <a asp-area="" asp-page="/GoodsReceives/GoodsReceiveList" class="quick-shortcut-item" data-role="GoodsReceives">
+        <span class="quick-shortcut-icon"><i class="fas fa-dolly-flatbed"></i></span>
+        <span class="quick-shortcut-label">Goods Receive</span>
+    </a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            const dock = document.getElementById('QuickShortcuts');
+            if (!dock) return;
+
+            const userRoles = StorageManager.getUserRoles() || [];
+            dock.querySelectorAll('.quick-shortcut-item').forEach(function (item) {
+                const role = item.getAttribute('data-role');
+                const allowed = userRoles.some(function (r) { return r.toLowerCase() === role.toLowerCase(); });
+                if (!allowed) item.remove();
+            });
+
+            if (!dock.querySelector('.quick-shortcut-item')) {
+                dock.remove();
+                return;
+            }
+
+            // Mark the shortcut for the module the user is currently viewing.
+            const firstSegment = (window.location.pathname.split('/')[1] || '').toLowerCase();
+            dock.querySelectorAll('.quick-shortcut-item').forEach(function (item) {
+                if (item.getAttribute('data-role').toLowerCase() === firstSegment) {
+                    item.classList.add('quick-shortcut-active');
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing quick shortcuts:', error);
+        }
+    });
+</script>

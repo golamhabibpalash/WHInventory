@@ -34,6 +34,9 @@
         <!-- Main Sidebar Container -->
         @await Html.PartialAsync("~/FrontEnd/Pages/Shared/AdminLTE/__sidebar.cshtml")
 
+        <!-- Quick-access shortcut dock (PO/SO/DO/GO) -->
+        @await Html.PartialAsync("~/FrontEnd/Pages/Shared/AdminLTE/__quick-shortcuts.cshtml")
+
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper p-4">
             @Html.AntiForgeryToken()
