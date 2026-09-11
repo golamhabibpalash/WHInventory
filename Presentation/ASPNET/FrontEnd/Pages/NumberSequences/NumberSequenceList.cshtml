@@ -1,4 +1,4 @@
-﻿@page
+@page
 @{
     ViewData["Title"] = "Number Sequence List";
 }
@@ -8,6 +8,61 @@
         <div class="col-12">
             <div class="grid-container">
                 <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="mainModalRef" id="MainModal" aria-hidden="true" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-list-ol me-2 text-primary"></i>Edit Number Sequence</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" v-model="state.id" id="Id" name="Id" />
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Entity, Prefix and Suffix identify which document type this sequence belongs to and can't be
+                        changed here &mdash; every place that generates a number looks up this exact combination.
+                        Editing Last Used Count changes where the <strong>next</strong> generated number starts from.
+                    </p>
+                    <form id="MainForm">
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <label>Entity Name</label>
+                                <input type="text" class="form-control" v-model="state.entityName" readonly disabled>
+                            </div>
+                            <div class="col-md-3">
+                                <label>Prefix</label>
+                                <input type="text" class="form-control" v-model="state.prefix" readonly disabled>
+                            </div>
+                            <div class="col-md-3">
+                                <label>Suffix</label>
+                                <input type="text" class="form-control" v-model="state.suffix" readonly disabled>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <label for="LastUsedCount">Last Used Count <span class="text-danger">*</span></label>
+                                <input id="LastUsedCount" type="number" step="1" min="0" class="form-control" v-model.number="state.lastUsedCount">
+                                <label class="text-danger">{{ state.errors.lastUsedCount }}</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                    <button type="button"
+                            id="MainSaveButton"
+                            class="btn btn-primary"
+                            v-on:click="handler.handleSubmit"
+                            v-bind:disabled="state.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
+                        <i v-if="!state.isSubmitting" class="fas fa-save me-2"></i><span v-if="!state.isSubmitting">Save</span>
+                        <span v-else>Saving...</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
