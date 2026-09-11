@@ -165,6 +165,35 @@ const App = {
             return isValid;
         };
 
+        // Field refs in the same top-to-bottom order they appear in the Add/Edit Product modal,
+        // so that on a failed validation the user is taken to the *first* offending field rather
+        // than whichever one happens first in validateForm()'s own (unrelated) check order.
+        const errorFieldRefsInDomOrder = [
+            { key: 'name', ref: nameRef },
+            { key: 'unitPrice', ref: unitPriceRef },
+            { key: 'unitMeasureId', ref: unitMeasureIdRef },
+            { key: 'minSellingPrice', ref: minSellingPriceRef },
+            { key: 'maxSellingPrice', ref: maxSellingPriceRef },
+            { key: 'productGroupId', ref: productGroupIdRef },
+        ];
+
+        // Scrolls the modal to the first field that currently has a validation error and focuses
+        // it, so the user immediately sees what needs fixing instead of hunting for it themselves.
+        const scrollToFirstError = () => {
+            const firstInvalid = errorFieldRefsInDomOrder.find(f => state.errors[f.key]);
+            if (!firstInvalid || !firstInvalid.ref.value) {
+                return;
+            }
+
+            const el = firstInvalid.ref.value;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Plain <input>s can be focused directly; the productGroup/unitMeasure fields are
+            // Syncfusion dropdown wrapper <div>s, so focus their generated inner <input> instead.
+            const focusTarget = el.tagName === 'INPUT' ? el : el.querySelector('input');
+            focusTarget?.focus({ preventScroll: true });
+        };
+
         const resetFormState = () => {
             state.id = '';
             state.name = '';
@@ -1119,6 +1148,8 @@ const App = {
                     state.isSubmitting = true;
 
                     if (!validateForm()) {
+                        await Vue.nextTick();
+                        scrollToFirstError();
                         return;
                     }
 
