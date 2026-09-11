@@ -8,6 +8,31 @@
  * No colour / radius values outside that set. Spacing uses Bootstrap utility classes in the markup.
  */
 
+/*
+ * Bootstrap 5 spacing-utility polyfill, scoped to this stylesheet.
+ *
+ * The app's CSS stack is AdminLTE 3, which bundles Bootstrap 4 (adminlte.min.css defines
+ * .mr-2/.ml-2, never .me-2/.ms-2 — the logical-property names only exist from Bootstrap 5
+ * onward). The JS side already targets Bootstrap 5 (data-bs-* attributes, `new bootstrap.Modal`),
+ * and this markup follows that same BS5 convention (.me-*/.ms-*/.gap-*), but with no BS5 CSS
+ * loaded anywhere those classes silently compute to nothing — every icon+text pair and
+ * flex-gapped button group in this modal was rendering with zero space, not a small one.
+ * These rules are copied verbatim from Bootstrap 5's own values, so if real Bootstrap 5 CSS is
+ * ever loaded app-wide, this block becomes redundant rather than conflicting.
+ */
+.me-0 { margin-right: 0 !important; }
+.me-1 { margin-right: .25rem !important; }
+.me-2 { margin-right: .5rem !important; }
+.me-3 { margin-right: 1rem !important; }
+.ms-0 { margin-left: 0 !important; }
+.ms-1 { margin-left: .25rem !important; }
+.ms-2 { margin-left: .5rem !important; }
+.ms-3 { margin-left: 1rem !important; }
+.gap-0 { gap: 0 !important; }
+.gap-1 { gap: .25rem !important; }
+.gap-2 { gap: .5rem !important; }
+.gap-3 { gap: 1rem !important; }
+
 .pos-modal .modal-body {
     background: #f8f9fa;
 }
