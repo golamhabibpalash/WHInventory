@@ -1,0 +1,161 @@
+@page
+@{
+    ViewData["Title"] = "Ticket Details";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/ticket-shared.css" asp-append-version="true" />
+}
+
+<div id="app" v-cloak>
+    <div v-if="state.loadError" class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ state.loadError }}
+    </div>
+
+    <template v-else>
+        <div class="ticket-detail-header mb-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <div class="ticket-detail-number">{{ state.ticket.ticketNumber }}</div>
+                    <div class="ticket-detail-subject">{{ state.ticket.subject }}</div>
+                    <span class="ticket-status-badge" v-bind:class="'ticket-status-' + statusKey(state.ticket.status)">{{ statusLabel(state.ticket.status) }}</span>
+                    <span class="ticket-overdue-badge ms-2" v-if="isOverdue"><i class="fas fa-exclamation-circle"></i>Overdue</span>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" v-on:click="handler.goBack"><i class="fas fa-arrow-left me-1"></i>Back</button>
+                    <button type="button" class="btn btn-primary btn-sm" v-if="canResolve" v-on:click="handler.resolveTicket"><i class="fas fa-check-circle me-1"></i>Resolve</button>
+                    <button type="button" class="btn btn-success btn-sm" v-if="canClose" v-on:click="handler.closeTicket"><i class="fas fa-times-circle me-1"></i>Close</button>
+                    <button type="button" class="btn btn-warning btn-sm" v-if="canReopen" v-on:click="handler.reopenTicket"><i class="fas fa-undo me-1"></i>Reopen</button>
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="ticket-meta-item">
+                        <span class="ticket-meta-label">Category</span>
+                        <span class="ticket-meta-value" v-if="!state.ticket.currentUserIsAgent">{{ state.ticket.categoryName }}</span>
+                        <div ref="categoryRef" v-else></div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="ticket-meta-item">
+                        <span class="ticket-meta-label">Priority</span>
+                        <span class="ticket-meta-value" v-if="!state.ticket.currentUserIsAgent">{{ state.ticket.priorityName || '—' }}</span>
+                        <div ref="priorityRef" v-else></div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="ticket-meta-item">
+                        <span class="ticket-meta-label">Requester</span>
+                        <span class="ticket-meta-value">{{ state.ticket.requesterName || '—' }}</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="ticket-meta-item">
+                        <span class="ticket-meta-label">Assigned To</span>
+                        <span class="ticket-meta-value" v-if="!state.ticket.currentUserIsAgent">{{ state.ticket.assignedToName || 'Unassigned' }}</span>
+                        <div ref="assigneeRef" v-else></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-1" v-if="state.ticket.referenceModule">
+                <div class="col-12">
+                    <div class="ticket-meta-item">
+                        <span class="ticket-meta-label">Related Record</span>
+                        <span class="ticket-meta-value"><i class="fas fa-link me-1"></i>{{ state.ticket.referenceModule }} — {{ state.ticket.referenceEntityType }} #{{ state.ticket.referenceEntityId }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="card mb-3">
+                    <div class="card-header"><h5><i class="fas fa-align-left me-2 text-primary"></i>Description</h5></div>
+                    <div class="card-body"><p class="mb-0" style="white-space:pre-wrap;">{{ state.ticket.description }}</p></div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header"><h5><i class="fas fa-comments me-2 text-success"></i>Conversation</h5></div>
+                    <div class="card-body">
+                        <div v-if="!state.ticket.comments || state.ticket.comments.length === 0" class="text-muted small mb-3">No replies yet.</div>
+                        <div v-for="comment in state.ticket.comments" v-bind:key="comment.id"
+                             class="ticket-comment" v-bind:class="{ 'ticket-comment--internal': comment.isInternal }">
+                            <div class="ticket-comment-header">
+                                <span class="ticket-comment-author">{{ comment.authorName }}
+                                    <span class="ticket-internal-flag ms-1" v-if="comment.isInternal"><i class="fas fa-lock"></i>Internal Note</span>
+                                </span>
+                                <span class="ticket-comment-time">{{ formatDateTime(comment.createdAtUtc) }}</span>
+                            </div>
+                            <div class="ticket-comment-message">{{ comment.message }}</div>
+                        </div>
+
+                        <hr />
+
+                        <textarea v-model="state.newComment" class="form-control mb-2" rows="3"
+                                  v-bind:placeholder="state.isInternalNote ? 'Write an internal note (not visible to the requester)...' : 'Write a reply...'"></textarea>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="form-check" v-if="state.ticket.currentUserIsAgent">
+                                <input v-model="state.isInternalNote" id="IsInternalNote" type="checkbox" class="form-check-input">
+                                <label for="IsInternalNote" class="form-check-label">Internal note (agents only)</label>
+                            </div>
+                            <div v-else></div>
+                            <button type="button" class="btn btn-primary btn-sm" v-on:click="handler.addComment" v-bind:disabled="state.isSubmittingComment || !state.newComment">
+                                <span class="spinner-border spinner-border-sm me-1" v-if="state.isSubmittingComment"></span>
+                                <i class="fas fa-paper-plane me-1" v-else></i>{{ state.isInternalNote ? 'Add Internal Note' : 'Reply' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-paperclip me-2 text-info"></i>Attachments</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" v-on:click="handler.triggerAttachmentInput">
+                            <i class="fas fa-upload me-1"></i>Upload
+                        </button>
+                        <input ref="attachmentInputRef" type="file" style="display:none" v-on:change="handler.onAttachmentSelected">
+                    </div>
+                    <div class="card-body">
+                        <div v-if="state.attachments.length === 0" class="text-muted small">No attachments.</div>
+                        <div v-for="attachment in state.attachments" v-bind:key="attachment.id" class="ticket-attachment-chip">
+                            <i class="fas fa-file"></i>
+                            <a href="#" v-on:click.prevent="handler.downloadAttachment(attachment)">{{ attachment.originalName }}</a>
+                            <span class="text-muted">({{ formatFileSize(attachment.fileSize) }})</span>
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0" v-on:click="handler.deleteAttachment(attachment)" title="Remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card mb-3" v-if="state.ticket.currentUserIsAgent">
+                    <div class="card-header"><h5><i class="fas fa-hashtag me-2 text-secondary"></i>Tags</h5></div>
+                    <div class="card-body">
+                        <div ref="tagsRef"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5><i class="fas fa-history me-2 text-secondary"></i>History</h5></div>
+                    <div class="card-body">
+                        <div v-if="state.history.length === 0" class="text-muted small">No history yet.</div>
+                        <div v-for="entry in state.history" v-bind:key="entry.id" class="ticket-history-item">
+                            <div>{{ historyLabel(entry) }}</div>
+                            <div class="ticket-history-time">{{ entry.performedByName }} &middot; {{ formatDateTime(entry.createdAtUtc) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Tickets/TicketDetails.cshtml.js"></script>
+}

@@ -1,0 +1,73 @@
+@page
+@{
+    ViewData["Title"] = "All Tickets";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/ticket-shared.css" asp-append-version="true" />
+}
+
+<div id="app" v-cloak>
+    <div class="ticket-filter-bar">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="small text-muted">Status</label>
+                <div ref="statusRef"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="small text-muted">Priority</label>
+                <div ref="priorityRef"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="small text-muted">Category</label>
+                <div ref="categoryRef"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="small text-muted">Assigned To</label>
+                <div ref="assigneeRef"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="small text-muted">From</label>
+                <div ref="fromDateRef"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="small text-muted">To</label>
+                <div ref="toDateRef"></div>
+            </div>
+        </div>
+        <div class="row g-2 align-items-center mt-2">
+            <div class="col-md-6">
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-outline-secondary ticket-quick-filter" v-bind:class="{ active: state.quickFilter === 'unassigned' }" v-on:click="handler.toggleQuickFilter('unassigned')">
+                        <i class="fas fa-user-slash me-1"></i>Unassigned
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ticket-quick-filter" v-bind:class="{ active: state.quickFilter === 'myAssigned' }" v-on:click="handler.toggleQuickFilter('myAssigned')">
+                        <i class="fas fa-user me-1"></i>My Assigned
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ticket-quick-filter" v-bind:class="{ active: state.quickFilter === 'overdue' }" v-on:click="handler.toggleQuickFilter('overdue')">
+                        <i class="fas fa-exclamation-circle me-1"></i>Overdue
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ticket-quick-filter" v-bind:class="{ active: state.quickFilter === 'critical' }" v-on:click="handler.toggleQuickFilter('critical')">
+                        <i class="fas fa-fire me-1"></i>Critical
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <button type="button" class="btn btn-sm btn-primary" v-on:click="handler.search"><i class="fas fa-search me-1"></i>Search</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" v-on:click="handler.clearFilters"><i class="fas fa-times me-1"></i>Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/TicketAgent/TicketList.cshtml.js"></script>
+}

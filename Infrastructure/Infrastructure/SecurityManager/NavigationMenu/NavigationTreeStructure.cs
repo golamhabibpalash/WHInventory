@@ -334,6 +334,32 @@ public static class NavigationTreeStructure
         },
         {
             "URL": "#",
+            "Name": "Ticketing",
+            "Icon": "fas fa-ticket-alt",
+            "IsModule": true,
+            "Children": [
+                {
+                    "URL": "/Tickets/TicketList",
+                    "Name": "My Tickets",
+                    "Icon": "fas fa-inbox",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/TicketAgent/TicketDashboard",
+                    "Name": "Dashboard",
+                    "Icon": "fas fa-chart-pie",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/TicketAgent/TicketList",
+                    "Name": "All Tickets",
+                    "Icon": "fas fa-list-ul",
+                    "IsModule": false
+                }
+            ]
+        },
+        {
+            "URL": "#",
             "Name": "Settings",
             "Icon": "fas fa-cog",
             "IsModule": true,
@@ -360,6 +386,24 @@ public static class NavigationTreeStructure
                     "URL": "/QuickShortcuts/QuickShortcutList",
                     "Name": "Quick Shortcuts",
                     "Icon": "fas fa-thumbtack",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/TicketConfigurations/TicketCategoryList",
+                    "Name": "Ticket Categories",
+                    "Icon": "fas fa-tags",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/TicketConfigurations/TicketPriorityList",
+                    "Name": "Ticket Priorities",
+                    "Icon": "fas fa-layer-group",
+                    "IsModule": false
+                },
+                {
+                    "URL": "/TicketConfigurations/TicketTagList",
+                    "Name": "Ticket Tags",
+                    "Icon": "fas fa-hashtag",
                     "IsModule": false
                 }
             ]

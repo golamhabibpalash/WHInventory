@@ -80,6 +80,13 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<PaymentMethod> PaymentMethod { get; set; }
     public DbSet<Payment> Payment { get; set; }
     public DbSet<QuickShortcut> QuickShortcut { get; set; }
+    public DbSet<Ticket> Ticket { get; set; }
+    public DbSet<TicketComment> TicketComment { get; set; }
+    public DbSet<TicketHistory> TicketHistory { get; set; }
+    public DbSet<TicketCategory> TicketCategory { get; set; }
+    public DbSet<TicketPriority> TicketPriority { get; set; }
+    public DbSet<TicketTag> TicketTag { get; set; }
+    public DbSet<TicketTagMap> TicketTagMap { get; set; }
 
     /// <summary>
     /// Stamps the ambient tenant onto new rows. Lives on the base context so that every writer
@@ -182,6 +189,13 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new PaymentMethodConfiguration());
         modelBuilder.ApplyConfiguration(new PaymentConfiguration());
         modelBuilder.ApplyConfiguration(new QuickShortcutConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketCommentConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketHistoryConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketCategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketPriorityConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketTagConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketTagMapConfiguration());
 
         ApplyTenantFilters(modelBuilder);
     }

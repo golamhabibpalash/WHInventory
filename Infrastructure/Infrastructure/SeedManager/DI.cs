@@ -21,6 +21,8 @@ public static class DI
         services.AddScoped<SystemWarehouseSeeder>();
         services.AddScoped<PaymentMethodSeeder>();
         services.AddScoped<QuickShortcutSeeder>();
+        services.AddScoped<TicketCategorySeeder>();
+        services.AddScoped<TicketPrioritySeeder>();
 
         return services;
     }
@@ -73,6 +75,18 @@ public static class DI
         {
             var quickShortcutSeeder = serviceProvider.GetRequiredService<QuickShortcutSeeder>();
             quickShortcutSeeder.GenerateDataAsync().Wait();
+        }
+
+        // Same independent gate again, for the Ticketing module's own lookups.
+        if (!context.TicketCategory.Any())
+        {
+            var ticketCategorySeeder = serviceProvider.GetRequiredService<TicketCategorySeeder>();
+            ticketCategorySeeder.GenerateDataAsync().Wait();
+        }
+        if (!context.TicketPriority.Any())
+        {
+            var ticketPrioritySeeder = serviceProvider.GetRequiredService<TicketPrioritySeeder>();
+            ticketPrioritySeeder.GenerateDataAsync().Wait();
         }
 
         return host;

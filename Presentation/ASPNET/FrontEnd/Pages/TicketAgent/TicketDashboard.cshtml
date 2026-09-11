@@ -1,0 +1,100 @@
+@page
+@{
+    ViewData["Title"] = "Ticket Dashboard";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/ticket-shared.css" asp-append-version="true" />
+}
+
+<div id="app" v-cloak>
+    <h1 class="h4 mb-1">Ticket Dashboard</h1>
+    <p class="text-muted mb-3">Support workload at a glance</p>
+
+    <div class="row g-3">
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList" class="ticket-kpi-link">
+                <div class="ticket-kpi ticket-kpi--open">
+                    <div class="ticket-kpi-value">{{ state.data.total }}</div>
+                    <div class="ticket-kpi-label">Total Tickets</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?status=1" class="ticket-kpi-link">
+                <div class="ticket-kpi ticket-kpi--open">
+                    <div class="ticket-kpi-value">{{ state.data.open }}</div>
+                    <div class="ticket-kpi-label">Open</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?status=2" class="ticket-kpi-link">
+                <div class="ticket-kpi ticket-kpi--open">
+                    <div class="ticket-kpi-value">{{ state.data.inProgress }}</div>
+                    <div class="ticket-kpi-label">In Progress</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?status=3" class="ticket-kpi-link">
+                <div class="ticket-kpi ticket-kpi--pending">
+                    <div class="ticket-kpi-value">{{ state.data.pending }}</div>
+                    <div class="ticket-kpi-label">Pending</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?status=5" class="ticket-kpi-link">
+                <div class="ticket-kpi ticket-kpi--resolved">
+                    <div class="ticket-kpi-value">{{ state.data.resolved }}</div>
+                    <div class="ticket-kpi-label">Resolved</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?status=6" class="ticket-kpi-link">
+                <div class="ticket-kpi">
+                    <div class="ticket-kpi-value">{{ state.data.closed }}</div>
+                    <div class="ticket-kpi-label">Closed</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?overdue=true" class="ticket-kpi-link">
+                <div class="ticket-kpi ticket-kpi--overdue">
+                    <div class="ticket-kpi-value">{{ state.data.overdue }}</div>
+                    <div class="ticket-kpi-label">Overdue</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?critical=true" class="ticket-kpi-link">
+                <div class="ticket-kpi ticket-kpi--critical">
+                    <div class="ticket-kpi-value">{{ state.data.critical }}</div>
+                    <div class="ticket-kpi-label">Critical</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?unassigned=true" class="ticket-kpi-link">
+                <div class="ticket-kpi ticket-kpi--unassigned">
+                    <div class="ticket-kpi-value">{{ state.data.unassigned }}</div>
+                    <div class="ticket-kpi-label">Unassigned</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <a href="/TicketAgent/TicketList?myAssigned=true" class="ticket-kpi-link">
+                <div class="ticket-kpi">
+                    <div class="ticket-kpi-value">{{ state.data.myAssigned }}</div>
+                    <div class="ticket-kpi-label">My Assigned</div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/TicketAgent/TicketDashboard.cshtml.js"></script>
+}

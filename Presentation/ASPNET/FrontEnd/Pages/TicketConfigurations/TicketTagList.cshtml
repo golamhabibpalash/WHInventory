@@ -1,0 +1,48 @@
+@page
+@{
+    ViewData["Title"] = "Ticket Tag List";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="mainModalRef" id="MainModal" aria-hidden="true" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ state.mainTitle }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" v-model="state.id" id="Id" name="Id" />
+                    <label for="Name">Name</label>
+                    <input ref="nameRef" v-model="state.name" type="text" class="form-control" placeholder="e.g. urgent">
+                    <label class="text-danger">{{ state.errors.name }}</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                    <button type="button"
+                            id="MainSaveButton"
+                            class="btn"
+                            v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
+                            v-on:click="handler.handleSubmit"
+                            v-bind:disabled="state.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
+                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
+                        <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/TicketConfigurations/TicketTagList.cshtml.js"></script>
+}

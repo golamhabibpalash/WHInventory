@@ -1,0 +1,83 @@
+@page
+@{
+    ViewData["Title"] = "Ticket Category List";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="mainModalRef" id="MainModal" aria-hidden="true" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ state.mainTitle }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" v-model="state.id" id="Id" name="Id" />
+                    <form>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-tags me-2 text-primary"></i>Category Details</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-2">
+                                            <div class="col-md-8">
+                                                <label for="Name">Name</label>
+                                                <input ref="nameRef" v-model="state.name" type="text" class="form-control" placeholder="e.g. Inventory">
+                                                <label class="text-danger">{{ state.errors.name }}</label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="SortOrder">Sort Order</label>
+                                                <input v-model.number="state.sortOrder" type="number" class="form-control" placeholder="1">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12">
+                                                <label for="Description">Description</label>
+                                                <textarea v-model="state.description" class="form-control" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12">
+                                                <div class="form-check mt-1">
+                                                    <input v-model="state.isActive" id="IsActive" type="checkbox" class="form-check-input">
+                                                    <label for="IsActive" class="form-check-label">Active (shown when raising a ticket)</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                    <button type="button"
+                            id="MainSaveButton"
+                            class="btn"
+                            v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
+                            v-on:click="handler.handleSubmit"
+                            v-bind:disabled="state.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
+                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
+                        <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/TicketConfigurations/TicketCategoryList.cshtml.js"></script>
+}

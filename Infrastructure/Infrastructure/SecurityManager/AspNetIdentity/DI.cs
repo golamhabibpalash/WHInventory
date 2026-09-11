@@ -1,3 +1,4 @@
+using Application.Common.Services.CurrentUserManager;
 using Application.Common.Services.SecurityManager;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Microsoft.AspNetCore.Identity;
@@ -45,6 +46,7 @@ public static class DI
             .AddEntityFrameworkStores<DataContext>();
 
         services.AddScoped<ISecurityService, SecurityService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         return services;
     }

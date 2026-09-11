@@ -55,5 +55,12 @@ public interface IEntityDbSet
     DbSet<PaymentMethod> PaymentMethod { get; set; }
     DbSet<Payment> Payment { get; set; }
     DbSet<QuickShortcut> QuickShortcut { get; set; }
+    DbSet<Ticket> Ticket { get; set; }
+    DbSet<TicketComment> TicketComment { get; set; }
+    DbSet<TicketHistory> TicketHistory { get; set; }
+    DbSet<TicketCategory> TicketCategory { get; set; }
+    DbSet<TicketPriority> TicketPriority { get; set; }
+    DbSet<TicketTag> TicketTag { get; set; }
+    DbSet<TicketTagMap> TicketTagMap { get; set; }
 }
 

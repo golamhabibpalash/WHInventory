@@ -1,0 +1,104 @@
+@page
+@{
+    ViewData["Title"] = "My Tickets";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/ticket-shared.css" asp-append-version="true" />
+}
+
+<div id="app" v-cloak>
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6 col-xl-3">
+            <div class="ticket-kpi ticket-kpi--open">
+                <div class="ticket-kpi-value">{{ state.kpiCounts.open }}</div>
+                <div class="ticket-kpi-label">Open / In Progress</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ticket-kpi ticket-kpi--pending">
+                <div class="ticket-kpi-value">{{ state.kpiCounts.pending }}</div>
+                <div class="ticket-kpi-label">Pending</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ticket-kpi ticket-kpi--resolved">
+                <div class="ticket-kpi-value">{{ state.kpiCounts.resolved }}</div>
+                <div class="ticket-kpi-label">Resolved</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ticket-kpi ticket-kpi--overdue">
+                <div class="ticket-kpi-value">{{ state.kpiCounts.overdue }}</div>
+                <div class="ticket-kpi-label">Overdue</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Ticket Modal -->
+    <div class="modal fade" ref="mainModalRef" id="MainModal" aria-hidden="true" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-ticket-alt me-2"></i>Create Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                <label for="Subject">Subject <span class="text-danger">*</span></label>
+                                <input ref="subjectRef" v-model="state.subject" type="text" class="form-control" placeholder="Short summary of the problem">
+                                <label class="text-danger">{{ state.errors.subject }}</label>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <label for="Category">Category <span class="text-danger">*</span></label>
+                                <div ref="categoryRef"></div>
+                                <label class="text-danger">{{ state.errors.categoryId }}</label>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="Priority">Priority</label>
+                                <div ref="priorityRef"></div>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                <label for="Description">Description <span class="text-danger">*</span></label>
+                                <textarea v-model="state.description" class="form-control" rows="5" placeholder="What happened, what you expected, and any steps to reproduce."></textarea>
+                                <label class="text-danger">{{ state.errors.description }}</label>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                <label for="Attachment">Attachment <span class="text-muted small">(optional — you can add more after creating the ticket)</span></label>
+                                <input ref="attachmentInputRef" type="file" class="form-control" v-on:change="handler.onAttachmentSelected">
+                                <small class="text-muted" v-if="state.attachmentFile">{{ state.attachmentFile.name }}</small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                    <button type="button" class="btn btn-primary" v-on:click="handler.handleSubmit" v-bind:disabled="state.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
+                        <i class="fas fa-paper-plane me-2" v-else></i>{{ state.isSubmitting ? 'Submitting...' : 'Submit Ticket' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Tickets/TicketList.cshtml.js"></script>
+}
