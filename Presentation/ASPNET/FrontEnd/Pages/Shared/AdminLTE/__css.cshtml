@@ -164,6 +164,17 @@
         border-radius: 0px;
     }
 
+    /* Draggable modals (modal-drag-manager.js): header is the drag handle for every modal. */
+    .modal-header-draggable {
+        cursor: move;
+        touch-action: none;
+    }
+
+    .modal-header-draggable.modal-header-dragging {
+        cursor: grabbing;
+        user-select: none;
+    }
+
         .e-input-group.e-control-wrapper.e-disabled input.e-input {
             background: var(--light);
         }
