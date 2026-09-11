@@ -79,6 +79,11 @@ const App = {
             customerCategoryQuickDescription: '',
             customerCategoryQuickIsSubmitting: false,
             customerCategoryQuickErrors: { name: '' },
+            taxQuickName: '',
+            taxQuickPercentage: null,
+            taxQuickDescription: '',
+            taxQuickIsSubmitting: false,
+            taxQuickErrors: { name: '', percentage: '' },
             barcodeInput: ''
         });
 
@@ -94,6 +99,7 @@ const App = {
         const customerQuickModalRef = Vue.ref(null);
         const customerGroupQuickModalRef = Vue.ref(null);
         const customerCategoryQuickModalRef = Vue.ref(null);
+        const taxQuickModalRef = Vue.ref(null);
         const customerQuickGroupIdRef = Vue.ref(null);
         const customerQuickCategoryIdRef = Vue.ref(null);
         const barcodeScanRef = Vue.ref(null);
@@ -437,6 +443,14 @@ const App = {
             getProductByBarcode: async (barcode) => {
                 try {
                     const response = await AxiosManager.get('/Product/GetProductByBarcode', { params: { barcode } });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createTax: async (name, percentage, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/Tax/CreateTax', { name, percentage, description, createdById });
                     return response;
                 } catch (error) {
                     throw error;
@@ -793,6 +807,16 @@ const App = {
             obj: null,
             create: () => {
                 customerCategoryQuickModal.obj = new bootstrap.Modal(customerCategoryQuickModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
+        const taxQuickModal = {
+            obj: null,
+            create: () => {
+                taxQuickModal.obj = new bootstrap.Modal(taxQuickModalRef.value, {
                     backdrop: 'static',
                     keyboard: false
                 });
@@ -1305,6 +1329,7 @@ const App = {
                     customerQuickModal.create();
                     customerGroupQuickModal.create();
                     customerCategoryQuickModal.create();
+                    taxQuickModal.create();
                 });
             } catch (e) {
             } finally {
@@ -1332,6 +1357,7 @@ const App = {
             customerQuickModalRef,
             customerGroupQuickModalRef,
             customerCategoryQuickModalRef,
+            taxQuickModalRef,
             customerQuickGroupIdRef,
             customerQuickCategoryIdRef,
             barcodeScanRef,
@@ -1592,6 +1618,57 @@ const App = {
                         state.customerCategoryQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
                     } finally {
                         state.customerCategoryQuickIsSubmitting = false;
+                    }
+                },
+                openTaxQuickCreate: () => {
+                    state.taxQuickName = '';
+                    state.taxQuickPercentage = null;
+                    state.taxQuickDescription = '';
+                    state.taxQuickErrors = { name: '', percentage: '' };
+                    taxQuickModal.obj.show();
+                },
+                closeTaxQuickCreate: () => {
+                    taxQuickModal.obj.hide();
+                },
+                submitTaxQuickCreate: async () => {
+                    const errors = { name: '', percentage: '' };
+                    let isValid = true;
+                    if (!state.taxQuickName?.trim()) { errors.name = 'Name is required.'; isValid = false; }
+                    if (state.taxQuickPercentage === null || state.taxQuickPercentage === '' || isNaN(Number(state.taxQuickPercentage))) {
+                        errors.percentage = 'Percentage is required.';
+                        isValid = false;
+                    }
+                    state.taxQuickErrors = errors;
+                    if (!isValid) return;
+
+                    try {
+                        state.taxQuickIsSubmitting = true;
+                        const response = await services.createTax(
+                            state.taxQuickName.trim(),
+                            Number(state.taxQuickPercentage),
+                            state.taxQuickDescription,
+                            StorageManager.getUserId()
+                        );
+                        if (response.data.code === 200) {
+                            const newTax = response.data.content.data;
+                            await methods.populateTaxListLookupData();
+                            taxListLookup.obj.setProperties({ dataSource: state.taxListLookupData, value: newTax.id });
+                            state.taxId = newTax.id;
+                            taxQuickModal.obj.hide();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Tax Created',
+                                text: `"${newTax.name}" has been created and selected.`,
+                                timer: 1000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Create Failed', text: response.data.message ?? 'Please check your data.', confirmButtonText: 'Try Again' });
+                        }
+                    } catch (error) {
+                        Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                    } finally {
+                        state.taxQuickIsSubmitting = false;
                     }
                 },
                 handleBarcodeInput: async () => {
