@@ -1,0 +1,98 @@
+@page
+@{
+    ViewData["Title"] = "Quick Shortcut List";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/quick-shortcut-list-modal.css" asp-append-version="true" />
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <div>These entries control the icon dock pinned to the right edge of every page. Order is controlled by <strong>Sort Order</strong> (lowest first).</div>
+            </div>
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="mainModalRef" id="MainModal" aria-hidden="true" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ state.mainTitle }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" v-model="state.id" id="Id" name="Id" />
+                    <form>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-thumbtack me-2 text-primary"></i>Shortcut Details</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-2">
+                                            <div class="col-md-8">
+                                                <label for="Name">Name</label>
+                                                <input ref="nameRef" v-model="state.name" type="text" class="form-control" placeholder="e.g. Purchase Order" v-bind:disabled="state.deleteMode">
+                                                <label class="text-danger">{{ state.errors.name }}</label>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="SortOrder">Sort Order</label>
+                                                <input v-model.number="state.sortOrder" type="number" class="form-control" placeholder="1" v-bind:disabled="state.deleteMode">
+                                                <small class="text-muted">Lowest shows first.</small>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-md-8">
+                                                <label for="Icon">Icon</label>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="quick-shortcut-icon-preview">
+                                                        <i v-bind:class="state.icon || 'fas fa-question'"></i>
+                                                    </div>
+                                                    <input v-model="state.icon" type="text" class="form-control" placeholder="fas fa-file-invoice" v-bind:disabled="state.deleteMode">
+                                                </div>
+                                                <label class="text-danger">{{ state.errors.icon }}</label>
+                                                <small class="text-muted d-block mt-1">
+                                                    A <a href="https://fontawesome.com/v5/search?o=r&m=free&s=solid" target="_blank" rel="noopener">Font Awesome 5 solid</a> class, e.g. <code>fas fa-truck</code>.
+                                                </small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="Url">Link</label>
+                                                <input v-model="state.url" type="text" class="form-control" placeholder="/PurchaseOrders/PurchaseOrderList" v-bind:disabled="state.deleteMode">
+                                                <label class="text-danger">{{ state.errors.url }}</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                    <button type="button"
+                            id="MainSaveButton"
+                            class="btn"
+                            v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
+                            v-on:click="handler.handleSubmit"
+                            v-bind:disabled="state.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
+                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
+                        <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/QuickShortcuts/QuickShortcutList.cshtml.js"></script>
+}

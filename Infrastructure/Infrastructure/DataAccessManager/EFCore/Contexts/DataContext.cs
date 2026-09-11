@@ -79,6 +79,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<PriceHistory> PriceHistory { get; set; }
     public DbSet<PaymentMethod> PaymentMethod { get; set; }
     public DbSet<Payment> Payment { get; set; }
+    public DbSet<QuickShortcut> QuickShortcut { get; set; }
 
     /// <summary>
     /// Stamps the ambient tenant onto new rows. Lives on the base context so that every writer
@@ -180,6 +181,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new PriceHistoryConfiguration());
         modelBuilder.ApplyConfiguration(new PaymentMethodConfiguration());
         modelBuilder.ApplyConfiguration(new PaymentConfiguration());
+        modelBuilder.ApplyConfiguration(new QuickShortcutConfiguration());
 
         ApplyTenantFilters(modelBuilder);
     }

@@ -22,6 +22,7 @@ public class TenantProvisioningService : ITenantProvisioningService
     private readonly CompanySeeder _companySeeder;
     private readonly SystemWarehouseSeeder _systemWarehouseSeeder;
     private readonly PaymentMethodSeeder _paymentMethodSeeder;
+    private readonly QuickShortcutSeeder _quickShortcutSeeder;
     private readonly IEmailService _emailService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<TenantProvisioningService> _logger;
@@ -33,6 +34,7 @@ public class TenantProvisioningService : ITenantProvisioningService
         CompanySeeder companySeeder,
         SystemWarehouseSeeder systemWarehouseSeeder,
         PaymentMethodSeeder paymentMethodSeeder,
+        QuickShortcutSeeder quickShortcutSeeder,
         IEmailService emailService,
         IHttpContextAccessor httpContextAccessor,
         ILogger<TenantProvisioningService> logger,
@@ -44,6 +46,7 @@ public class TenantProvisioningService : ITenantProvisioningService
         _companySeeder = companySeeder;
         _systemWarehouseSeeder = systemWarehouseSeeder;
         _paymentMethodSeeder = paymentMethodSeeder;
+        _quickShortcutSeeder = quickShortcutSeeder;
         _emailService = emailService;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
@@ -94,6 +97,7 @@ public class TenantProvisioningService : ITenantProvisioningService
             await _companySeeder.GenerateDataAsync(request.CompanyName);
             await _systemWarehouseSeeder.GenerateDataAsync();
             await _paymentMethodSeeder.GenerateDataAsync();
+            await _quickShortcutSeeder.GenerateDataAsync();
 
             await CreateAdministratorAsync(request);
         }

@@ -355,6 +355,12 @@ public static class NavigationTreeStructure
                     "Name": "Number Sequence",
                     "Icon": "fas fa-sort-numeric-up",
                     "IsModule": false
+                },
+                {
+                    "URL": "/QuickShortcuts/QuickShortcutList",
+                    "Name": "Quick Shortcuts",
+                    "Icon": "fas fa-thumbtack",
+                    "IsModule": false
                 }
             ]
         },

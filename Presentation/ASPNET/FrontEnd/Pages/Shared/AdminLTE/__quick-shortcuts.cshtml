@@ -1,57 +1,59 @@
 @*
-    Quick-access shortcut dock: a fixed vertical rail on the right edge, vertically centered,
-    linking straight to the four order list pages. Icon-only at rest; hovering (or focusing, for
-    keyboard users) reveals the full name. Each item carries the same permission-role name the
-    target page itself checks via SecurityManager.authorizePage, so the script below can hide any
-    shortcut the signed-in user isn't authorized to open — mirrors __sidebar.cshtml's own
-    role-filtering so this never offers a link that would just 403.
+    Quick-access shortcut dock: a fixed vertical rail on the right edge, vertically centered.
+    Icon-only at rest; hovering (or focusing, for keyboard users) reveals the full name. The set
+    of shortcuts is admin-configurable from Settings > Quick Shortcuts (QuickShortcutController /
+    FrontEnd/Pages/QuickShortcuts/QuickShortcutList.cshtml) rather than hardcoded here, so this
+    partial only renders a container and fetches+builds the actual items in script. Each target
+    page still runs its own SecurityManager.authorizePage check on navigation, so a shortcut
+    pointed at a page the viewer can't open simply redirects them there rather than being a
+    security gap — this dock is a convenience list, not an access-control surface.
 *@
-<div class="quick-shortcuts" id="QuickShortcuts" aria-label="Quick access shortcuts">
-    <a asp-area="" asp-page="/PurchaseOrders/PurchaseOrderList" class="quick-shortcut-item" data-role="PurchaseOrders">
-        <span class="quick-shortcut-icon"><i class="fas fa-file-invoice"></i></span>
-        <span class="quick-shortcut-label">Purchase Order</span>
-    </a>
-    <a asp-area="" asp-page="/SalesOrders/SalesOrderList" class="quick-shortcut-item" data-role="SalesOrders">
-        <span class="quick-shortcut-icon"><i class="fas fa-cash-register"></i></span>
-        <span class="quick-shortcut-label">Sales Order</span>
-    </a>
-    <a asp-area="" asp-page="/DeliveryOrders/DeliveryOrderList" class="quick-shortcut-item" data-role="DeliveryOrders">
-        <span class="quick-shortcut-icon"><i class="fas fa-truck"></i></span>
-        <span class="quick-shortcut-label">Delivery Order</span>
-    </a>
-    <a asp-area="" asp-page="/GoodsReceives/GoodsReceiveList" class="quick-shortcut-item" data-role="GoodsReceives">
-        <span class="quick-shortcut-icon"><i class="fas fa-dolly-flatbed"></i></span>
-        <span class="quick-shortcut-label">Goods Receive</span>
-    </a>
-</div>
+<div class="quick-shortcuts" id="QuickShortcuts" aria-label="Quick access shortcuts"></div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
         try {
             const dock = document.getElementById('QuickShortcuts');
             if (!dock) return;
 
-            const userRoles = StorageManager.getUserRoles() || [];
-            dock.querySelectorAll('.quick-shortcut-item').forEach(function (item) {
-                const role = item.getAttribute('data-role');
-                const allowed = userRoles.some(function (r) { return r.toLowerCase() === role.toLowerCase(); });
-                if (!allowed) item.remove();
-            });
+            const response = await AxiosManager.get('/QuickShortcut/GetQuickShortcutList', {});
+            const shortcuts = response?.data?.content?.data ?? [];
 
-            if (!dock.querySelector('.quick-shortcut-item')) {
+            if (!shortcuts.length) {
                 dock.remove();
                 return;
             }
 
-            // Mark the shortcut for the module the user is currently viewing.
             const firstSegment = (window.location.pathname.split('/')[1] || '').toLowerCase();
-            dock.querySelectorAll('.quick-shortcut-item').forEach(function (item) {
-                if (item.getAttribute('data-role').toLowerCase() === firstSegment) {
+
+            shortcuts.forEach(function (shortcut) {
+                if (!shortcut.url || !shortcut.name) return;
+
+                const item = document.createElement('a');
+                item.className = 'quick-shortcut-item';
+                item.href = shortcut.url;
+
+                const targetSegment = (shortcut.url.split('/')[1] || '').toLowerCase();
+                if (targetSegment && targetSegment === firstSegment) {
                     item.classList.add('quick-shortcut-active');
                 }
+
+                const icon = document.createElement('span');
+                icon.className = 'quick-shortcut-icon';
+                const iconTag = document.createElement('i');
+                iconTag.className = shortcut.icon || 'fas fa-link';
+                icon.appendChild(iconTag);
+
+                const label = document.createElement('span');
+                label.className = 'quick-shortcut-label';
+                label.textContent = shortcut.name;
+
+                item.appendChild(icon);
+                item.appendChild(label);
+                dock.appendChild(item);
             });
         } catch (error) {
-            console.error('Error initializing quick shortcuts:', error);
+            console.error('Error loading quick shortcuts:', error);
         }
     });
 </script>

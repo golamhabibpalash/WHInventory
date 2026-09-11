@@ -20,6 +20,7 @@ public static class DI
         services.AddScoped<CompanySeeder>();
         services.AddScoped<SystemWarehouseSeeder>();
         services.AddScoped<PaymentMethodSeeder>();
+        services.AddScoped<QuickShortcutSeeder>();
 
         return services;
     }
@@ -63,6 +64,15 @@ public static class DI
         {
             var paymentMethodSeeder = serviceProvider.GetRequiredService<PaymentMethodSeeder>();
             paymentMethodSeeder.GenerateDataAsync().Wait();
+        }
+
+        // Same independent gate as PaymentMethod above, for the same reason: an installation that
+        // predates the quick-shortcut dock already has a Company and would otherwise never get
+        // the default shortcuts seeded.
+        if (!context.QuickShortcut.Any())
+        {
+            var quickShortcutSeeder = serviceProvider.GetRequiredService<QuickShortcutSeeder>();
+            quickShortcutSeeder.GenerateDataAsync().Wait();
         }
 
         return host;

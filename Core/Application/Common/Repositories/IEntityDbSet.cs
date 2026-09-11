@@ -54,5 +54,6 @@ public interface IEntityDbSet
     DbSet<PriceHistory> PriceHistory { get; set; }
     DbSet<PaymentMethod> PaymentMethod { get; set; }
     DbSet<Payment> Payment { get; set; }
+    DbSet<QuickShortcut> QuickShortcut { get; set; }
 }
 

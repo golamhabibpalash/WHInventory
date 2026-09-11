@@ -1,0 +1,25 @@
+/*
+ * Styles for /QuickShortcuts/QuickShortcutList: the Add/Edit Shortcut modal.
+ */
+
+/* Bootstrap 5 spacing-utility polyfill — same rationale as pos-order-modal.css and
+ * product-list-modal.css: the app's CSS stack is Bootstrap 4 (AdminLTE), which never defines
+ * .me-*/.gap-* (those are Bootstrap-5-only names), so without this they silently compute to
+ * zero margin/gap.
+ */
+.me-2 { margin-right: .5rem !important; }
+.gap-2 { gap: .5rem !important; }
+
+.quick-shortcut-icon-preview {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: var(--primary);
+    background: #f0f7ff;
+    border: 1px solid #dee2e6;
+    border-radius: .25rem;
+}
