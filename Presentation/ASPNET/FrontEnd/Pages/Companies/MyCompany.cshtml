@@ -3,6 +3,10 @@
     ViewData["Title"] = "My Company";
 }
 
+@section styles {
+    <link rel="stylesheet" href="~/css/mycompany-modal.css" asp-append-version="true" />
+}
+
 <div id="app" v-cloak>
     <div class="row">
         <div class="col-12">
@@ -24,14 +28,9 @@
                     <div class="row g-3">
                         <div class="col-md-5 text-center">
                             <p class="text-muted mb-2 fw-semibold">Current Logo</p>
-                            <img v-if="state.logoSrc"
-                                 :src="state.logoSrc"
-                                 alt="Company Logo"
-                                 style="max-height:160px; max-width:100%; object-fit:contain; border:1px solid #dee2e6; border-radius:6px; padding:8px;" />
-                            <div v-else
-                                 class="text-muted border rounded d-flex align-items-center justify-content-center"
-                                 style="height:160px;">
-                                <div>
+                            <div class="company-logo-frame">
+                                <img v-if="state.logoSrc" v-bind:src="state.logoSrc" alt="Company Logo" />
+                                <div v-else class="company-logo-placeholder">
                                     <i class="fas fa-building fa-3x mb-2 d-block"></i>
                                     <small>No logo uploaded</small>
                                 </div>
@@ -43,12 +42,12 @@
                                  v-on:dragover.prevent="handler.onLogoDragOver"
                                  v-on:dragleave="handler.onLogoDragLeave"
                                  v-on:drop.prevent="handler.onLogoDrop"
-                                 class="border rounded text-center p-3"
-                                 style="cursor:pointer; min-height:130px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-style:dashed !important; transition:background-color .15s;">
+                                 class="company-logo-dropzone"
+                                 v-bind:class="{ 'company-logo-dropzone-active': state.isLogoDragActive }">
                                 <template v-if="state.previewSrc">
-                                    <img :src="state.previewSrc" alt="Preview"
-                                         style="max-height:90px; max-width:100%; object-fit:contain; margin-bottom:6px;" />
+                                    <img v-bind:src="state.previewSrc" alt="Preview" />
                                     <small class="text-success">{{ state.selectedFileName }}</small>
+                                    <small class="text-muted" v-if="state.selectedFileDimensions">{{ state.selectedFileDimensions }}</small>
                                 </template>
                                 <template v-else>
                                     <i class="fas fa-cloud-upload-alt fa-2x text-info mb-2"></i>
@@ -56,6 +55,10 @@
                                     <small class="text-muted">PNG, JPG, GIF up to 5 MB</small>
                                 </template>
                             </div>
+                            <small class="company-logo-hint d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>Preferred resolution: <strong>300 &times; 90px</strong>
+                                (wide, transparent PNG) &mdash; it's displayed at 110 &times; 32px in the sidebar.
+                            </small>
                             <input ref="logoFileInputRef"
                                    type="file"
                                    accept="image/*"

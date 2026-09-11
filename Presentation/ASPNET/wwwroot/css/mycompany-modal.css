@@ -1,0 +1,79 @@
+/*
+ * Styles for /Companies/MyCompany: the Change Logo modal and the Company Details modal.
+ */
+
+/*
+ * Bootstrap 5 spacing-utility polyfill, scoped to this stylesheet.
+ *
+ * The app's CSS stack is AdminLTE 3, which bundles Bootstrap 4 (adminlte.min.css defines
+ * .mr-2/.ml-2, never .me-2/.ms-2 — the logical-property names only exist from Bootstrap 5
+ * onward). This page's markup uses the BS5 names, which otherwise silently compute to zero
+ * margin/gap — every icon+text pair and button group here was rendering with no space at all.
+ * Same fix as wwwroot/css/pos-order-modal.css and product-list-modal.css; copied verbatim from
+ * Bootstrap 5's own values, so it's redundant rather than conflicting if real Bootstrap 5 CSS is
+ * ever loaded app-wide.
+ */
+.me-0 { margin-right: 0 !important; }
+.me-1 { margin-right: .25rem !important; }
+.me-2 { margin-right: .5rem !important; }
+.me-3 { margin-right: 1rem !important; }
+.ms-0 { margin-left: 0 !important; }
+.ms-1 { margin-left: .25rem !important; }
+.ms-2 { margin-left: .5rem !important; }
+.ms-3 { margin-left: 1rem !important; }
+.gap-0 { gap: 0 !important; }
+.gap-1 { gap: .25rem !important; }
+.gap-2 { gap: .5rem !important; }
+.gap-3 { gap: 1rem !important; }
+
+/* ── Change Logo modal ───────────────────────────────────────────────── */
+
+.company-logo-frame {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: .5rem;
+    padding: .5rem;
+    box-shadow: 0 10px 25px -12px rgba(15, 23, 42, .15);
+}
+
+.company-logo-frame img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.company-logo-placeholder {
+    color: #adb5bd;
+}
+
+.company-logo-dropzone {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem;
+    border: 2px dashed #ced4da;
+    border-radius: .5rem;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+.company-logo-dropzone:hover,
+.company-logo-dropzone.company-logo-dropzone-active {
+    background: #f0f7ff;
+    border-color: #1b84ff;
+}
+
+.company-logo-dropzone img {
+    max-height: 90px;
+    max-width: 100%;
+    object-fit: contain;
+    margin-bottom: .5rem;
+}

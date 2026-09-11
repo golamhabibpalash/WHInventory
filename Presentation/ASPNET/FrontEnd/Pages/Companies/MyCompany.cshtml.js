@@ -22,7 +22,9 @@ const App = {
             logoSrc: '',
             previewSrc: '',
             selectedFileName: '',
+            selectedFileDimensions: '',
             isUploading: false,
+            isLogoDragActive: false,
             errors: {
                 name: '',
                 currency: '',
@@ -679,19 +681,16 @@ const App = {
                 }
             },
 
-            onLogoDragOver: (e) => {
-                e.currentTarget.style.backgroundColor = '#f0f7ff';
-                e.currentTarget.style.borderColor = '#0d6efd';
+            onLogoDragOver: () => {
+                state.isLogoDragActive = true;
             },
 
-            onLogoDragLeave: (e) => {
-                e.currentTarget.style.backgroundColor = '';
-                e.currentTarget.style.borderColor = '';
+            onLogoDragLeave: () => {
+                state.isLogoDragActive = false;
             },
 
             onLogoDrop: (e) => {
-                e.currentTarget.style.backgroundColor = '';
-                e.currentTarget.style.borderColor = '';
+                state.isLogoDragActive = false;
                 const file = e.dataTransfer.files[0];
                 if (file) handler.handleLogoFile(file);
             },
@@ -712,7 +711,19 @@ const App = {
                 }
                 state.previewSrc = URL.createObjectURL(file);
                 state.selectedFileName = file.name;
+                state.selectedFileDimensions = '';
                 selectedLogoFile = file;
+
+                // Read the actual pixel size so it can be shown next to the recommended size —
+                // a separate Image() rather than the preview <img>'s own load event, since that
+                // element may not exist yet this same tick (it's behind a v-if).
+                const probe = new Image();
+                probe.onload = () => {
+                    if (selectedLogoFile === file) {
+                        state.selectedFileDimensions = `${probe.naturalWidth} × ${probe.naturalHeight}px`;
+                    }
+                };
+                probe.src = state.previewSrc;
             },
 
             clearLogoSelection: () => {
@@ -721,6 +732,7 @@ const App = {
                 }
                 state.previewSrc = '';
                 state.selectedFileName = '';
+                state.selectedFileDimensions = '';
                 selectedLogoFile = null;
             },
 
