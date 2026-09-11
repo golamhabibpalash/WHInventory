@@ -122,18 +122,6 @@
     </div>
 </div>
 
-<script type="text/x-template" id="deliveryStatusTemplate">
-    # if(data.deliveryStatus === 'Complete') { #
-    <span class="badge badge-success bg-success">#:= data.deliveryStatus #</span>
-    # } else if(data.deliveryStatus === 'Partial') { #
-    <span class="badge badge-warning bg-warning text-dark">#:= data.deliveryStatus #</span>
-    # } else if(data.deliveryStatus === 'Not Started') { #
-    <span class="badge badge-secondary bg-secondary">#:= data.deliveryStatus #</span>
-    # } else { #
-    <span class="badge badge-light bg-light text-muted">#:= data.deliveryStatus #</span>
-    # } #
-</script>
-
 @section scripts {
     <script src="~/FrontEnd/Pages/DeliveryOrders/DeliveryOrderList.cshtml.js"></script>
 }

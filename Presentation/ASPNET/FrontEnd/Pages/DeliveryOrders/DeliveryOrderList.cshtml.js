@@ -490,7 +490,7 @@ const App = {
                         { field: 'totalDeliveredQty', headerText: 'Delivered Qty', width: 120, format: 'N2', textAlign: 'Right', type: 'number' },
                         {
                             field: 'deliveryStatus', headerText: 'Delivery Status', width: 130, minWidth: 130,
-                            template: '#deliveryStatusTemplate'
+                            template: '<span class="badge" style="font-size:.75rem;font-weight:600;" v-bind:class="{"bg-success": data.deliveryStatus === "Complete", "bg-warning text-dark": data.deliveryStatus === "Partial", "bg-secondary": data.deliveryStatus === "Not Started" || data.deliveryStatus === "N/A"}">${deliveryStatus}</span>'
                         },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
