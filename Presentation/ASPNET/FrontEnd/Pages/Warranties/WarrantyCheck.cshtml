@@ -58,7 +58,7 @@
                                     v-on:click="handler.search"
                                     v-bind:disabled="state.isSearching">
                                 <span class="spinner-border spinner-border-sm me-1" v-if="state.isSearching"></span>
-                                <i class="fas fa-search me-1" v-else></i>
+                                <i class="fas fa-search me-2" v-else></i>
                                 {{ state.isSearching ? 'Searching...' : 'Search' }}
                             </button>
                             <button type="button"

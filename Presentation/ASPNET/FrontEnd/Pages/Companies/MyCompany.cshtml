@@ -64,13 +64,13 @@
                             <div class="mt-2 d-flex justify-content-end gap-2" v-if="state.previewSrc">
                                 <button type="button" class="btn btn-sm btn-outline-secondary"
                                         v-on:click.stop="handler.clearLogoSelection">
-                                    <i class="fas fa-times me-1"></i>Clear
+                                    <i class="fas fa-times me-2"></i>Clear
                                 </button>
                                 <button type="button" class="btn btn-sm btn-primary"
                                         v-on:click.stop="handler.uploadLogo"
                                         v-bind:disabled="state.isUploading">
                                     <span class="spinner-border spinner-border-sm me-1" v-if="state.isUploading"></span>
-                                    <i class="fas fa-upload me-1" v-else></i>
+                                    <i class="fas fa-upload me-2" v-else></i>
                                     {{ state.isUploading ? 'Uploading...' : 'Upload Logo' }}
                                 </button>
                             </div>
@@ -78,7 +78,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
                 </div>
             </div>
         </div>
@@ -218,7 +218,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
                     <button type="button"
                             id="MainSaveButton"
                             class="btn"

@@ -122,11 +122,11 @@
                                     <div class="small mb-3" v-if="state.productHint.name">
                                         <span v-if="state.productHint.physical"
                                               v-bind:class="posStockExceeded ? 'text-danger fw-semibold' : 'text-muted'">
-                                            <i class="fas fa-warehouse me-1"></i>Available: {{ handler.formatQty(state.productHint.stock) }}
+                                            <i class="fas fa-warehouse me-2"></i>Available: {{ handler.formatQty(state.productHint.stock) }}
                                         </span>
-                                        <span v-else class="text-muted"><i class="fas fa-infinity me-1"></i>Non-stock item</span>
+                                        <span v-else class="text-muted"><i class="fas fa-infinity me-2"></i>Non-stock item</span>
                                         <span v-if="posPriceOutOfBand" class="text-danger ms-2">
-                                            <i class="fas fa-tag me-1"></i>Price outside {{ handler.formatAmount(state.productHint.minPrice || 0) }} &ndash; {{ handler.formatAmount(state.productHint.maxPrice || 0) }}
+                                            <i class="fas fa-tag me-2"></i>Price outside {{ handler.formatAmount(state.productHint.minPrice || 0) }} &ndash; {{ handler.formatAmount(state.productHint.maxPrice || 0) }}
                                         </span>
                                     </div>
                                     <div class="d-flex gap-2">
@@ -134,7 +134,7 @@
                                                 v-on:click="handler.addLineToCart"
                                                 v-bind:disabled="state.isAddingLine">
                                             <span class="spinner-border spinner-border-sm me-2" v-if="state.isAddingLine" role="status" aria-hidden="true"></span>
-                                            <i class="fas fa-cart-plus me-1" v-else></i>Add to Cart
+                                            <i class="fas fa-cart-plus me-2" v-else></i>Add to Cart
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary" v-on:click="handler.clearProductPick">Clear</button>
                                     </div>
@@ -320,7 +320,7 @@
                                                     v-on:click="handler.submitPayment"
                                                     v-bind:disabled="state.isPaymentSubmitting || state.isFullySettled">
                                                 <span class="spinner-border spinner-border-sm me-1" v-if="state.isPaymentSubmitting" role="status" aria-hidden="true"></span>
-                                                <i class="fas fa-plus me-1" v-else></i>Record Payment
+                                                <i class="fas fa-plus me-2" v-else></i>Record Payment
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-secondary"
                                                     v-on:click="handler.payFullBalance"
@@ -338,7 +338,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
                     <button type="button"
                             id="MainSaveButton"
                             class="btn"
@@ -363,7 +363,7 @@
                     <button type="button" class="btn-close" v-on:click="handler.closeCustomerQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new customer will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new customer will be automatically selected after creation.</p>
                     <div class="card mb-3">
                         <div class="card-header"><h6 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Basic Info</h6></div>
                         <div class="card-body">
@@ -387,7 +387,7 @@
                                                 class="btn btn-sm btn-outline-success flex-shrink-0"
                                                 v-on:click="handler.openCustomerGroupQuickCreate"
                                                 title="Quick-create a new customer group">
-                                            <i class="fas fa-plus me-1"></i>New
+                                            <i class="fas fa-plus me-2"></i>New
                                         </button>
                                     </div>
                                     <span class="text-danger small">{{ state.customerQuickErrors.customerGroupId }}</span>
@@ -400,7 +400,7 @@
                                                 class="btn btn-sm btn-outline-warning flex-shrink-0"
                                                 v-on:click="handler.openCustomerCategoryQuickCreate"
                                                 title="Quick-create a new customer category">
-                                            <i class="fas fa-plus me-1"></i>New
+                                            <i class="fas fa-plus me-2"></i>New
                                         </button>
                                     </div>
                                     <span class="text-danger small">{{ state.customerQuickErrors.customerCategoryId }}</span>
@@ -462,10 +462,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerQuickCreate"><i class="fas fa-times me-2"></i>Cancel</button>
                     <button type="button" class="btn btn-primary" v-on:click="handler.submitCustomerQuickCreate" v-bind:disabled="state.customerQuickIsSubmitting">
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.customerQuickIsSubmitting"></span>
-                        <i class="fas fa-user-plus me-1" v-else></i>
+                        <i class="fas fa-user-plus me-2" v-else></i>
                         {{ state.customerQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
@@ -482,7 +482,7 @@
                     <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeCustomerGroupQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new group will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new group will be automatically selected after creation.</p>
                     <div class="row mb-2">
                         <div class="col-md-12">
                             <label>Name <span class="text-danger">*</span></label>
@@ -498,10 +498,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerGroupQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerGroupQuickCreate"><i class="fas fa-times me-2"></i>Cancel</button>
                     <button type="button" class="btn btn-success" v-on:click="handler.submitCustomerGroupQuickCreate" v-bind:disabled="state.customerGroupQuickIsSubmitting">
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.customerGroupQuickIsSubmitting"></span>
-                        <i class="fas fa-users me-1" v-else></i>
+                        <i class="fas fa-users me-2" v-else></i>
                         {{ state.customerGroupQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
@@ -518,7 +518,7 @@
                     <button type="button" class="btn-close" v-on:click="handler.closeCustomerCategoryQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new category will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new category will be automatically selected after creation.</p>
                     <div class="row mb-2">
                         <div class="col-md-12">
                             <label>Name <span class="text-danger">*</span></label>
@@ -534,10 +534,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerCategoryQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerCategoryQuickCreate"><i class="fas fa-times me-2"></i>Cancel</button>
                     <button type="button" class="btn btn-warning text-dark" v-on:click="handler.submitCustomerCategoryQuickCreate" v-bind:disabled="state.customerCategoryQuickIsSubmitting">
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.customerCategoryQuickIsSubmitting"></span>
-                        <i class="fas fa-tag me-1" v-else></i>
+                        <i class="fas fa-tag me-2" v-else></i>
                         {{ state.customerCategoryQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
@@ -554,7 +554,7 @@
                     <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeTaxQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new tax will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new tax will be automatically selected after creation.</p>
                     <div class="row mb-2">
                         <div class="col-md-8">
                             <label>Name <span class="text-danger">*</span></label>
@@ -576,13 +576,13 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" v-on:click="handler.closeTaxQuickCreate">
-                        <i class="fas fa-times me-1"></i>Cancel
+                        <i class="fas fa-times me-2"></i>Cancel
                     </button>
                     <button type="button" class="btn btn-primary"
                             v-on:click="handler.submitTaxQuickCreate"
                             v-bind:disabled="state.taxQuickIsSubmitting">
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.taxQuickIsSubmitting"></span>
-                        <i class="fas fa-percent me-1" v-else></i>
+                        <i class="fas fa-percent me-2" v-else></i>
                         {{ state.taxQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>

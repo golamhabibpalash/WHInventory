@@ -9,7 +9,7 @@
 
         <div v-if="state.done">
             <div class="alert alert-success">
-                <h6 class="fw-bold"><i class="fas fa-check-circle me-1"></i>{{ state.result.name }} is ready</h6>
+                <h6 class="fw-bold"><i class="fas fa-check-circle me-2"></i>{{ state.result.name }} is ready</h6>
                 <p class="mb-1 small">Your workspace address is <strong>{{ state.result.slug }}</strong>.</p>
                 <p class="mb-0 small" v-if="state.result.emailConfirmationRequired">
                     Confirm <strong>{{ state.result.adminEmail }}</strong> using the link we emailed you, then sign in.

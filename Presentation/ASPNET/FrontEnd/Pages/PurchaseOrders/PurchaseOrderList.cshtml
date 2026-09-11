@@ -124,14 +124,14 @@
                                         </div>
                                     </div>
                                     <div class="small text-muted mb-3" v-if="state.productHint.name">
-                                        <i class="fas fa-hashtag me-1"></i>{{ state.productHint.number || '—' }}
+                                        <i class="fas fa-hashtag me-2"></i>{{ state.productHint.number || '—' }}
                                     </div>
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn btn-primary flex-grow-1"
                                                 v-on:click="handler.addLineToCart"
                                                 v-bind:disabled="state.isAddingLine">
                                             <span class="spinner-border spinner-border-sm me-2" v-if="state.isAddingLine" role="status" aria-hidden="true"></span>
-                                            <i class="fas fa-cart-plus me-1" v-else></i>Add to Cart
+                                            <i class="fas fa-cart-plus me-2" v-else></i>Add to Cart
                                         </button>
                                         <button type="button" class="btn btn-outline-secondary" v-on:click="handler.clearProductPick">Clear</button>
                                     </div>
@@ -229,7 +229,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
                     <button type="button"
                             id="MainSaveButton"
                             class="btn"
@@ -254,7 +254,7 @@
                     <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeVendorGroupQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new group will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new group will be automatically selected after creation.</p>
                     <div class="row mb-2">
                         <div class="col-md-12">
                             <label>Name <span class="text-danger">*</span></label>
@@ -270,10 +270,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeVendorGroupQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeVendorGroupQuickCreate"><i class="fas fa-times me-2"></i>Cancel</button>
                     <button type="button" class="btn btn-success" v-on:click="handler.submitVendorGroupQuickCreate" v-bind:disabled="state.vendorGroupQuickIsSubmitting">
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.vendorGroupQuickIsSubmitting"></span>
-                        <i class="fas fa-layer-group me-1" v-else></i>
+                        <i class="fas fa-layer-group me-2" v-else></i>
                         {{ state.vendorGroupQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
@@ -290,7 +290,7 @@
                     <button type="button" class="btn-close" v-on:click="handler.closeVendorCategoryQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new category will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new category will be automatically selected after creation.</p>
                     <div class="row mb-2">
                         <div class="col-md-12">
                             <label>Name <span class="text-danger">*</span></label>
@@ -306,10 +306,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeVendorCategoryQuickCreate"><i class="fas fa-times me-1"></i>Cancel</button>
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeVendorCategoryQuickCreate"><i class="fas fa-times me-2"></i>Cancel</button>
                     <button type="button" class="btn btn-warning text-dark" v-on:click="handler.submitVendorCategoryQuickCreate" v-bind:disabled="state.vendorCategoryQuickIsSubmitting">
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.vendorCategoryQuickIsSubmitting"></span>
-                        <i class="fas fa-tag me-1" v-else></i>
+                        <i class="fas fa-tag me-2" v-else></i>
                         {{ state.vendorCategoryQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
@@ -326,7 +326,7 @@
                     <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeVendorQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new vendor will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new vendor will be automatically selected after creation.</p>
                     <div class="row mb-2">
                         <div class="col-md-8">
                             <label>Name <span class="text-danger">*</span></label>
@@ -347,7 +347,7 @@
                                         class="btn btn-sm btn-outline-success flex-shrink-0"
                                         v-on:click="handler.openVendorGroupQuickCreate"
                                         title="Quick-create a new vendor group">
-                                    <i class="fas fa-plus me-1"></i>New
+                                    <i class="fas fa-plus me-2"></i>New
                                 </button>
                             </div>
                             <span class="text-danger small">{{ state.vendorQuickErrors.vendorGroupId }}</span>
@@ -360,7 +360,7 @@
                                         class="btn btn-sm btn-outline-warning flex-shrink-0"
                                         v-on:click="handler.openVendorCategoryQuickCreate"
                                         title="Quick-create a new vendor category">
-                                    <i class="fas fa-plus me-1"></i>New
+                                    <i class="fas fa-plus me-2"></i>New
                                 </button>
                             </div>
                             <span class="text-danger small">{{ state.vendorQuickErrors.vendorCategoryId }}</span>
@@ -405,13 +405,13 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" v-on:click="handler.closeVendorQuickCreate">
-                        <i class="fas fa-times me-1"></i>Cancel
+                        <i class="fas fa-times me-2"></i>Cancel
                     </button>
                     <button type="button" class="btn btn-success"
                             v-on:click="handler.submitVendorQuickCreate"
                             v-bind:disabled="state.vendorQuickIsSubmitting">
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.vendorQuickIsSubmitting"></span>
-                        <i class="fas fa-store me-1" v-else></i>
+                        <i class="fas fa-store me-2" v-else></i>
                         {{ state.vendorQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
@@ -428,7 +428,7 @@
                     <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeTaxQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Fill in the required fields. The new tax will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new tax will be automatically selected after creation.</p>
                     <div class="row mb-2">
                         <div class="col-md-8">
                             <label>Name <span class="text-danger">*</span></label>
@@ -450,13 +450,13 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" v-on:click="handler.closeTaxQuickCreate">
-                        <i class="fas fa-times me-1"></i>Cancel
+                        <i class="fas fa-times me-2"></i>Cancel
                     </button>
                     <button type="button" class="btn btn-primary"
                             v-on:click="handler.submitTaxQuickCreate"
                             v-bind:disabled="state.taxQuickIsSubmitting">
                         <span class="spinner-border spinner-border-sm me-1" v-if="state.taxQuickIsSubmitting"></span>
-                        <i class="fas fa-percent me-1" v-else></i>
+                        <i class="fas fa-percent me-2" v-else></i>
                         {{ state.taxQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
