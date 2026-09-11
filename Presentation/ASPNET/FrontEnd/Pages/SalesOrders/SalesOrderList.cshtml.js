@@ -545,7 +545,6 @@ const App = {
             },
             handleFormSubmit: async () => {
                 state.isSubmitting = true;
-                await new Promise(resolve => setTimeout(resolve, 200));
 
                 if (!validateForm()) {
                     state.isSubmitting = false;
@@ -589,7 +588,7 @@ const App = {
                                     icon: 'success',
                                     title: 'Sales Order Created',
                                     text: `${state.number} saved. Add products to build the cart.`,
-                                    timer: 1800,
+                                    timer: 1000,
                                     showConfirmButton: false
                                 });
                             } else {
@@ -597,7 +596,7 @@ const App = {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Order Details Saved',
-                                    timer: 1400,
+                                    timer: 1000,
                                     showConfirmButton: false
                                 });
                             }
@@ -606,13 +605,13 @@ const App = {
                                 icon: 'success',
                                 title: 'Delete Successful',
                                 text: 'Form will be closed...',
-                                timer: 2000,
+                                timer: 1000,
                                 showConfirmButton: false
                             });
                             setTimeout(() => {
                                 mainModal.obj.hide();
                                 resetFormState();
-                            }, 2000);
+                            }, 1000);
                         }
 
                     } else {

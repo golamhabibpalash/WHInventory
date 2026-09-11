@@ -165,7 +165,6 @@ const App = {
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
-                    await new Promise(resolve => setTimeout(resolve, 200));
 
                     let isValid = true;
                     if (!state.name) { state.errors.name = 'Name is required.'; isValid = false; }
@@ -189,8 +188,8 @@ const App = {
                     if (response.data.code === 200) {
                         await methods.populateMainData();
                         mainGrid.refresh();
-                        Swal.fire({ icon: 'success', title: state.deleteMode ? 'Delete Successful' : 'Save Successful', text: 'Form will be closed...', timer: 2000, showConfirmButton: false });
-                        setTimeout(() => { mainModal.obj.hide(); resetFormState(); }, 2000);
+                        Swal.fire({ icon: 'success', title: state.deleteMode ? 'Delete Successful' : 'Save Successful', text: 'Form will be closed...', timer: 1000, showConfirmButton: false });
+                        setTimeout(() => { mainModal.obj.hide(); resetFormState(); }, 1000);
                     } else {
                         Swal.fire({ icon: 'error', title: state.deleteMode ? 'Delete Failed' : 'Save Failed', text: response.data.message ?? 'Please check your data.', confirmButtonText: 'Try Again' });
                     }

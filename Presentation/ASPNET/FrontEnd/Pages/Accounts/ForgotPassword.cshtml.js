@@ -39,7 +39,6 @@
 
             try {
                 state.isSubmitting = true;
-                await new Promise(resolve => setTimeout(resolve, 300));
 
                 if (!validateForm()) return;
 
@@ -49,12 +48,12 @@
                         icon: 'success',
                         title: 'Reset Password Successful',
                         text: 'Please check your email. You are being redirected...',
-                        timer: 2000,
+                        timer: 1000,
                         showConfirmButton: false
                     });
                     setTimeout(() => {
                         window.location.href = '/';
-                    }, 2000);
+                    }, 1000);
                 } else {
                     Swal.fire({
                         icon: 'error',

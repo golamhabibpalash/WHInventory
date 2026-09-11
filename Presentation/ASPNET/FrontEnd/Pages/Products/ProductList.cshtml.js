@@ -953,7 +953,7 @@ const App = {
                         await methods.populateMainData();
                         mainGrid.refresh();
                         if (result.failureCount === 0) {
-                            Swal.fire({ icon: 'success', title: 'All products created successfully', timer: 2000, showConfirmButton: false });
+                            Swal.fire({ icon: 'success', title: 'All products created successfully', timer: 1000, showConfirmButton: false });
                         }
                     }
                 } catch (error) {
@@ -970,7 +970,6 @@ const App = {
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
-                    await new Promise(resolve => setTimeout(resolve, 300));
 
                     if (!validateForm()) {
                         return;
@@ -1011,25 +1010,25 @@ const App = {
                                 icon: 'success',
                                 title: 'Save Successful',
                                 text: 'Form will be closed...',
-                                timer: 2000,
+                                timer: 1000,
                                 showConfirmButton: false
                             });
                             setTimeout(() => {
                                 mainModal.obj.hide();
-                            }, 2000);
+                            }, 1000);
 
                         } else {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Delete Successful',
                                 text: 'Form will be closed...',
-                                timer: 2000,
+                                timer: 1000,
                                 showConfirmButton: false
                             });
                             setTimeout(() => {
                                 mainModal.obj.hide();
                                 resetFormState();
-                            }, 2000);
+                            }, 1000);
                         }
 
                     } else {

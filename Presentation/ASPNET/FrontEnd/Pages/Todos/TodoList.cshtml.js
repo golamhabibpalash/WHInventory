@@ -96,7 +96,6 @@
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
-                    await new Promise(resolve => setTimeout(resolve, 300));
 
                     if (!validateForm()) {
                         return;
@@ -115,12 +114,12 @@
                             icon: 'success',
                             title: state.deleteMode ? 'Delete Successful' : 'Save Successful',
                             text: 'Form will be closed...',
-                            timer: 2000,
+                            timer: 1000,
                             showConfirmButton: false
                         });
                         setTimeout(() => {
                             mainModal.obj.hide();
-                        }, 2000);
+                        }, 1000);
                     } else {
                         Swal.fire({
                             icon: 'error',

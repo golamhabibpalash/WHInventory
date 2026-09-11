@@ -582,7 +582,6 @@ const App = {
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
-                    await new Promise(resolve => setTimeout(resolve, 200));
 
                     // Validation
                     let isValid = true;

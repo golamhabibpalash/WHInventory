@@ -41,10 +41,10 @@ const App = {
                             icon: 'success',
                             title: 'Password Reset Successful',
                             text: 'You are being redirected to login...',
-                            timer: 2000,
+                            timer: 1000,
                             showConfirmButton: false
                         });
-                        setTimeout(() => { window.location.href = '/Accounts/Login'; }, 2000);
+                        setTimeout(() => { window.location.href = '/Accounts/Login'; }, 1000);
                     } else {
                         Swal.fire({ icon: 'error', title: 'Reset Failed', text: response.data.message ?? 'Please try again.' });
                     }

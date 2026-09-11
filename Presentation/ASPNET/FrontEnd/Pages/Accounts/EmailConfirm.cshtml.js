@@ -17,7 +17,6 @@
         Vue.onMounted(async () => {
             try {
                 state.isSubmitting = true;
-                await new Promise(resolve => setTimeout(resolve, 300));
 
                 const params = new URLSearchParams(window.location.search);
                 const email = params.get('email');
@@ -30,12 +29,12 @@
                             icon: 'success',
                             title: 'Email Confirmation Successful',
                             text: 'You are being redirected...',
-                            timer: 2000,
+                            timer: 1000,
                             showConfirmButton: false
                         });
                         setTimeout(() => {
                             window.location.href = '/Accounts/Login';
-                        }, 2000);
+                        }, 1000);
                     } else {
                         Swal.fire({
                             icon: 'error',

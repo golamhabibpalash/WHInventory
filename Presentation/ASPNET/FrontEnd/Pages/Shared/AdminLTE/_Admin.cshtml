@@ -53,23 +53,57 @@
     @await RenderSectionAsync("scripts", required: false)
 
     <script>
+        // Avatar, company details and the brand logo don't change from one page navigation to the
+        // next, but every page load used to re-fetch all three (2 of them image blobs) regardless.
+        // Cache the rendered result in sessionStorage for this browser tab and reuse it on
+        // subsequent navigations; only re-fetch when the cache is missing, stale, or belongs to a
+        // different signed-in user (tab reused across a logout/login).
+        const BrandingCache = {
+            KEY: 'brandingCache',
+            read: () => {
+                try {
+                    const raw = sessionStorage.getItem(BrandingCache.KEY);
+                    return raw ? JSON.parse(raw) : null;
+                } catch (error) {
+                    return null;
+                }
+            },
+            write: (patch) => {
+                try {
+                    const current = BrandingCache.read() || {};
+                    sessionStorage.setItem(BrandingCache.KEY, JSON.stringify({ ...current, ...patch, userId: StorageManager.getUserId() }));
+                } catch (error) {
+                    // Cache is a pure optimization; a write failure just means the next page re-fetches.
+                }
+            },
+            forThisUser: (cache) => cache && cache.userId === StorageManager.getUserId()
+        };
+
+        const fetchImageAsDataUrl = async (imageName) => {
+            const response = await AxiosManager.get('/FileImage/GetImage?imageName=' + imageName, { responseType: 'blob' });
+            if (response.status !== 200) return null;
+            return await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(response.data);
+            });
+        };
+
         document.addEventListener('DOMContentLoaded', async function () {
             async function getAvatar() {
+                const avatarName = StorageManager.getAvatar();
+                const cache = BrandingCache.read();
+
+                if (BrandingCache.forThisUser(cache) && cache.avatarName === avatarName && cache.avatarDataUrl) {
+                    document.getElementById('AvatarImageSide').src = cache.avatarDataUrl;
+                    return;
+                }
+
                 try {
-                    const avatar = StorageManager.getAvatar();
-                    const response = await AxiosManager.get('/FileImage/GetImage?imageName=' + avatar, {
-                        responseType: 'blob'
-                    });
-                    
-                    if (response.status === 200) {
-                        const reader = new FileReader();
-                        reader.onloadend = function () {
-                            const base64Image = reader.result;
-                            document.getElementById('AvatarImageSide').src = base64Image;
-                        };
-                        reader.readAsDataURL(response.data);
-                    } else {
-                        console.error('Error:', response.statusText);
+                    const dataUrl = await fetchImageAsDataUrl(avatarName);
+                    if (dataUrl) {
+                        document.getElementById('AvatarImageSide').src = dataUrl;
+                        BrandingCache.write({ avatarName, avatarDataUrl: dataUrl });
                     }
                 } catch (error) {
                     console.error('Error:', error);
@@ -81,43 +115,56 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
+            function renderCompany(company) {
+                const companyName = company?.name ?? 'Default Company';
+                const companyWeb = company?.website ?? '#';
+                const year = new Date().getFullYear();
+                const currency = company?.currency ?? '---';
+
+                const footerEl = document.getElementById('footerContent');
+                if (footerEl) {
+                    footerEl.textContent = '';
+                    footerEl.appendChild(document.createTextNode(`© ${year} `));
+                    const link = document.createElement('a');
+                    try { link.href = new URL(companyWeb).href; } catch { link.href = '#'; }
+                    link.textContent = companyName;
+                    footerEl.appendChild(link);
+                    footerEl.appendChild(document.createTextNode(', All Right Reserved.'));
+                }
+                const topbarEl = document.getElementById('topbarContent');
+                if (topbarEl) topbarEl.textContent = `Currency: ${currency}`;
+            }
+
             async function getCompany() {
+                const cache = BrandingCache.read();
+
+                if (BrandingCache.forThisUser(cache) && cache.company) {
+                    renderCompany(cache.company);
+                    if (cache.logoDataUrl) {
+                        const brandImg = document.getElementById('brandLogoImg');
+                        if (brandImg) brandImg.src = cache.logoDataUrl;
+                    }
+                    return;
+                }
+
                 try {
                     const response = await AxiosManager.get('/Company/GetCompanyList', {});
                     const data = response?.data?.content?.data;
-                    
+
                     if (data && data.length > 0) {
-                        StorageManager.saveCompany(data[0]);
+                        const company = data[0];
+                        StorageManager.saveCompany(company);
+                        renderCompany(company);
+                        BrandingCache.write({ company });
 
-                        const companyName = data[0]?.name ?? 'Default Company';
-                        const companyWeb = data[0]?.website ?? '#';
-                        const year = new Date().getFullYear();
-                        const currency = data[0]?.currency ?? '---';
-
-                        const footerEl = document.getElementById('footerContent');
-                        if (footerEl) {
-                            footerEl.textContent = '';
-                            footerEl.appendChild(document.createTextNode(`© ${year} `));
-                            const link = document.createElement('a');
-                            try { link.href = new URL(companyWeb).href; } catch { link.href = '#'; }
-                            link.textContent = companyName;
-                            footerEl.appendChild(link);
-                            footerEl.appendChild(document.createTextNode(', All Right Reserved.'));
-                        }
-                        const topbarEl = document.getElementById('topbarContent');
-                        if (topbarEl) topbarEl.textContent = `Currency: ${currency}`;
-
-                        const logoName = data[0]?.logoName;
+                        const logoName = company?.logoName;
                         if (logoName) {
                             try {
-                                const logoResponse = await AxiosManager.get('/FileImage/GetImage?imageName=' + logoName, { responseType: 'blob' });
-                                if (logoResponse.status === 200) {
-                                    const reader = new FileReader();
-                                    reader.onloadend = function () {
-                                        const brandImg = document.getElementById('brandLogoImg');
-                                        if (brandImg) brandImg.src = reader.result;
-                                    };
-                                    reader.readAsDataURL(logoResponse.data);
+                                const logoDataUrl = await fetchImageAsDataUrl(logoName);
+                                if (logoDataUrl) {
+                                    const brandImg = document.getElementById('brandLogoImg');
+                                    if (brandImg) brandImg.src = logoDataUrl;
+                                    BrandingCache.write({ logoDataUrl });
                                 }
                             } catch (e) { /* keep default logo on error */ }
                         }

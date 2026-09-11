@@ -84,7 +84,6 @@ const App = {
         const handleSubmit = async () => {
             try {
                 state.isSubmitting = true;
-                await new Promise(resolve => setTimeout(resolve, 300));
 
                 if (!validateForm()) return;
 

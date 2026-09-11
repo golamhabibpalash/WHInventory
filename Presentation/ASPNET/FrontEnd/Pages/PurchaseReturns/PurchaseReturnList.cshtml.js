@@ -351,7 +351,6 @@ const App = {
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
-                    await new Promise(resolve => setTimeout(resolve, 300));
 
                     if (!validateForm()) {
                         return;
@@ -375,26 +374,26 @@ const App = {
                                 icon: 'success',
                                 title: 'Save Successful',
                                 text: 'Form will be closed...',
-                                timer: 2000,
+                                timer: 1000,
                                 showConfirmButton: false
                             });
                             setTimeout(() => {
                                 mainModal.obj.hide();
                                 resetFormState();
-                            }, 2000);
+                            }, 1000);
 
                         } else {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Delete Successful',
                                 text: 'Form will be closed...',
-                                timer: 2000,
+                                timer: 1000,
                                 showConfirmButton: false
                             });
                             setTimeout(() => {
                                 mainModal.obj.hide();
                                 resetFormState();
-                            }, 2000);
+                            }, 1000);
                         }
 
                     } else {
@@ -757,7 +756,7 @@ const App = {
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Save Successful',
-                                        timer: 2000,
+                                        timer: 1000,
                                         showConfirmButton: false
                                     });
                                 } else {
@@ -786,7 +785,7 @@ const App = {
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Update Successful',
-                                        timer: 2000,
+                                        timer: 1000,
                                         showConfirmButton: false
                                     });
                                 } else {
@@ -815,7 +814,7 @@ const App = {
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Delete Successful',
-                                        timer: 2000,
+                                        timer: 1000,
                                         showConfirmButton: false
                                     });
                                 } else {

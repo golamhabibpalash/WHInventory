@@ -194,7 +194,6 @@
         const handler = {
             handleSubmit: async () => {
                 state.isSubmitting = true;
-                await new Promise(resolve => setTimeout(resolve, 200));
 
                 state.errors.firstName = '';
                 state.errors.lastName = '';
@@ -226,12 +225,12 @@
                             icon: 'success',
                             title: 'Save Successful',
                             text: 'Form will be closed...',
-                            timer: 2000,
+                            timer: 1000,
                             showConfirmButton: false
                         });
                         setTimeout(() => {
                             mainModal.obj.hide();
-                        }, 2000);
+                        }, 1000);
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -253,7 +252,6 @@
             },
             handleChangePassword: async () => {
                 state.isSubmitting = true;
-                await new Promise(resolve => setTimeout(resolve, 200));
 
                 state.errors.oldPassword = '';
                 state.errors.newPassword = '';
@@ -299,12 +297,12 @@
                             icon: 'success',
                             title: 'Save Successful',
                             text: 'Form will be closed...',
-                            timer: 2000,
+                            timer: 1000,
                             showConfirmButton: false
                         });
                         setTimeout(() => {
                             changePasswordModal.obj.hide();
-                        }, 2000);
+                        }, 1000);
                     } else {
                         Swal.fire({
                             icon: 'error',
