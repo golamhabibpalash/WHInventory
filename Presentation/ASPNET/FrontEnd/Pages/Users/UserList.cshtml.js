@@ -624,11 +624,11 @@
 
         const secondaryGrid = {
             obj: null,
+            changedRoles: new Set(),
             create: async (dataSource) => {
                 secondaryGrid.obj = new ej.grids.Grid({
                     height: 400,
                     dataSource: dataSource,
-                    editSettings: { allowEditing: true, allowAdding: false, allowDeleting: false, showDeleteConfirmDialog: true, mode: 'Normal', allowEditOnDblClick: true },
                     allowFiltering: false,
                     allowSorting: true,
                     allowSelection: true,
@@ -649,36 +649,37 @@
                         {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
-                        { field: 'roleName', headerText: 'Role', allowEditing: false, width: 200, minWidth: 200 },
-                        { field: 'accessGranted', headerText: 'Access Granted', textAlign: 'Center', width: 150, minWidth: 150, editType: 'booleanedit', displayAsCheckBox: true, type: 'boolean', allowEditing: true },
+                        { field: 'roleName', headerText: 'Role', width: 200, minWidth: 200 },
+                        {
+                            field: 'accessGranted', headerText: 'Access Granted', textAlign: 'Center', width: 150, minWidth: 150,
+                            template: '<input type="checkbox" class="role-access-toggle" data-role-name="${roleName}" ${accessGranted ? "checked" : ""} />'
+                        },
                     ],
                     toolbar: [
                         'ExcelExport',
                         { type: 'Separator' },
-                        'Edit', 'Update', 'Cancel',
+                        { text: 'Save Changes', tooltipText: 'Save all role changes', prefixIcon: 'e-save', id: 'SaveRoleChanges' },
                         { type: 'Separator' },
                         { text: 'Grant All', tooltipText: 'Grant all roles to this user', prefixIcon: 'e-check', id: 'GrantAllRoles' },
                         { text: 'Revoke All', tooltipText: 'Revoke all roles from this user', prefixIcon: 'e-close', id: 'RevokeAllRoles' },
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
+                        secondaryGrid.obj.toolbarModule.enableItems(['SaveRoleChanges'], false);
                         secondaryGrid.obj.autoFitColumns(['roleName', 'accessGranted']);
+                        secondaryGrid.changedRoles.clear();
+                        const checkboxes = secondaryGridRef.value?.querySelectorAll('.role-access-toggle') ?? [];
+                        checkboxes.forEach(cb => {
+                            cb.addEventListener('change', (e) => {
+                                const roleName = e.target.getAttribute('data-role-name');
+                                secondaryGrid.changedRoles.add(roleName);
+                                secondaryGrid.obj.toolbarModule.enableItems(['SaveRoleChanges'], secondaryGrid.changedRoles.size > 0);
+                            });
+                        });
                     },
                     excelExportComplete: () => { },
-                    rowSelected: () => {
-                        if (secondaryGrid.obj.getSelectedRecords().length == 1) {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit'], true);
-                        } else {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit'], false);
-                        }
-                    },
-                    rowDeselected: () => {
-                        if (secondaryGrid.obj.getSelectedRecords().length == 1) {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit'], true);
-                        } else {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit'], false);
-                        }
-                    },
+                    rowSelected: () => { },
+                    rowDeselected: () => { },
                     rowSelecting: () => {
                         if (secondaryGrid.obj.getSelectedRecords().length) {
                             secondaryGrid.obj.clearSelection();
@@ -687,6 +688,51 @@
                     toolbarClick: async (args) => {
                         if (args.item.id === 'SecondaryGrid_excelexport') {
                             secondaryGrid.obj.excelExport();
+                        }
+
+                        if (args.item.id === 'SaveRoleChanges') {
+                            if (secondaryGrid.changedRoles.size === 0) return;
+
+                            try {
+                                const rolesToUpdate = Array.from(secondaryGrid.changedRoles);
+                                const dataSource = secondaryGrid.obj.dataSource;
+                                let allSuccess = true;
+
+                                for (const roleName of rolesToUpdate) {
+                                    const row = dataSource.find(r => r.roleName === roleName);
+                                    if (!row) continue;
+                                    const response = await services.updateUserRoleData(state.userId, roleName, row.accessGranted);
+                                    if (response.data.code !== 200) {
+                                        allSuccess = false;
+                                    }
+                                }
+
+                                await methods.populateSecondaryData(state.userId);
+                                secondaryGrid.refresh();
+
+                                if (allSuccess) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Roles Updated',
+                                        timer: 1000,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Partial Update',
+                                        text: 'Some roles could not be updated.',
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            } catch (error) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'An Error Occurred',
+                                    text: error.response?.data?.message ?? 'Please try again.',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
                         }
 
                         if (args.item.id === 'GrantAllRoles' || args.item.id === 'RevokeAllRoles') {
@@ -733,44 +779,10 @@
                             }
                         }
                     },
-                    actionComplete: async (args) => {
-                        if (args.requestType === 'save' && args.action === 'edit') {
-                            try {
-                                const roleName = args?.data?.roleName;
-                                const accessGranted = args?.data?.accessGranted;
-                                const response = await services.updateUserRoleData(state.userId, roleName, accessGranted);
-
-                                if (response.data.code === 200) {
-                                    await methods.populateSecondaryData(state.userId);
-                                    secondaryGrid.refresh();
-                                    secondaryGrid.obj.clearSelection();
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Save Successful',
-                                        timer: 1000,
-                                        showConfirmButton: false
-                                    });
-                                } else {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Save Failed',
-                                        text: response.data.message ?? 'Please check your data.',
-                                        confirmButtonText: 'Try Again'
-                                    });
-                                }
-                            } catch (error) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'An Error Occurred',
-                                    text: error.response?.data?.message ?? 'Please try again.',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        }
-                    }
                 });
                 secondaryGrid.obj.appendTo(secondaryGridRef.value);
                 GridHeightManager.apply(secondaryGrid.obj, secondaryGridRef.value);
+
             },
             refresh: () => {
                 secondaryGrid.obj.setProperties({ dataSource: state.secondaryData });
