@@ -76,6 +76,12 @@ const App = {
             taxQuickDescription: '',
             taxQuickIsSubmitting: false,
             taxQuickErrors: { name: '', percentage: '' },
+            view: {
+                id: '', number: '', orderDate: '', orderStatusName: '', statusClass: '',
+                description: '', referenceNumber: '', vendorName: '', taxName: '',
+                beforeTaxAmount: 0, taxAmount: 0, afterTaxAmount: 0,
+                items: []
+            }
         });
 
         const mainGridRef = Vue.ref(null);
@@ -92,6 +98,7 @@ const App = {
         const vendorGroupQuickModalRef = Vue.ref(null);
         const vendorCategoryQuickModalRef = Vue.ref(null);
         const taxQuickModalRef = Vue.ref(null);
+        const viewModalRef = Vue.ref(null);
 
         // Running line total for the "Select Product" form.
         const posLineTotal = Vue.computed(() => (state.productPick.unitPrice || 0) * (state.productPick.quantity || 0));
@@ -163,6 +170,14 @@ const App = {
             getMainData: async () => {
                 try {
                     const response = await AxiosManager.get('/PurchaseOrder/GetPurchaseOrderList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPurchaseOrderSingle: async (id) => {
+                try {
+                    const response = await AxiosManager.get('/PurchaseOrder/GetPurchaseOrderSingle', { params: { id } });
                     return response;
                 } catch (error) {
                     throw error;
@@ -1041,6 +1056,17 @@ const App = {
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
                     },
+                    queryCellInfo: (args) => {
+                        if (args.column.field === 'number') {
+                            args.cell.style.cursor = 'pointer';
+                            args.cell.style.color = 'var(--primary)';
+                            args.cell.style.fontWeight = '600';
+                            args.cell.addEventListener('click', () => {
+                                const rowData = args.row?.data;
+                                if (rowData?.id) handler.openViewModal(rowData.id);
+                            });
+                        }
+                    },
                     excelExportComplete: () => { },
                     rowSelected: () => {
                         if (mainGrid.obj.getSelectedRecords().length == 1) {
@@ -1348,6 +1374,13 @@ const App = {
             }
         };
 
+        const viewModal = {
+            obj: null,
+            create: () => {
+                viewModal.obj = new bootstrap.Modal(viewModalRef.value);
+            }
+        };
+
         Vue.onMounted(async () => {
             try {
                 await SecurityManager.authorizePage(['PurchaseOrders']);
@@ -1357,6 +1390,7 @@ const App = {
                 await mainGrid.create(state.mainData);
 
                 mainModal.create();
+                viewModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
                 orderDatePicker.create();
                 numberText.create();
@@ -1404,12 +1438,18 @@ const App = {
             vendorGroupQuickModalRef,
             vendorCategoryQuickModalRef,
             taxQuickModalRef,
+            viewModalRef,
             state,
             methods,
             handler: {
                 handleSubmit: methods.handleFormSubmit,
                 formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
                 formatQty: formatQty,
+                formatDate: (value) => {
+                    if (!value) return '—';
+                    const d = new Date(value);
+                    return isNaN(d) ? value : d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                },
                 stepQty: (delta) => {
                     const next = Math.max(0, (Number(state.productPick.quantity) || 0) + delta);
                     state.productPick.quantity = Number(next.toFixed(4));
@@ -1433,6 +1473,71 @@ const App = {
                 openTaxQuickCreate: taxQuickHandler.open,
                 closeTaxQuickCreate: taxQuickHandler.close,
                 submitTaxQuickCreate: taxQuickHandler.submit,
+                openViewModal: async (id) => {
+                    try {
+                        const response = await services.getPurchaseOrderSingle(id);
+                        const data = response?.data?.content?.data;
+                        if (!data) return;
+
+                        const statusMap = {
+                            0: 'text-bg-secondary',
+                            1: 'text-bg-danger',
+                            2: 'text-bg-info',
+                            3: 'text-bg-dark',
+                            4: 'text-bg-primary',
+                            5: 'text-bg-warning',
+                            6: 'text-bg-success',
+                            7: 'text-bg-dark'
+                        };
+
+                        state.view = {
+                            id: data.id ?? '',
+                            number: data.number ?? '',
+                            orderDate: data.orderDate ?? '',
+                            orderStatusName: data.orderStatusName ?? '',
+                            statusClass: statusMap[data.orderStatus] ?? 'text-bg-secondary',
+                            description: data.description ?? '',
+                            referenceNumber: data.referenceNumber ?? '',
+                            vendorName: data.vendor?.name ?? '',
+                            taxName: data.tax?.name ?? '',
+                            beforeTaxAmount: data.beforeTaxAmount ?? 0,
+                            taxAmount: data.taxAmount ?? 0,
+                            afterTaxAmount: data.afterTaxAmount ?? 0,
+                            items: (data.purchaseOrderItemList ?? []).map(item => ({
+                                id: item.id ?? '',
+                                productName: item.product?.name ?? '',
+                                unitPrice: item.unitPrice ?? 0,
+                                quantity: item.quantity ?? 0,
+                                total: item.total ?? 0
+                            }))
+                        };
+
+                        viewModal.obj.show();
+                    } catch (error) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load purchase order details.' });
+                    }
+                },
+                editFromView: () => {
+                    const id = state.view.id;
+                    viewModal.obj.hide();
+                    if (id) {
+                        const record = state.mainData.find(r => r.id === id);
+                        if (record) {
+                            state.deleteMode = false;
+                            state.mainTitle = `Purchase Order ${record.number ?? ''}`;
+                            state.id = record.id ?? '';
+                            state.number = record.number ?? '';
+                            state.orderDate = record.orderDate ? new Date(record.orderDate) : null;
+                            state.description = record.description ?? '';
+                            state.referenceNumber = record.referenceNumber ?? '';
+                            state.vendorId = record.vendorId ?? '';
+                            state.taxId = record.taxId ?? '';
+                            state.orderStatus = String(record.orderStatus ?? '');
+                            methods.populateSecondaryData(record.id);
+                            mainModal.obj.show();
+                        }
+                    }
+                }
             }
         };
     }

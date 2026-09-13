@@ -463,6 +463,101 @@
             </div>
         </div>
     </div>
+
+    <!-- View Purchase Order Modal -->
+    <div class="modal fade" ref="viewModalRef" id="ViewPurchaseOrderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-invoice me-2 text-primary"></i>{{ state.view.number || 'Purchase Order Details' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="text-muted small">Order Number</label>
+                            <div class="fw-semibold">{{ state.view.number || '—' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Order Date</label>
+                            <div class="fw-semibold">{{ handler.formatDate(state.view.orderDate) }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Status</label>
+                            <div><span class="badge" v-bind:class="state.view.statusClass">{{ state.view.orderStatusName || '—' }}</span></div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="text-muted small">Vendor</label>
+                            <div class="fw-semibold">{{ state.view.vendorName || '—' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Tax</label>
+                            <div class="fw-semibold">{{ state.view.taxName || '—' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Reference Number</label>
+                            <div class="fw-semibold">{{ state.view.referenceNumber || '—' }}</div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-4" v-if="state.view.description">
+                        <div class="col-md-12">
+                            <label class="text-muted small">Description</label>
+                            <div>{{ state.view.description }}</div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3"><i class="fas fa-list me-2 text-primary"></i>Line Items</h6>
+                    <div class="table-responsive" v-if="state.view.items.length">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Qty</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in state.view.items" v-bind:key="item.id">
+                                    <td>{{ item.productName || '—' }}</td>
+                                    <td class="text-end">{{ handler.formatAmount(item.unitPrice) }}</td>
+                                    <td class="text-end">{{ handler.formatQty(item.quantity) }}</td>
+                                    <td class="text-end">{{ handler.formatAmount(item.total) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p v-else class="text-muted small mb-0">No line items.</p>
+
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-4">
+                            <label class="text-muted small">Sub Total</label>
+                            <div class="fw-semibold">{{ handler.formatAmount(state.view.beforeTaxAmount) }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Tax Amount</label>
+                            <div class="fw-semibold">{{ handler.formatAmount(state.view.taxAmount) }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Total Amount</label>
+                            <div class="fw-bold text-primary">{{ handler.formatAmount(state.view.afterTaxAmount) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" v-on:click="handler.editFromView">
+                        <i class="fas fa-edit me-2"></i>Edit Order
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
 </div>
 
 @section scripts {
