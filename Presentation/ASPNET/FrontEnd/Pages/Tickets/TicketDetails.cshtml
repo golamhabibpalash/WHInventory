@@ -19,7 +19,7 @@
                     <div class="ticket-detail-number">{{ state.ticket.ticketNumber }}</div>
                     <div class="ticket-detail-subject">{{ state.ticket.subject }}</div>
                     <span class="ticket-status-badge" v-bind:class="'ticket-status-' + statusKey(state.ticket.status)">{{ statusLabel(state.ticket.status) }}</span>
-                    <span class="ticket-overdue-badge ms-2" v-if="isOverdue"><i class="fas fa-exclamation-circle"></i>Overdue</span>
+                    <span class="ticket-overdue-badge ms-2" v-if="isOverdue"><i class="fas fa-exclamation-circle me-1"></i>Overdue</span>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
                     <button type="button" class="btn btn-outline-secondary btn-sm" v-on:click="handler.goBack"><i class="fas fa-arrow-left me-1"></i>Back</button>
@@ -86,7 +86,7 @@
                              class="ticket-comment" v-bind:class="{ 'ticket-comment--internal': comment.isInternal }">
                             <div class="ticket-comment-header">
                                 <span class="ticket-comment-author">{{ comment.authorName }}
-                                    <span class="ticket-internal-flag ms-1" v-if="comment.isInternal"><i class="fas fa-lock"></i>Internal Note</span>
+                                    <span class="ticket-internal-flag ms-1" v-if="comment.isInternal"><i class="fas fa-lock me-1"></i>Internal Note</span>
                                 </span>
                                 <span class="ticket-comment-time">{{ formatDateTime(comment.createdAtUtc) }}</span>
                             </div>

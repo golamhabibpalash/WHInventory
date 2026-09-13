@@ -256,7 +256,7 @@ const App = {
                         }
                         if (args.column.field === 'isOverdue') {
                             args.cell.innerHTML = args.data.isOverdue
-                                ? '<span class="ticket-overdue-badge"><i class="fas fa-exclamation-circle"></i>Overdue</span>'
+                                ? '<span class="ticket-overdue-badge"><i class="fas fa-exclamation-circle me-1"></i>Overdue</span>'
                                 : '<span class="text-muted small">&mdash;</span>';
                         }
                     },
