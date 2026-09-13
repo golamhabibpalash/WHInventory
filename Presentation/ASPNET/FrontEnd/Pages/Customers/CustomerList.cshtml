@@ -104,7 +104,7 @@
                                 <div class="row mb-2">
                                     <div class="col-md-6">
                                         <label for="PhoneNumber">Phone Number</label>
-                                        <input ref="phoneNumberRef" v-model="state.phoneNumber" class="form-control" placeholder="" />
+                                        <input ref="phoneNumberRef" v-model="state.phoneNumber" class="form-control" maxlength="15" placeholder="" />
                                         <label class="text-danger" v-text="state.errors.phoneNumber"></label>
                                     </div>
                                     <div class="col-md-6">
