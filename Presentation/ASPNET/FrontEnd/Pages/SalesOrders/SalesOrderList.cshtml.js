@@ -1407,7 +1407,30 @@ const App = {
                     const d = new Date(value);
                     return isNaN(d) ? value : d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 },
-                editFromView: handler.editFromView,
+                editFromView: () => {
+                    const id = state.view.id;
+                    viewModal.obj.hide();
+                    if (id) {
+                        const record = state.mainData.find(r => r.id === id);
+                        if (record) {
+                            state.deleteMode = false;
+                            state.paymentError = '';
+                            resetNewPaymentState();
+                            resetProductPick();
+                            state.mainTitle = `Sales Order ${record.number ?? ''}`;
+                            state.id = record.id ?? '';
+                            state.number = record.number ?? '';
+                            state.orderDate = record.orderDate ? new Date(record.orderDate) : null;
+                            state.description = record.description ?? '';
+                            state.customerId = record.customerId ?? '';
+                            state.taxId = record.taxId ?? '';
+                            taxListLookup.trackingChange = true;
+                            state.orderStatus = String(record.orderStatus ?? '');
+                            methods.populateSecondaryData(record.id);
+                            mainModal.obj.show();
+                        }
+                    }
+                },
                 stepQty: (delta) => {
                     const next = Math.max(0, (Number(state.productPick.quantity) || 0) + delta);
                     state.productPick.quantity = Number(next.toFixed(4));
@@ -1796,30 +1819,6 @@ const App = {
                         viewModal.obj.show();
                     } catch (error) {
                         Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load sales order details.' });
-                    }
-                },
-                editFromView: () => {
-                    const id = state.view.id;
-                    viewModal.obj.hide();
-                    if (id) {
-                        const record = state.mainData.find(r => r.id === id);
-                        if (record) {
-                            state.deleteMode = false;
-                            state.paymentError = '';
-                            resetNewPaymentState();
-                            resetProductPick();
-                            state.mainTitle = `Sales Order ${record.number ?? ''}`;
-                            state.id = record.id ?? '';
-                            state.number = record.number ?? '';
-                            state.orderDate = record.orderDate ? new Date(record.orderDate) : null;
-                            state.description = record.description ?? '';
-                            state.customerId = record.customerId ?? '';
-                            state.taxId = record.taxId ?? '';
-                            taxListLookup.trackingChange = true;
-                            state.orderStatus = String(record.orderStatus ?? '');
-                            methods.populateSecondaryData(record.id);
-                            mainModal.obj.show();
-                        }
                     }
                 }
             }
