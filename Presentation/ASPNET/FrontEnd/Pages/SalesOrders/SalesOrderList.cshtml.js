@@ -1499,6 +1499,7 @@ const App = {
                     let isValid = true;
                     if (!state.customerQuickName?.trim()) { state.customerQuickErrors.name = 'Name is required.'; isValid = false; }
                     if (!state.customerQuickPhoneNumber?.trim()) { state.customerQuickErrors.phoneNumber = 'Phone number is required.'; isValid = false; }
+                    else if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(state.customerQuickPhoneNumber.trim().replace(/[\s\-]/g, ''))) { state.customerQuickErrors.phoneNumber = 'Enter a valid Bangladeshi number (e.g. 01711234567 or +8801711234567).'; isValid = false; }
                     if (state.customerQuickEmailAddress?.trim() && !/\S+@\S+\.\S+/.test(state.customerQuickEmailAddress.trim())) { state.customerQuickErrors.emailAddress = 'Please enter a valid email address.'; isValid = false; }
                     if (!isValid) return;
                     try {
