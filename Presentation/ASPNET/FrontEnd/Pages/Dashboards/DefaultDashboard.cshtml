@@ -15,8 +15,8 @@
     <!-- ── Page header ──────────────────────────────────────── -->
     <div class="db-header">
         <div>
-            <h1 class="db-header-title">Dashboard Overview</h1>
-            <p class="db-header-sub">Real-time summary of your warehouse &amp; inventory operations</p>
+            <h1 class="db-header-title">{{ t('dashboard.title') }}</h1>
+            <p class="db-header-sub">{{ t('dashboard.subtitle') }}</p>
         </div>
         <div class="db-header-meta">
             <div class="db-chip db-chip--brand" v-if="state.companyName">
@@ -30,7 +30,7 @@
                 <select v-model="state.selectedWarehouseId"
                         v-on:change="methods.changeWarehouse"
                         v-bind:disabled="state.isReloading">
-                    <option value="">All Warehouses</option>
+                    <option value="">{{ t('dashboard.allWarehouses') }}</option>
                     <option v-for="warehouse in state.warehouses"
                             v-bind:key="warehouse.id"
                             v-bind:value="warehouse.id">{{ warehouse.name }}</option>
@@ -56,12 +56,12 @@
                 <div class="gtile" style="--g1:#a855f7; --g2:#7c6ef5;">
                     <div class="gtile-top">
                         <div>
-                            <div class="gtile-label">Sales</div>
+                            <div class="gtile-label">{{ t('dashboard.tile.sales') }}</div>
                             <div class="gtile-value"><span ref="cardSalesQtyRef">&mdash;</span></div>
                         </div>
                         <div class="gtile-icon"><i class="fas fa-chart-line"></i></div>
                     </div>
-                    <div class="gtile-desc">total sales orders</div>
+                    <div class="gtile-desc">{{ t('dashboard.tile.totalSalesOrders') }}</div>
                 </div>
             </a>
         </div>
@@ -70,12 +70,12 @@
                 <div class="gtile" style="--g1:#fbbf24; --g2:#f97316;">
                     <div class="gtile-top">
                         <div>
-                            <div class="gtile-label">Sales Return</div>
+                            <div class="gtile-label">{{ t('dashboard.tile.salesReturn') }}</div>
                             <div class="gtile-value"><span ref="cardSalesReturnQtyRef">&mdash;</span></div>
                         </div>
                         <div class="gtile-icon"><i class="fas fa-undo-alt"></i></div>
                     </div>
-                    <div class="gtile-desc">total return orders</div>
+                    <div class="gtile-desc">{{ t('dashboard.tile.totalReturnOrders') }}</div>
                 </div>
             </a>
         </div>
@@ -84,12 +84,12 @@
                 <div class="gtile" style="--g1:#22c55e; --g2:#10b981;">
                     <div class="gtile-top">
                         <div>
-                            <div class="gtile-label">Purchase</div>
+                            <div class="gtile-label">{{ t('dashboard.tile.purchase') }}</div>
                             <div class="gtile-value"><span ref="cardPurchaseQtyRef">&mdash;</span></div>
                         </div>
                         <div class="gtile-icon"><i class="fas fa-shopping-cart"></i></div>
                     </div>
-                    <div class="gtile-desc">total purchase orders</div>
+                    <div class="gtile-desc">{{ t('dashboard.tile.totalPurchaseOrders') }}</div>
                 </div>
             </a>
         </div>
@@ -98,12 +98,12 @@
                 <div class="gtile" style="--g1:#8b5cf6; --g2:#a78bfa;">
                     <div class="gtile-top">
                         <div>
-                            <div class="gtile-label">Purchase Return</div>
+                            <div class="gtile-label">{{ t('dashboard.tile.purchaseReturn') }}</div>
                             <div class="gtile-value"><span ref="cardPurchaseReturnQtyRef">&mdash;</span></div>
                         </div>
                         <div class="gtile-icon"><i class="fas fa-undo"></i></div>
                     </div>
-                    <div class="gtile-desc">total return orders</div>
+                    <div class="gtile-desc">{{ t('dashboard.tile.totalReturnOrders') }}</div>
                 </div>
             </a>
         </div>
@@ -116,12 +116,12 @@
                 <div class="gtile" style="--g1:#2563eb; --g2:#3b82f6;">
                     <div class="gtile-top">
                         <div>
-                            <div class="gtile-label">Delivery Order</div>
+                            <div class="gtile-label">{{ t('dashboard.tile.deliveryOrder') }}</div>
                             <div class="gtile-value"><span ref="cardDeliveryOrderQtyRef">&mdash;</span></div>
                         </div>
                         <div class="gtile-icon"><i class="fas fa-truck"></i></div>
                     </div>
-                    <div class="gtile-desc">deliveries dispatched</div>
+                    <div class="gtile-desc">{{ t('dashboard.tile.deliveriesDispatched') }}</div>
                 </div>
             </a>
         </div>
@@ -130,12 +130,12 @@
                 <div class="gtile" style="--g1:#0ea5e9; --g2:#38bdf8;">
                     <div class="gtile-top">
                         <div>
-                            <div class="gtile-label">Goods Receive</div>
+                            <div class="gtile-label">{{ t('dashboard.tile.goodsReceive') }}</div>
                             <div class="gtile-value"><span ref="cardGoodsReceiveQtyRef">&mdash;</span></div>
                         </div>
                         <div class="gtile-icon"><i class="fas fa-boxes"></i></div>
                     </div>
-                    <div class="gtile-desc">receipts processed</div>
+                    <div class="gtile-desc">{{ t('dashboard.tile.receiptsProcessed') }}</div>
                 </div>
             </a>
         </div>
@@ -144,12 +144,12 @@
                 <div class="gtile" style="--g1:#ef4444; --g2:#f87171;">
                     <div class="gtile-top">
                         <div>
-                            <div class="gtile-label">Transfer Out</div>
+                            <div class="gtile-label">{{ t('dashboard.tile.transferOut') }}</div>
                             <div class="gtile-value"><span ref="cardTransferOutQtyRef">&mdash;</span></div>
                         </div>
                         <div class="gtile-icon"><i class="fas fa-sign-out-alt"></i></div>
                     </div>
-                    <div class="gtile-desc">outbound transfers</div>
+                    <div class="gtile-desc">{{ t('dashboard.tile.outboundTransfers') }}</div>
                 </div>
             </a>
         </div>
@@ -158,12 +158,12 @@
                 <div class="gtile" style="--g1:#14b8a6; --g2:#34d399;">
                     <div class="gtile-top">
                         <div>
-                            <div class="gtile-label">Transfer In</div>
+                            <div class="gtile-label">{{ t('dashboard.tile.transferIn') }}</div>
                             <div class="gtile-value"><span ref="cardTransferInQtyRef">&mdash;</span></div>
                         </div>
                         <div class="gtile-icon"><i class="fas fa-sign-in-alt"></i></div>
                     </div>
-                    <div class="gtile-desc">inbound transfers</div>
+                    <div class="gtile-desc">{{ t('dashboard.tile.inboundTransfers') }}</div>
                 </div>
             </a>
         </div>
@@ -178,7 +178,7 @@
                         <i class="fas fa-warehouse"></i>
                     </div>
                     <div>
-                        <div class="kpi-tile-label">Total Inventory</div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.totalInventory') }}</div>
                         <div class="kpi-tile-value">
                             {{ methods.formatQty(state.kpi.totalInventory) }}
                             <i class="fas fa-chevron-right kpi-tile-cta"></i>
@@ -188,7 +188,7 @@
                                 <i v-bind:class="methods.deltaIcon(state.kpi.totalInventoryDeltaPct)"></i>
                                 {{ methods.formatDelta(state.kpi.totalInventoryDeltaPct) }}
                             </span>
-                            <span>vs last month</span>
+                            <span>{{ t('dashboard.kpi.vsLastMonth') }}</span>
                         </div>
                     </div>
                 </div>
@@ -201,7 +201,7 @@
                         <i class="fas fa-arrow-down"></i>
                     </div>
                     <div>
-                        <div class="kpi-tile-label">Inbound Today</div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.inboundToday') }}</div>
                         <div class="kpi-tile-value">
                             {{ methods.formatQty(state.kpi.inboundToday) }}
                             <i class="fas fa-chevron-right kpi-tile-cta"></i>
@@ -211,7 +211,7 @@
                                 <i v-bind:class="methods.deltaIcon(state.kpi.inboundDeltaPct)"></i>
                                 {{ methods.formatDelta(state.kpi.inboundDeltaPct) }}
                             </span>
-                            <span>vs daily average</span>
+                            <span>{{ t('dashboard.kpi.vsDailyAverage') }}</span>
                         </div>
                     </div>
                 </div>
@@ -224,7 +224,7 @@
                         <i class="fas fa-arrow-up"></i>
                     </div>
                     <div>
-                        <div class="kpi-tile-label">Outbound Today</div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.outboundToday') }}</div>
                         <div class="kpi-tile-value">
                             {{ methods.formatQty(state.kpi.outboundToday) }}
                             <i class="fas fa-chevron-right kpi-tile-cta"></i>
@@ -234,7 +234,7 @@
                                 <i v-bind:class="methods.deltaIcon(state.kpi.outboundDeltaPct)"></i>
                                 {{ methods.formatDelta(state.kpi.outboundDeltaPct) }}
                             </span>
-                            <span>vs daily average</span>
+                            <span>{{ t('dashboard.kpi.vsDailyAverage') }}</span>
                         </div>
                     </div>
                 </div>
@@ -247,7 +247,7 @@
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                     <div>
-                        <div class="kpi-tile-label">Low Stock Items</div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.lowStockItems') }}</div>
                         <div class="kpi-tile-value">
                             {{ methods.formatQty(state.kpi.lowStockCount) }}
                             <i class="fas fa-chevron-right kpi-tile-cta"></i>
@@ -257,7 +257,7 @@
                                 <i v-bind:class="methods.deltaIcon(state.kpi.lowStockDeltaPct)"></i>
                                 {{ methods.formatDelta(state.kpi.lowStockDeltaPct) }}
                             </span>
-                            <span>at or below {{ methods.formatQty(state.kpi.lowStockThreshold) }} units</span>
+                            <span>{{ t('dashboard.kpi.atOrBelow') }} {{ methods.formatQty(state.kpi.lowStockThreshold) }} {{ t('dashboard.kpi.units') }}</span>
                         </div>
                     </div>
                 </div>
@@ -274,13 +274,13 @@
                         <i class="fas fa-truck-loading"></i>
                     </div>
                     <div>
-                        <div class="kpi-tile-label">Pending Delivery</div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.pendingDelivery') }}</div>
                         <div class="kpi-tile-value">
                             {{ methods.formatQty(state.kpi.pendingDeliveryCount) }}
                             <i class="fas fa-chevron-right kpi-tile-cta"></i>
                         </div>
                         <div class="kpi-tile-foot">
-                            <span>units outstanding across {{ methods.formatQty(state.kpi.pendingDeliveryOrderCount) }} order(s)</span>
+                            <span>{{ t('dashboard.kpi.unitsOutstandingAcross') }} {{ methods.formatQty(state.kpi.pendingDeliveryOrderCount) }} {{ t('dashboard.kpi.orders') }}</span>
                         </div>
                     </div>
                 </div>
@@ -293,13 +293,13 @@
                         <i class="fas fa-inbox"></i>
                     </div>
                     <div>
-                        <div class="kpi-tile-label">Pending Goods Received</div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.pendingGoodsReceived') }}</div>
                         <div class="kpi-tile-value">
                             {{ methods.formatQty(state.kpi.pendingGoodsReceiveCount) }}
                             <i class="fas fa-chevron-right kpi-tile-cta"></i>
                         </div>
                         <div class="kpi-tile-foot">
-                            <span>units outstanding across {{ methods.formatQty(state.kpi.pendingGoodsReceiveOrderCount) }} order(s)</span>
+                            <span>{{ t('dashboard.kpi.unitsOutstandingAcross') }} {{ methods.formatQty(state.kpi.pendingGoodsReceiveOrderCount) }} {{ t('dashboard.kpi.orders') }}</span>
                         </div>
                     </div>
                 </div>
@@ -316,13 +316,13 @@
                         <i class="fas fa-shopping-cart"></i>
                     </div>
                     <div>
-                        <div class="kpi-tile-label">Today's Purchase</div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.todaysPurchase') }}</div>
                         <div class="kpi-tile-value">
                             {{ methods.formatCurrency(state.kpi.todayPurchaseAmount) }}
                             <i class="fas fa-chevron-right kpi-tile-cta"></i>
                         </div>
                         <div class="kpi-tile-foot">
-                            <span>confirmed orders today</span>
+                            <span>{{ t('dashboard.kpi.confirmedOrdersToday') }}</span>
                         </div>
                     </div>
                 </div>
@@ -335,13 +335,13 @@
                         <i class="fas fa-file-invoice-dollar"></i>
                     </div>
                     <div>
-                        <div class="kpi-tile-label">Today's Sales</div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.todaysSales') }}</div>
                         <div class="kpi-tile-value">
                             {{ methods.formatCurrency(state.kpi.todaySalesAmount) }}
                             <i class="fas fa-chevron-right kpi-tile-cta"></i>
                         </div>
                         <div class="kpi-tile-foot">
-                            <span>confirmed orders today</span>
+                            <span>{{ t('dashboard.kpi.confirmedOrdersToday') }}</span>
                         </div>
                     </div>
                 </div>
@@ -353,12 +353,12 @@
                     <i class="fas fa-hand-holding-usd"></i>
                 </div>
                 <div>
-                    <div class="kpi-tile-label">Today's Collections</div>
+                    <div class="kpi-tile-label">{{ t('dashboard.kpi.todaysCollections') }}</div>
                     <div class="kpi-tile-value">
                         {{ methods.formatCurrency(state.kpi.todayDueAmount) }}
                     </div>
                     <div class="kpi-tile-foot">
-                        <span>payments received today</span>
+                        <span>{{ t('dashboard.kpi.paymentsReceivedToday') }}</span>
                     </div>
                 </div>
             </div>
@@ -370,15 +370,15 @@
         <div class="col-12 col-xl-5">
             <div class="dash-panel">
                 <div class="dash-ph">
-                    <h2 class="dash-ph-title">Inventory Status</h2>
-                    <a href="/StockReports/StockReportList" class="dash-ph-link">View Report</a>
+                    <h2 class="dash-ph-title">{{ t('dashboard.panel.inventoryStatus') }}</h2>
+                    <a href="/StockReports/StockReportList" class="dash-ph-link">{{ t('dashboard.panel.viewReport') }}</a>
                 </div>
                 <div class="donut-row">
                     <div class="donut-holder">
                         <div ref="statusChartRef"></div>
                         <div class="donut-center">
                             <div class="donut-center-value">{{ methods.formatQty(state.statusTotal) }}</div>
-                            <div class="donut-center-label">Total Units</div>
+                            <div class="donut-center-label">{{ t('dashboard.panel.totalUnits') }}</div>
                         </div>
                     </div>
                     <div class="donut-legend">
@@ -388,7 +388,7 @@
                             <span class="donut-legend-value">{{ methods.formatQty(slice.value) }}</span>
                             <span class="donut-legend-pct">({{ slice.percentage }}%)</span>
                         </div>
-                        <div class="db-empty" v-if="state.inventoryStatus.length === 0">No inventory recorded yet.</div>
+                        <div class="db-empty" v-if="state.inventoryStatus.length === 0">{{ t('dashboard.panel.noInventoryYet') }}</div>
                     </div>
                 </div>
             </div>
@@ -396,8 +396,8 @@
         <div class="col-12 col-xl-7">
             <div class="dash-panel">
                 <div class="dash-ph">
-                    <h2 class="dash-ph-title">Inbound vs Outbound</h2>
-                    <span class="dash-ph-pill">Last 7 Days</span>
+                    <h2 class="dash-ph-title">{{ t('dashboard.panel.inboundVsOutbound') }}</h2>
+                    <span class="dash-ph-pill">{{ t('dashboard.panel.last7Days') }}</span>
                 </div>
                 <div ref="trendChartRef"></div>
             </div>
@@ -409,8 +409,8 @@
         <div class="col-12 col-xl-5">
             <div class="dash-panel">
                 <div class="dash-ph">
-                    <h2 class="dash-ph-title">Top Categories</h2>
-                    <a href="/ProductGroups/ProductGroupList" class="dash-ph-link">View All</a>
+                    <h2 class="dash-ph-title">{{ t('dashboard.panel.topCategories') }}</h2>
+                    <a href="/ProductGroups/ProductGroupList" class="dash-ph-link">{{ t('dashboard.panel.viewAll') }}</a>
                 </div>
                 <div class="cat-list">
                     <div v-for="category in state.topCategories" v-bind:key="category.name">
@@ -425,15 +425,15 @@
                             <div class="cat-fill" v-bind:style="{ width: category.percentage + '%' }"></div>
                         </div>
                     </div>
-                    <div class="db-empty" v-if="state.topCategories.length === 0">No stock on hand yet.</div>
+                    <div class="db-empty" v-if="state.topCategories.length === 0">{{ t('dashboard.panel.noStockYet') }}</div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-xl-7">
             <div class="dash-panel">
                 <div class="dash-ph">
-                    <h2 class="dash-ph-title">Recent Activities</h2>
-                    <a href="/TransactionReports/TransactionReportList" class="dash-ph-link">View All</a>
+                    <h2 class="dash-ph-title">{{ t('dashboard.panel.recentActivities') }}</h2>
+                    <a href="/TransactionReports/TransactionReportList" class="dash-ph-link">{{ t('dashboard.panel.viewAll') }}</a>
                 </div>
                 <div class="act-list">
                     <div class="act-row" v-for="activity in state.recentActivities" v-bind:key="activity.key">
@@ -442,12 +442,12 @@
                         </span>
                         <span class="act-title">
                             <span>{{ activity.title }}</span>
-                            <span class="act-qty">{{ methods.formatQty(activity.quantity) }} units</span>
+                            <span class="act-qty">{{ methods.formatQty(activity.quantity) }} {{ t('dashboard.kpi.units') }}</span>
                         </span>
                         <span class="act-number">{{ activity.number }}</span>
                         <span class="act-time">{{ activity.timeLabel }}</span>
                     </div>
-                    <div class="db-empty" v-if="state.recentActivities.length === 0">No recent movements.</div>
+                    <div class="db-empty" v-if="state.recentActivities.length === 0">{{ t('dashboard.panel.noRecentMovements') }}</div>
                 </div>
             </div>
         </div>

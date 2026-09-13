@@ -377,7 +377,8 @@ const App = {
             statusChartRef,
             trendChartRef,
             state,
-            methods
+            methods,
+            t: I18n.t
         };
     }
 };
