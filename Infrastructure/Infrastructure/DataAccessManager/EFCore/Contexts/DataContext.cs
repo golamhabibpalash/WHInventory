@@ -205,10 +205,18 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
 
     private void ApplyTenantFilters(ModelBuilder modelBuilder)
     {
+        // Global entities visible to all tenants — no tenant query filter applied.
+        var globalTypes = new HashSet<Type>
+        {
+            typeof(TicketCategory),
+            typeof(TicketPriority),
+        };
+
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (entityType.BaseType != null) continue;
             if (entityType.ClrType == typeof(Tenant)) continue;
+            if (globalTypes.Contains(entityType.ClrType)) continue;
             if (!typeof(IHasTenant).IsAssignableFrom(entityType.ClrType)) continue;
 
             _tenantFilterMethod
