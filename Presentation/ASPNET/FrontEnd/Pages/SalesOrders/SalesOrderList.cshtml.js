@@ -1494,19 +1494,12 @@ const App = {
                 },
                 submitCustomerQuickCreate: async () => {
                     state.customerQuickErrors = {
-                        name: '', street: '', city: '', addrState: '', zipCode: '',
-                        phoneNumber: '', emailAddress: '', customerGroupId: '', customerCategoryId: ''
+                        name: '', phoneNumber: '', emailAddress: ''
                     };
                     let isValid = true;
                     if (!state.customerQuickName?.trim()) { state.customerQuickErrors.name = 'Name is required.'; isValid = false; }
-                    if (!state.customerQuickStreet?.trim()) { state.customerQuickErrors.street = 'Street is required.'; isValid = false; }
-                    if (!state.customerQuickCity?.trim()) { state.customerQuickErrors.city = 'City is required.'; isValid = false; }
-                    if (!state.customerQuickAddrState?.trim()) { state.customerQuickErrors.addrState = 'State / Province is required.'; isValid = false; }
-                    if (!state.customerQuickZipCode?.trim()) { state.customerQuickErrors.zipCode = 'Zip code is required.'; isValid = false; }
                     if (!state.customerQuickPhoneNumber?.trim()) { state.customerQuickErrors.phoneNumber = 'Phone number is required.'; isValid = false; }
-                    if (!state.customerQuickEmailAddress?.trim()) { state.customerQuickErrors.emailAddress = 'Email address is required.'; isValid = false; }
-                    if (!state.customerQuickGroupId) { state.customerQuickErrors.customerGroupId = 'Customer group is required.'; isValid = false; }
-                    if (!state.customerQuickCategoryId) { state.customerQuickErrors.customerCategoryId = 'Customer category is required.'; isValid = false; }
+                    if (state.customerQuickEmailAddress?.trim() && !/\S+@\S+\.\S+/.test(state.customerQuickEmailAddress.trim())) { state.customerQuickErrors.emailAddress = 'Please enter a valid email address.'; isValid = false; }
                     if (!isValid) return;
                     try {
                         state.customerQuickIsSubmitting = true;

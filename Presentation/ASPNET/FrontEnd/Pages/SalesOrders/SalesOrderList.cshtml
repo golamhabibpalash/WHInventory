@@ -363,7 +363,7 @@
                     <button type="button" class="btn-close" v-on:click="handler.closeCustomerQuickCreate" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new customer will be automatically selected after creation.</p>
+                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Only Name and Phone are required. The new customer will be automatically selected after creation.</p>
                     <div class="card mb-3">
                         <div class="card-header"><h6 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Basic Info</h6></div>
                         <div class="card-body">
@@ -380,7 +380,7 @@
                             </div>
                             <div class="row mb-2">
                                 <div class="col-md-6">
-                                    <label>Customer Group <span class="text-danger">*</span></label>
+                                    <label>Customer Group</label>
                                     <div class="d-flex align-items-center gap-2">
                                         <div ref="customerQuickGroupIdRef" class="flex-grow-1"></div>
                                         <button type="button"
@@ -390,10 +390,9 @@
                                             <i class="fas fa-plus me-2"></i>New
                                         </button>
                                     </div>
-                                    <span class="text-danger small">{{ state.customerQuickErrors.customerGroupId }}</span>
                                 </div>
                                 <div class="col-md-6">
-                                    <label>Customer Category <span class="text-danger">*</span></label>
+                                    <label>Customer Category</label>
                                     <div class="d-flex align-items-center gap-2">
                                         <div ref="customerQuickCategoryIdRef" class="flex-grow-1"></div>
                                         <button type="button"
@@ -403,7 +402,6 @@
                                             <i class="fas fa-plus me-2"></i>New
                                         </button>
                                     </div>
-                                    <span class="text-danger small">{{ state.customerQuickErrors.customerCategoryId }}</span>
                                 </div>
                             </div>
                         </div>
@@ -413,26 +411,22 @@
                         <div class="card-body">
                             <div class="row mb-2">
                                 <div class="col-md-12">
-                                    <label>Street <span class="text-danger">*</span></label>
-                                    <input v-model="state.customerQuickStreet" type="text" class="form-control" placeholder="Street address" />
-                                    <span class="text-danger small">{{ state.customerQuickErrors.street }}</span>
+                                    <label>Street</label>
+                                    <input v-model="state.customerQuickStreet" type="text" class="form-control" placeholder="Street address (optional)" />
                                 </div>
                             </div>
                             <div class="row mb-2">
                                 <div class="col-md-4">
-                                    <label>City <span class="text-danger">*</span></label>
-                                    <input v-model="state.customerQuickCity" type="text" class="form-control" placeholder="City" />
-                                    <span class="text-danger small">{{ state.customerQuickErrors.city }}</span>
+                                    <label>City</label>
+                                    <input v-model="state.customerQuickCity" type="text" class="form-control" placeholder="City (optional)" />
                                 </div>
                                 <div class="col-md-4">
-                                    <label>State / Province <span class="text-danger">*</span></label>
-                                    <input v-model="state.customerQuickAddrState" type="text" class="form-control" placeholder="State / Province" />
-                                    <span class="text-danger small">{{ state.customerQuickErrors.addrState }}</span>
+                                    <label>State / Province</label>
+                                    <input v-model="state.customerQuickAddrState" type="text" class="form-control" placeholder="State / Province (optional)" />
                                 </div>
                                 <div class="col-md-4">
-                                    <label>Zip Code <span class="text-danger">*</span></label>
-                                    <input v-model="state.customerQuickZipCode" type="text" class="form-control" placeholder="Zip / Postal code" />
-                                    <span class="text-danger small">{{ state.customerQuickErrors.zipCode }}</span>
+                                    <label>Zip Code</label>
+                                    <input v-model="state.customerQuickZipCode" type="text" class="form-control" placeholder="Zip / Postal code (optional)" />
                                 </div>
                             </div>
                             <div class="row mb-2">
@@ -449,12 +443,12 @@
                             <div class="row mb-2">
                                 <div class="col-md-6">
                                     <label>Phone Number <span class="text-danger">*</span></label>
-                                    <input v-model="state.customerQuickPhoneNumber" type="text" class="form-control" placeholder="Phone number" />
+                                    <input v-model="state.customerQuickPhoneNumber" type="text" class="form-control" maxlength="15" placeholder="Phone number" />
                                     <span class="text-danger small">{{ state.customerQuickErrors.phoneNumber }}</span>
                                 </div>
                                 <div class="col-md-6">
-                                    <label>Email Address <span class="text-danger">*</span></label>
-                                    <input v-model="state.customerQuickEmailAddress" type="email" class="form-control" placeholder="Email address" />
+                                    <label>Email Address</label>
+                                    <input v-model="state.customerQuickEmailAddress" type="email" class="form-control" placeholder="Email (optional)" />
                                     <span class="text-danger small">{{ state.customerQuickErrors.emailAddress }}</span>
                                 </div>
                             </div>
