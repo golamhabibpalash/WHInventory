@@ -185,99 +185,14 @@
                                                         <div class="fw-semibold">{{ line.productName }}</div>
                                                         <div class="text-muted small">{{ line.productNumber }}</div>
                                                     </td>
-                                                    <td>
+                                                     <td>
                                                         <div class="input-group input-group-sm pos-qty">
                                                             <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepLineQty(line, -1)" aria-label="Decrease quantity">&minus;</button>
                                                             <input type="number" step="any" min="0" class="form-control"
                                                                    v-bind:value="line.quantity"
                                                                    v-on:change="handler.commitLineQty(line, $event.target.value)">
                                                             <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepLineQty(line, 1)" aria-label="Increase quantity">+</button>
-    <!-- View Sales Order Modal -->
-    <div class="modal fade order-view-modal" ref="viewModalRef" id="ViewSalesOrderModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div>
-                        <div class="ov-title-row">
-                            <h5>{{ state.view.number || 'Sales Order Details' }}</h5>
-                            <span class="ov-number-badge" v-if="state.view.number">{{ state.view.number }}</span>
-                        </div>
-                        <div class="ov-badges">
-                            <span class="badge" v-bind:class="state.view.statusClass">{{ state.view.orderStatusName || '—' }}</span>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="ov-facts">
-                        <div class="ov-fact">
-                            <span class="ov-fact-label">Customer</span>
-                            <span class="ov-fact-value">{{ state.view.customerName || '—' }}</span>
-                        </div>
-                        <div class="ov-fact">
-                            <span class="ov-fact-label">Order Date</span>
-                            <span class="ov-fact-value">{{ handler.formatDate(state.view.orderDate) }}</span>
-                        </div>
-                        <div class="ov-fact">
-                            <span class="ov-fact-label">Tax</span>
-                            <span class="ov-fact-value">{{ state.view.taxName || '—' }}</span>
-                        </div>
-                        <div class="ov-fact">
-                            <span class="ov-fact-label">Description</span>
-                            <span class="ov-fact-value">{{ state.view.description || '—' }}</span>
-                        </div>
-                    </div>
-
-                    <h6 class="ov-section-title"><i class="fas fa-list me-2"></i>Line Items</h6>
-                    <div class="table-responsive" v-if="state.view.items.length">
-                        <table class="table table-sm ov-items-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th class="text-end">Unit Price</th>
-                                    <th class="text-end">Qty</th>
-                                    <th class="text-end">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="item in state.view.items" v-bind:key="item.id">
-                                    <td>{{ item.productName || '—' }}</td>
-                                    <td class="text-end">{{ handler.formatAmount(item.unitPrice) }}</td>
-                                    <td class="text-end">{{ handler.formatQty(item.quantity) }}</td>
-                                    <td class="text-end fw-semibold">{{ handler.formatAmount(item.total) }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <p v-else class="text-muted small mb-0">No line items.</p>
-
-                    <div class="ov-totals">
-                        <div class="ov-fact">
-                            <span class="ov-fact-label">Sub Total</span>
-                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.beforeTaxAmount) }}</span>
-                        </div>
-                        <div class="ov-fact">
-                            <span class="ov-fact-label">Tax Amount</span>
-                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.taxAmount) }}</span>
-                        </div>
-                        <div class="ov-fact">
-                            <span class="ov-fact-label">Total Amount</span>
-                            <span class="ov-total-amount">{{ handler.formatAmount(state.view.afterTaxAmount) }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Close
-                    </button>
-                    <button type="button" class="btn btn-primary" v-on:click="handler.editFromView">
-                        <i class="fas fa-edit me-2"></i>Edit Order
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                                                        </div>
                                                     </td>
                                                     <td class="text-end">
                                                         <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end"
@@ -434,6 +349,92 @@
                         <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
                         <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete Order' : 'Save Order Details' }}</span>
                         <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Sales Order Modal -->
+    <div class="modal fade order-view-modal" ref="viewModalRef" id="ViewSalesOrderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <div class="ov-title-row">
+                            <h5>{{ state.view.number || 'Sales Order Details' }}</h5>
+                            <span class="ov-number-badge" v-if="state.view.number">{{ state.view.number }}</span>
+                        </div>
+                        <div class="ov-badges">
+                            <span class="badge" v-bind:class="state.view.statusClass">{{ state.view.orderStatusName || '—' }}</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="ov-facts">
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Customer</span>
+                            <span class="ov-fact-value">{{ state.view.customerName || '—' }}</span>
+                        </div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Order Date</span>
+                            <span class="ov-fact-value">{{ handler.formatDate(state.view.orderDate) }}</span>
+                        </div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Tax</span>
+                            <span class="ov-fact-value">{{ state.view.taxName || '—' }}</span>
+                        </div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Description</span>
+                            <span class="ov-fact-value">{{ state.view.description || '—' }}</span>
+                        </div>
+                    </div>
+
+                    <h6 class="ov-section-title"><i class="fas fa-list me-2"></i>Line Items</h6>
+                    <div class="table-responsive" v-if="state.view.items.length">
+                        <table class="table table-sm ov-items-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Qty</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in state.view.items" v-bind:key="item.id">
+                                    <td>{{ item.productName || '—' }}</td>
+                                    <td class="text-end">{{ handler.formatAmount(item.unitPrice) }}</td>
+                                    <td class="text-end">{{ handler.formatQty(item.quantity) }}</td>
+                                    <td class="text-end fw-semibold">{{ handler.formatAmount(item.total) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p v-else class="text-muted small mb-0">No line items.</p>
+
+                    <div class="ov-totals">
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Sub Total</span>
+                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.beforeTaxAmount) }}</span>
+                        </div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Tax Amount</span>
+                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.taxAmount) }}</span>
+                        </div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Total Amount</span>
+                            <span class="ov-total-amount">{{ handler.formatAmount(state.view.afterTaxAmount) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-primary" v-on:click="handler.editFromView">
+                        <i class="fas fa-edit me-2"></i>Edit Order
                     </button>
                 </div>
             </div>
