@@ -118,7 +118,13 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
+            // Kept so the currency label can be re-rendered (with the new "Currency:" translation,
+            // not the currency code itself — that's the tenant's own data, not UI chrome) when
+            // the user switches language without a page reload.
+            let lastRenderedCompany = null;
+
             function renderCompany(company) {
+                lastRenderedCompany = company;
                 const companyName = company?.name ?? 'Default Company';
                 const companyWeb = company?.website ?? '#';
                 const year = new Date().getFullYear();
@@ -135,8 +141,12 @@
                     footerEl.appendChild(document.createTextNode(', All Right Reserved.'));
                 }
                 const topbarEl = document.getElementById('topbarContent');
-                if (topbarEl) topbarEl.textContent = `Currency: ${currency}`;
+                if (topbarEl) topbarEl.textContent = `${I18n.t('navbar.currency')} ${currency}`;
             }
+
+            document.addEventListener('i18n:locale-changed', function () {
+                if (lastRenderedCompany) renderCompany(lastRenderedCompany);
+            });
 
             async function getCompany() {
                 const cache = BrandingCache.read();

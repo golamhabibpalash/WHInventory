@@ -13,6 +13,19 @@
 
     <span class="mt-0" id="topbarContent">Currency: </span>
     <ul class="navbar-nav ml-auto">
+        <li class="nav-item dropdown" id="LanguageSwitcher">
+            <a class="nav-link" data-bs-toggle="dropdown" href="#" title="Language">
+                <i class="fas fa-globe"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right">
+                <a href="#" class="dropdown-item language-option" data-locale="en">
+                    <i class="fas fa-check me-2 language-option-check"></i>English
+                </a>
+                <a href="#" class="dropdown-item language-option" data-locale="bn">
+                    <i class="fas fa-check me-2 language-option-check"></i>বাংলা
+                </a>
+            </div>
+        </li>
         <li class="nav-item dropdown">
             <a class="nav-link" data-bs-toggle="dropdown" href="#">
                 <i class="fas fa-th-large"></i>
@@ -20,11 +33,11 @@
             <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                 <div class="dropdown-divider"></div>
                 <a asp-area="" asp-page="/Profiles/MyProfile" class="dropdown-item">
-                    <i class="fas fa-users me-2"></i> Profile
+                    <i class="fas fa-users me-2"></i> <span data-i18n="navbar.profile">Profile</span>
                 </a>
                 <div class="dropdown-divider"></div>
                 <form class="form-inline" asp-area="" asp-page="/Accounts/Logout">
-                    <button type="submit" class="nav-link btn btn-link text-black dropdown-item"><i class="fas fa-lock me-2"></i>Log Out</button>
+                    <button type="submit" class="nav-link btn btn-link text-black dropdown-item"><i class="fas fa-lock me-2"></i><span data-i18n="navbar.logOut">Log Out</span></button>
 
                 </form>
                 <div class="dropdown-divider"></div>
@@ -32,3 +45,29 @@
         </li>
     </ul>
 </nav>
+
+@* __navbar.cshtml *@
+<script>
+    // Plain DOM, not Vue — this partial renders outside any page's own Vue app (it's shared
+    // layout chrome), so the language switcher is wired with vanilla listeners instead of v-on,
+    // the same way __sidebar.cshtml's own menu already is.
+    document.addEventListener('DOMContentLoaded', function () {
+        const options = document.querySelectorAll('#LanguageSwitcher .language-option');
+
+        function markActive() {
+            options.forEach(function (opt) {
+                opt.classList.toggle('language-option-active', opt.getAttribute('data-locale') === I18n.locale.value);
+            });
+        }
+
+        options.forEach(function (opt) {
+            opt.addEventListener('click', function (e) {
+                e.preventDefault();
+                I18n.setLocale(opt.getAttribute('data-locale'));
+            });
+        });
+
+        document.addEventListener('i18n:locale-changed', markActive);
+        markActive();
+    });
+</script>

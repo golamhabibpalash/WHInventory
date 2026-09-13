@@ -175,6 +175,16 @@
         user-select: none;
     }
 
+    /* Navbar language switcher (__navbar.cshtml): a checkmark next to the currently active
+       language, hidden for the rest — toggled by the .language-option-active class the
+       switcher's own script applies. */
+    .language-option-check {
+        visibility: hidden;
+    }
+    .language-option-active .language-option-check {
+        visibility: visible;
+    }
+
     /* Inline role-access checkbox toggle (UserList Change Roles modal) */
     .role-access-toggle {
         width: 1.15em;
