@@ -873,37 +873,39 @@ const App = {
             }
         };
 
-        Vue.watch(
+        const watcherStops = [];
+
+        watcherStops.push(Vue.watch(
             () => state.orderDate,
             (newVal, oldVal) => {
                 orderDatePicker.refresh();
                 state.errors.orderDate = '';
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.customerId,
             (newVal, oldVal) => {
                 customerListLookup.refresh();
                 state.errors.customerId = '';
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.taxId,
             (newVal, oldVal) => {
                 taxListLookup.refresh();
                 state.errors.taxId = '';
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.orderStatus,
             (newVal, oldVal) => {
                 salesOrderStatusListLookup.refresh();
                 state.errors.orderStatus = '';
             }
-        );
+        ));
 
         const mainGrid = {
             obj: null,
@@ -958,10 +960,10 @@ const App = {
                             args.cell.style.cursor = 'pointer';
                             args.cell.style.color = 'var(--primary)';
                             args.cell.style.fontWeight = '600';
-                            args.cell.addEventListener('click', () => {
+                            args.cell.onclick = () => {
                                 const rowData = args.row?.data;
                                 if (rowData?.id) handler.openViewModal(rowData.id);
-                            });
+                            };
                         }
                     },
                     beforeExcelExport: (args) => {
@@ -978,18 +980,12 @@ const App = {
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
-                        if (mainGrid.obj.getSelectedRecords().length == 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], true);
-                        } else {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
-                        }
+                        const enable = mainGrid.obj.getSelectedRecords().length === 1;
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], enable);
                     },
                     rowDeselected: () => {
-                        if (mainGrid.obj.getSelectedRecords().length == 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], true);
-                        } else {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
-                        }
+                        const enable = mainGrid.obj.getSelectedRecords().length === 1;
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], enable);
                     },
                     rowSelecting: () => {
                         if (mainGrid.obj.getSelectedRecords().length) {
@@ -1297,15 +1293,27 @@ const App = {
 
                 try {
                     const userId = StorageManager.getUserId();
-                    for (const line of [...state.secondaryData]) {
-                        await services.deleteSecondaryData(line.id, userId);
+                    const results = await Promise.allSettled(
+                        [...state.secondaryData].map(line => services.deleteSecondaryData(line.id, userId))
+                    );
+                    const failed = results.filter(r => r.status === 'rejected');
+                    if (failed.length > 0) {
+                        await methods.populateSecondaryData(state.id);
+                        Swal.fire({ icon: 'error', title: 'Error', text: `${failed.length} item(s) could not be removed.` });
+                    } else {
+                        await refreshAfterCartChange();
+                        Swal.fire({ icon: 'success', title: 'Cart Cleared', timer: 1200, showConfirmButton: false });
                     }
-                    await refreshAfterCartChange();
-                    Swal.fire({ icon: 'success', title: 'Cart Cleared', timer: 1200, showConfirmButton: false });
                 } catch (error) {
                     Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message ?? 'Some items could not be removed.' });
                     await methods.populateSecondaryData(state.id);
                 }
+            }
+        };
+
+        const onMainModalShown = () => {
+            if (!state.deleteMode) {
+                orderDatePicker.focus();
             }
         };
 
@@ -1316,11 +1324,7 @@ const App = {
                     backdrop: 'static',
                     keyboard: false
                 });
-                mainModalRef.value.addEventListener('shown.bs.modal', () => {
-                    if (!state.deleteMode) {
-                        orderDatePicker.focus();
-                    }
-                });
+                mainModalRef.value.addEventListener('shown.bs.modal', onMainModalShown);
             }
         };
 
@@ -1372,7 +1376,20 @@ const App = {
         });
 
         Vue.onUnmounted(() => {
+            watcherStops.forEach(stop => stop());
             mainModalRef.value?.removeEventListener('hidden.bs.modal', methods.onMainModalHidden);
+            mainModalRef.value?.removeEventListener('shown.bs.modal', onMainModalShown);
+            mainGrid.obj?.destroy();
+            orderDatePicker.obj?.destroy();
+            numberText.obj?.destroy();
+            customerListLookup.obj?.destroy();
+            taxListLookup.obj?.destroy();
+            salesOrderStatusListLookup.obj?.destroy();
+            productPickLookup.obj?.destroy();
+            if (paymentDateRef.value) {
+                const dpInst = paymentDateRef.value?.ej2_instances?.[0];
+                dpInst?.destroy();
+            }
         });
 
         return {

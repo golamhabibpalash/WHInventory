@@ -500,84 +500,86 @@
             }
         };
 
-        Vue.watch(
+        const watcherStops = [];
+
+        watcherStops.push(Vue.watch(
             () => state.name,
             (newVal, oldVal) => {
                 state.errors.name = '';
                 nameText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.number,
             (newVal, oldVal) => {
                 numberText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.customerGroupId,
             (newVal, oldVal) => {
                 customerGroupListLookup.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.customerCategoryId,
             (newVal, oldVal) => {
                 customerCategoryListLookup.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.street,
             (newVal, oldVal) => {
                 streetText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.city,
             (newVal, oldVal) => {
                 cityText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.state,
             (newVal, oldVal) => {
                 stateText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.zipCode,
             (newVal, oldVal) => {
                 zipCodeText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.country,
             (newVal, oldVal) => {
                 countryText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.phoneNumber,
             (newVal, oldVal) => {
                 state.errors.phoneNumber = '';
                 phoneNumberText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.emailAddress,
             (newVal, oldVal) => {
                 emailAddressText.refresh();
             }
-        );
+        ));
 
         const handler = {
             handleSubmit: async function () {
@@ -837,26 +839,20 @@
                             args.cell.style.cursor = 'pointer';
                             args.cell.style.color = 'var(--primary)';
                             args.cell.style.fontWeight = '600';
-                            args.cell.addEventListener('click', () => {
+                            args.cell.onclick = () => {
                                 const rowData = args.row?.data;
                                 if (rowData?.id) handler.openViewModal(rowData.id);
-                            });
+                            };
                         }
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
-                        if (mainGrid.obj.getSelectedRecords().length == 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'ManageContactCustom'], true);
-                        } else {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'ManageContactCustom'], false);
-                        }
+                        const enable = mainGrid.obj.getSelectedRecords().length === 1;
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'ManageContactCustom'], enable);
                     },
                     rowDeselected: () => {
-                        if (mainGrid.obj.getSelectedRecords().length == 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'ManageContactCustom'], true);
-                        } else {
-                            mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'ManageContactCustom'], false);
-                        }
+                        const enable = mainGrid.obj.getSelectedRecords().length === 1;
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'ManageContactCustom'], enable);
                     },
                     rowSelecting: () => {
                         if (mainGrid.obj.getSelectedRecords().length) {
@@ -1007,18 +1003,12 @@
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
-                        if (secondaryGrid.obj.getSelectedRecords().length == 1) {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit', 'Delete'], true);
-                        } else {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit', 'Delete'], false);
-                        }
+                        const enable = secondaryGrid.obj.getSelectedRecords().length === 1;
+                        secondaryGrid.obj.toolbarModule.enableItems(['Edit', 'Delete'], enable);
                     },
                     rowDeselected: () => {
-                        if (secondaryGrid.obj.getSelectedRecords().length == 1) {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit', 'Delete'], true);
-                        } else {
-                            secondaryGrid.obj.toolbarModule.enableItems(['Edit', 'Delete'], false);
-                        }
+                        const enable = secondaryGrid.obj.getSelectedRecords().length === 1;
+                        secondaryGrid.obj.toolbarModule.enableItems(['Edit', 'Delete'], enable);
                     },
                     rowSelecting: () => {
                         if (secondaryGrid.obj.getSelectedRecords().length) {
@@ -1113,6 +1103,31 @@
             } finally {
                 
             }
+        });
+
+        Vue.onUnmounted(() => {
+            watcherStops.forEach(stop => stop());
+            mainGrid.obj?.destroy();
+            secondaryGrid.obj?.destroy();
+            nameText.obj?.destroy();
+            numberText.obj?.destroy();
+            streetText.obj?.destroy();
+            cityText.obj?.destroy();
+            stateText.obj?.destroy();
+            zipCodeText.obj?.destroy();
+            countryText.obj?.destroy();
+            phoneNumberText.obj?.destroy();
+            faxNumberText.obj?.destroy();
+            emailAddressText.obj?.destroy();
+            websiteText.obj?.destroy();
+            whatsAppText.obj?.destroy();
+            linkedInText.obj?.destroy();
+            facebookText.obj?.destroy();
+            instagramText.obj?.destroy();
+            twitterXText.obj?.destroy();
+            tikTokText.obj?.destroy();
+            customerGroupListLookup.obj?.destroy();
+            customerCategoryListLookup.obj?.destroy();
         });
 
         return {

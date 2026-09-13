@@ -227,6 +227,8 @@ const App = {
             docDropzone.reset();
         };
 
+        const onMainModalHidden = () => resetFormState();
+
         const services = {
             getMainData: async () => {
                 try {
@@ -424,11 +426,13 @@ const App = {
             },
             loadImagePreview: async (imageName) => {
                 if (!imageName) {
+                    if (state.imagePreviewUrl) URL.revokeObjectURL(state.imagePreviewUrl);
                     state.imagePreviewUrl = '';
                     return;
                 }
                 try {
                     const response = await services.getProductImage(imageName);
+                    if (state.imagePreviewUrl) URL.revokeObjectURL(state.imagePreviewUrl);
                     state.imagePreviewUrl = URL.createObjectURL(response.data);
                 } catch {
                     state.imagePreviewUrl = '';
@@ -661,80 +665,83 @@ const App = {
             }
         };
 
-        Vue.watch(
+        const watcherStops = [];
+
+        watcherStops.push(Vue.watch(
             () => state.minSellingPrice,
             () => {
                 state.errors.minSellingPrice = '';
                 minSellingPriceNumber.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.maxSellingPrice,
             () => {
                 state.errors.maxSellingPrice = '';
                 maxSellingPriceNumber.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.warrantyDays,
             () => { warrantyDaysNumber.refresh(); }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.isWarrantyApplicable,
             (val) => { if (!val) { state.warrantyDays = null; } }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.name,
             (newVal, oldVal) => {
                 state.errors.name = '';
                 nameText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.number,
             (newVal, oldVal) => {
                 numberText.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.unitPrice,
             (newVal, oldVal) => {
                 state.errors.unitPrice = '';
                 unitPriceNumber.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.productGroupId,
             (newVal, oldVal) => {
                 state.errors.productGroupId = '';
                 productGroupListLookup.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.unitMeasureId,
             (newVal, oldVal) => {
                 state.errors.unitMeasureId = '';
                 unitMeasureListLookup.refresh();
             }
-        );
+        ));
 
-        Vue.watch(
+        watcherStops.push(Vue.watch(
             () => state.brandId,
             (newVal, oldVal) => {
                 state.errors.brandId = '';
                 brandListLookup.refresh();
             }
-        );
+        ));
 
         const imageDropzone = {
+            obj: null,
             initialized: false,
             allowedExtensions: ['png', 'jpg', 'jpeg'],
             maxFileSizeInBytes: 1 * 1024 * 1024, // 1 MB
@@ -742,7 +749,7 @@ const App = {
                 if (imageDropzone.initialized || !imageUploadRef.value) return;
                 imageDropzone.initialized = true;
                 Dropzone.autoDiscover = false;
-                new Dropzone(imageUploadRef.value, {
+                imageDropzone.obj = new Dropzone(imageUploadRef.value, {
                     url: 'api/Product/UploadProductImage',
                     paramName: 'file',
                     maxFiles: 1,
@@ -1263,9 +1270,7 @@ const App = {
                 bulkUploadModal.create();
                 imageDropzone.init();
                 docDropzone.init();
-                mainModalRef.value?.addEventListener('hidden.bs.modal', () => {
-                    resetFormState();
-                });
+                mainModalRef.value?.addEventListener('hidden.bs.modal', onMainModalHidden);
 
             } catch (e) {
             } finally {
@@ -1274,7 +1279,19 @@ const App = {
         });
 
         Vue.onUnmounted(() => {
-            mainModalRef.value?.removeEventListener('hidden.bs.modal', resetFormState);
+            watcherStops.forEach(stop => stop());
+            mainModalRef.value?.removeEventListener('hidden.bs.modal', onMainModalHidden);
+            mainGrid.obj?.destroy();
+            if (imageDropzone.obj) {
+                imageDropzone.obj.destroy();
+                imageDropzone.obj = null;
+            }
+            if (docDropzone.obj) {
+                docDropzone.obj.destroy();
+                docDropzone.obj = null;
+            }
+            thumbnailUrlCache.forEach(url => URL.revokeObjectURL(url));
+            thumbnailUrlCache.clear();
         });
 
         const mainGrid = {
