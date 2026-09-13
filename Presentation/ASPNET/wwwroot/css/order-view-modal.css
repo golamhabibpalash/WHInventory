@@ -1,0 +1,143 @@
+/* ── Order View modal (shared by SalesOrder & PurchaseOrder) ─────────── */
+
+.order-view-modal .modal-content {
+    border: none;
+    border-radius: .75rem;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, .35), 0 10px 20px -8px rgba(15, 23, 42, .15);
+}
+
+.order-view-modal .modal-header,
+.order-view-modal .modal-footer {
+    border-color: #dee2e6;
+}
+
+.order-view-modal .modal-header {
+    padding: 1rem 1.25rem;
+}
+
+.order-view-modal .modal-body {
+    padding: 1.25rem;
+}
+
+/* ── Title row ─────────────────────────────────────────────────────── */
+
+.ov-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem .75rem;
+    margin-bottom: .25rem;
+}
+
+.ov-title-row h5 {
+    margin: 0;
+    font-weight: 700;
+}
+
+.ov-number-badge {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: .75rem;
+    padding: .25em .6em;
+}
+
+/* ── Badges ────────────────────────────────────────────────────────── */
+
+.ov-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: .75rem;
+}
+
+/* ── Info facts grid ───────────────────────────────────────────────── */
+
+.ov-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: .875rem 1.25rem;
+}
+
+.ov-fact {
+    display: flex;
+    flex-direction: column;
+    gap: .125rem;
+}
+
+.ov-fact-label {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.ov-fact-value {
+    font-size: .9rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+/* ── Section title ─────────────────────────────────────────────────── */
+
+.ov-section-title {
+    font-size: .8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: .5rem;
+    margin-bottom: .75rem;
+    margin-top: 1.25rem;
+}
+
+/* ── Line items table ──────────────────────────────────────────────── */
+
+.ov-items-table {
+    font-size: .85rem;
+}
+
+.ov-items-table thead th {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #6c757d;
+    font-weight: 600;
+    border-bottom-width: 1px;
+    padding: .5rem .625rem;
+}
+
+.ov-items-table tbody td {
+    padding: .5rem .625rem;
+    vertical-align: middle;
+}
+
+.ov-items-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── Totals summary ────────────────────────────────────────────────── */
+
+.ov-totals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: .75rem 1.25rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.ov-total-amount {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary, #1b84ff);
+}
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+
+.order-view-modal .modal-footer {
+    padding: .75rem 1.25rem;
+}

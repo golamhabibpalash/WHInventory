@@ -5,6 +5,7 @@
 
 @section styles {
     <link rel="stylesheet" href="~/css/pos-order-modal.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/order-view-modal.css" asp-append-version="true" />
 }
 
 <div id="app" v-cloak>
@@ -465,52 +466,48 @@
     </div>
 
     <!-- View Purchase Order Modal -->
-    <div class="modal fade" ref="viewModalRef" id="ViewPurchaseOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade order-view-modal" ref="viewModalRef" id="ViewPurchaseOrderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-file-invoice me-2 text-primary"></i>{{ state.view.number || 'Purchase Order Details' }}</h5>
+                    <div>
+                        <div class="ov-title-row">
+                            <h5>{{ state.view.number || 'Purchase Order Details' }}</h5>
+                            <span class="ov-number-badge" v-if="state.view.number">{{ state.view.number }}</span>
+                        </div>
+                        <div class="ov-badges">
+                            <span class="badge" v-bind:class="state.view.statusClass">{{ state.view.orderStatusName || '—' }}</span>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <label class="text-muted small">Order Number</label>
-                            <div class="fw-semibold">{{ state.view.number || '—' }}</div>
+                    <div class="ov-facts">
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Vendor</span>
+                            <span class="ov-fact-value">{{ state.view.vendorName || '—' }}</span>
                         </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small">Order Date</label>
-                            <div class="fw-semibold">{{ handler.formatDate(state.view.orderDate) }}</div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Order Date</span>
+                            <span class="ov-fact-value">{{ handler.formatDate(state.view.orderDate) }}</span>
                         </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small">Status</label>
-                            <div><span class="badge" v-bind:class="state.view.statusClass">{{ state.view.orderStatusName || '—' }}</span></div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Tax</span>
+                            <span class="ov-fact-value">{{ state.view.taxName || '—' }}</span>
                         </div>
-                    </div>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <label class="text-muted small">Vendor</label>
-                            <div class="fw-semibold">{{ state.view.vendorName || '—' }}</div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Reference Number</span>
+                            <span class="ov-fact-value">{{ state.view.referenceNumber || '—' }}</span>
                         </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small">Tax</label>
-                            <div class="fw-semibold">{{ state.view.taxName || '—' }}</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small">Reference Number</label>
-                            <div class="fw-semibold">{{ state.view.referenceNumber || '—' }}</div>
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-4" v-if="state.view.description">
-                        <div class="col-md-12">
-                            <label class="text-muted small">Description</label>
-                            <div>{{ state.view.description }}</div>
+                        <div class="ov-fact" v-if="state.view.description">
+                            <span class="ov-fact-label">Description</span>
+                            <span class="ov-fact-value">{{ state.view.description }}</span>
                         </div>
                     </div>
 
-                    <h6 class="mb-3"><i class="fas fa-list me-2 text-primary"></i>Line Items</h6>
+                    <h6 class="ov-section-title"><i class="fas fa-list me-2"></i>Line Items</h6>
                     <div class="table-responsive" v-if="state.view.items.length">
-                        <table class="table table-sm table-hover mb-0">
+                        <table class="table table-sm ov-items-table mb-0">
                             <thead>
                                 <tr>
                                     <th>Product</th>
@@ -524,34 +521,34 @@
                                     <td>{{ item.productName || '—' }}</td>
                                     <td class="text-end">{{ handler.formatAmount(item.unitPrice) }}</td>
                                     <td class="text-end">{{ handler.formatQty(item.quantity) }}</td>
-                                    <td class="text-end">{{ handler.formatAmount(item.total) }}</td>
+                                    <td class="text-end fw-semibold">{{ handler.formatAmount(item.total) }}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <p v-else class="text-muted small mb-0">No line items.</p>
 
-                    <div class="row g-3 mt-3">
-                        <div class="col-md-4">
-                            <label class="text-muted small">Sub Total</label>
-                            <div class="fw-semibold">{{ handler.formatAmount(state.view.beforeTaxAmount) }}</div>
+                    <div class="ov-totals">
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Sub Total</span>
+                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.beforeTaxAmount) }}</span>
                         </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small">Tax Amount</label>
-                            <div class="fw-semibold">{{ handler.formatAmount(state.view.taxAmount) }}</div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Tax Amount</span>
+                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.taxAmount) }}</span>
                         </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small">Total Amount</label>
-                            <div class="fw-bold text-primary">{{ handler.formatAmount(state.view.afterTaxAmount) }}</div>
+                        <div class="ov-fact">
+                            <span class="ov-fact-label">Total Amount</span>
+                            <span class="ov-total-amount">{{ handler.formatAmount(state.view.afterTaxAmount) }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-primary" v-on:click="handler.editFromView">
-                        <i class="fas fa-edit me-2"></i>Edit Order
-                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-2"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-primary" v-on:click="handler.editFromView">
+                        <i class="fas fa-edit me-2"></i>Edit Order
                     </button>
                 </div>
             </div>
