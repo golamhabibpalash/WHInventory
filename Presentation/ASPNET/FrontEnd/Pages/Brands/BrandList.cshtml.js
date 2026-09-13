@@ -76,7 +76,7 @@ const App = {
             let isValid = true;
 
             if (!state.name) {
-                state.errors.name = 'Name is required.';
+                state.errors.name = I18n.t('common.nameRequired');
                 isValid = false;
             }
 
@@ -169,7 +169,7 @@ const App = {
                         Swal.fire({
                             icon: 'success',
                             title: 'Status Updated',
-                            text: 'Brand status has been toggled.',
+                            text: I18n.t('brand.statusToggled'),
                             timer: 1000,
                             showConfirmButton: false
                         });
@@ -178,8 +178,8 @@ const App = {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: error.response?.data?.message ?? 'Failed to toggle status.',
-                        confirmButtonText: 'OK'
+                        text: error.response?.data?.message ?? I18n.t('brand.failedToToggleStatus'),
+                        confirmButtonText: I18n.t('common.ok')
                     });
                 }
             },
@@ -207,8 +207,8 @@ const App = {
                     Swal.fire({
                         icon: 'error',
                         title: 'Upload Failed',
-                        text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
+                        text: error.response?.data?.message ?? I18n.t('common.pleaseTryAgain'),
+                        confirmButtonText: I18n.t('common.ok')
                     });
                 } finally {
                     state.bulkUploadSubmitting = false;
@@ -233,7 +233,7 @@ const App = {
                         mainGrid.refresh();
 
                         if (!state.deleteMode) {
-                            state.mainTitle = 'Edit Brand';
+                            state.mainTitle = I18n.t('brand.editTitle');
                             state.id = response?.data?.content?.data.id ?? '';
                             state.name = response?.data?.content?.data.name ?? '';
                             state.number = response?.data?.content?.data.number ?? '';
@@ -241,8 +241,8 @@ const App = {
 
                             Swal.fire({
                                 icon: 'success',
-                                title: state.deleteMode ? 'Delete Successful' : 'Save Successful',
-                                text: 'Form will be closed...',
+                                title: state.deleteMode ? I18n.t('common.deleteSuccessful') : I18n.t('common.saveSuccessful'),
+                                text: I18n.t('common.formWillClose'),
                                 timer: 1000,
                                 showConfirmButton: false
                             });
@@ -253,8 +253,8 @@ const App = {
                         } else {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Delete Successful',
-                                text: 'Form will be closed...',
+                                title: I18n.t('common.deleteSuccessful'),
+                                text: I18n.t('common.formWillClose'),
                                 timer: 1000,
                                 showConfirmButton: false
                             });
@@ -267,18 +267,18 @@ const App = {
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                            text: response.data.message ?? 'Please check your data.',
-                            confirmButtonText: 'Try Again'
+                            title: state.deleteMode ? I18n.t('common.deleteFailed') : I18n.t('common.saveFailed'),
+                            text: response.data.message ?? I18n.t('common.checkYourData'),
+                            confirmButtonText: I18n.t('common.tryAgain')
                         });
                     }
 
                 } catch (error) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'An Error Occurred',
-                        text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
+                        title: I18n.t('common.errorOccurred'),
+                        text: error.response?.data?.message ?? I18n.t('common.pleaseTryAgain'),
+                        confirmButtonText: I18n.t('common.ok')
                     });
                 } finally {
                     state.isSubmitting = false;
@@ -338,22 +338,22 @@ const App = {
                         {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
-                        { field: 'number', headerText: 'Code', width: 150, minWidth: 150 },
-                        { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
-                        { field: 'status', headerText: 'Status', width: 120, minWidth: 120 },
-                        { field: 'description', headerText: 'Description', width: 350, minWidth: 200, clipMode: 'EllipsisWithTooltip', template: '<div class="grid-cell-desc">${description}</div>' },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
+                        { field: 'number', headerText: I18n.t('common.code'), width: 150, minWidth: 150 },
+                        { field: 'name', headerText: I18n.t('common.name'), width: 200, minWidth: 200 },
+                        { field: 'status', headerText: I18n.t('common.status'), width: 120, minWidth: 120 },
+                        { field: 'description', headerText: I18n.t('common.description'), width: 350, minWidth: 200, clipMode: 'EllipsisWithTooltip', template: '<div class="grid-cell-desc">${description}</div>' },
+                        { field: 'createdAtUtc', headerText: I18n.t('common.createdAtUtc'), width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
                         { type: 'Separator' },
-                        { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
-                        { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
-                        { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
+                        { text: I18n.t('common.add'), tooltipText: I18n.t('common.add'), prefixIcon: 'e-add', id: 'AddCustom' },
+                        { text: I18n.t('common.edit'), tooltipText: I18n.t('common.edit'), prefixIcon: 'e-edit', id: 'EditCustom' },
+                        { text: I18n.t('common.delete'), tooltipText: I18n.t('common.delete'), prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
-                        { text: 'Bulk Upload', tooltipText: 'Bulk Upload', prefixIcon: 'e-upload', id: 'BulkUploadCustom' },
+                        { text: I18n.t('brand.bulkUploadButton'), tooltipText: I18n.t('brand.bulkUpload'), prefixIcon: 'e-upload', id: 'BulkUploadCustom' },
                         { type: 'Separator' },
-                        { text: 'Toggle Status', tooltipText: 'Toggle Active/Inactive', prefixIcon: 'e-toggle', id: 'ToggleStatusCustom' },
+                        { text: I18n.t('brand.toggleStatus'), tooltipText: I18n.t('brand.toggleActiveInactive'), prefixIcon: 'e-toggle', id: 'ToggleStatusCustom' },
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
@@ -394,7 +394,7 @@ const App = {
 
                         if (args.item.id === 'AddCustom') {
                             state.deleteMode = false;
-                            state.mainTitle = 'Add Brand';
+                            state.mainTitle = I18n.t('brand.addTitle');
                             resetFormState();
                             mainModal.obj.show();
                         }
@@ -403,7 +403,7 @@ const App = {
                             state.deleteMode = false;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Edit Brand';
+                                state.mainTitle = I18n.t('brand.editTitle');
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.number = selectedRecord.number ?? '';
@@ -417,12 +417,12 @@ const App = {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
                                 const newStatus = selectedRecord.status === 'Active' ? 'Inactive' : 'Active';
                                 Swal.fire({
-                                    title: 'Toggle Status',
-                                    text: `Are you sure you want to set this brand to "${newStatus}"?`,
+                                    title: I18n.t('brand.toggleStatus'),
+                                    text: `${I18n.t('brand.confirmToggleStatus')} "${newStatus}"?`,
                                     icon: 'question',
                                     showCancelButton: true,
-                                    confirmButtonText: 'Yes, toggle it!',
-                                    cancelButtonText: 'Cancel'
+                                    confirmButtonText: I18n.t('brand.yesToggleIt'),
+                                    cancelButtonText: I18n.t('common.cancel')
                                 }).then(async (result) => {
                                     if (result.isConfirmed) {
                                         await handler.handleToggleStatus(selectedRecord.id);
@@ -435,7 +435,7 @@ const App = {
                             state.deleteMode = true;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Delete Brand?';
+                                state.mainTitle = I18n.t('brand.deleteTitle');
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.number = selectedRecord.number ?? '';
@@ -483,6 +483,7 @@ const App = {
             numberRef,
             state,
             handler,
+            t: I18n.t,
         };
     }
 };

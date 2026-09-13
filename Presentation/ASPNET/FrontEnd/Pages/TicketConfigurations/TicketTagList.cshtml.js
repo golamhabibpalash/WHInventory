@@ -20,7 +20,7 @@ const App = {
             state.errors.name = '';
             let isValid = true;
             if (!state.name) {
-                state.errors.name = 'Name is required.';
+                state.errors.name = I18n.t('common.nameRequired');
                 isValid = false;
             }
             return isValid;
@@ -67,8 +67,8 @@ const App = {
 
                         Swal.fire({
                             icon: 'success',
-                            title: state.deleteMode ? 'Delete Successful' : 'Save Successful',
-                            text: 'Form will be closed...',
+                            title: state.deleteMode ? I18n.t('common.deleteSuccessful') : I18n.t('common.saveSuccessful'),
+                            text: I18n.t('common.formWillClose'),
                             timer: 1000,
                             showConfirmButton: false
                         });
@@ -79,17 +79,17 @@ const App = {
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                            text: response.data.message ?? 'Please check your data.',
-                            confirmButtonText: 'Try Again'
+                            title: state.deleteMode ? I18n.t('common.deleteFailed') : I18n.t('common.saveFailed'),
+                            text: response.data.message ?? I18n.t('common.checkYourData'),
+                            confirmButtonText: I18n.t('common.tryAgain')
                         });
                     }
                 } catch (error) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'An Error Occurred',
-                        text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
+                        title: I18n.t('common.errorOccurred'),
+                        text: error.response?.data?.message ?? I18n.t('common.pleaseTryAgain'),
+                        confirmButtonText: I18n.t('common.ok')
                     });
                 } finally {
                     state.isSubmitting = false;
@@ -141,14 +141,14 @@ const App = {
                     columns: [
                         { type: 'checkbox', width: 60 },
                         { field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false },
-                        { field: 'name', headerText: 'Name', width: 200 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
+                        { field: 'name', headerText: I18n.t('common.name'), width: 200 },
+                        { field: 'createdAtUtc', headerText: I18n.t('common.createdAtUtc'), width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
                         { type: 'Separator' },
-                        { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
-                        { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
+                        { text: I18n.t('common.add'), tooltipText: I18n.t('common.add'), prefixIcon: 'e-add', id: 'AddCustom' },
+                        { text: I18n.t('common.delete'), tooltipText: I18n.t('common.delete'), prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
                     ],
                     beforeDataBound: () => { },
@@ -171,7 +171,7 @@ const App = {
 
                         if (args.item.id === 'AddCustom') {
                             state.deleteMode = false;
-                            state.mainTitle = 'Add Ticket Tag';
+                            state.mainTitle = I18n.t('ticketTag.addTitle');
                             resetFormState();
                             mainModal.obj.show();
                         }
@@ -179,7 +179,7 @@ const App = {
                             state.deleteMode = true;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const r = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Delete Ticket Tag?';
+                                state.mainTitle = I18n.t('ticketTag.deleteTitle');
                                 state.id = r.id ?? '';
                                 state.name = r.name ?? '';
                                 mainModal.obj.show();
@@ -203,7 +203,7 @@ const App = {
             }
         };
 
-        return { mainGridRef, mainModalRef, nameRef, state, handler };
+        return { mainGridRef, mainModalRef, nameRef, state, handler, t: I18n.t };
     }
 };
 

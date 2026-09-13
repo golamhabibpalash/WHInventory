@@ -21,12 +21,12 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" v-model="state.id" id="Id" name="Id" />
-                    <label for="Name">Name</label>
+                    <label for="Name">{{ t('common.name') }}</label>
                     <input ref="nameRef" v-model="state.name" type="text" class="form-control" placeholder="e.g. urgent">
                     <label class="text-danger">{{ state.errors.name }}</label>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>{{ t('common.close') }}</button>
                     <button type="button"
                             id="MainSaveButton"
                             class="btn"
@@ -34,8 +34,8 @@
                             v-on:click="handler.handleSubmit"
                             v-bind:disabled="state.isSubmitting">
                         <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
-                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
-                        <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? t('common.delete') : t('common.save') }}</span>
+                        <span v-else>{{ state.deleteMode ? t('common.deleting') : t('common.saving') }}</span>
                     </button>
                 </div>
             </div>

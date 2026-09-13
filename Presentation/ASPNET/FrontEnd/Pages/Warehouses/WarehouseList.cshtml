@@ -26,25 +26,25 @@
                             <div class="col-md-12">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h5><i class="fas fa-info-circle me-2 text-primary"></i>Main Info</h5>
+                                        <h5><i class="fas fa-info-circle me-2 text-primary"></i>{{ t('common.mainInfo') }}</h5>
                                     </div>
                                     <div class="card-body">
                                         <div class="row mb-2">
                                             <div class="col-md-6">
-                                                <label for="Name">Name</label>
+                                                <label for="Name">{{ t('common.name') }}</label>
                                                 <input ref="nameRef" v-model="state.name">
                                                 <label class="text-danger">{{ state.errors.name }}</label>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-check mt-4">
                                                     <input v-model="state.isSystemWarehouse" id="SystemWarehouse" name="SystemWarehouse" type="checkbox" class="form-check-input">
-                                                    <label for="SystemWarehouse" class="form-check-label">Is System Warehouse?</label>
+                                                    <label for="SystemWarehouse" class="form-check-label">{{ t('warehouse.isSystemWarehouse') }}</label>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="row mb-2">
                                             <div class="col-12">
-                                                <label for="Description">Description</label>
+                                                <label for="Description">{{ t('common.description') }}</label>
                                                 <textarea v-model="state.description" id="Description" name="Description" class="form-control" rows="3"></textarea>
                                             </div>
                                         </div>
@@ -55,7 +55,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>{{ t('common.close') }}</button>
                     <button type="button"
                             id="MainSaveButton"
                             class="btn"
@@ -63,8 +63,8 @@
                             v-on:click="handler.handleSubmit"
                             v-bind:disabled="state.isSubmitting">
                         <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
-                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete' : 'Save' }}</span>
-                        <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
+                        <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? t('common.delete') : t('common.save') }}</span>
+                        <span v-else>{{ state.deleteMode ? t('common.deleting') : t('common.saving') }}</span>
                     </button>
                 </div>
             </div>

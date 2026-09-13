@@ -25,7 +25,7 @@ const App = {
             state.errors.name = '';
             let isValid = true;
             if (!state.name) {
-                state.errors.name = 'Name is required.';
+                state.errors.name = I18n.t('common.nameRequired');
                 isValid = false;
             }
             return isValid;
@@ -89,8 +89,8 @@ const App = {
 
                         Swal.fire({
                             icon: 'success',
-                            title: state.deleteMode ? 'Delete Successful' : 'Save Successful',
-                            text: 'Form will be closed...',
+                            title: state.deleteMode ? I18n.t('common.deleteSuccessful') : I18n.t('common.saveSuccessful'),
+                            text: I18n.t('common.formWillClose'),
                             timer: 1000,
                             showConfirmButton: false
                         });
@@ -101,17 +101,17 @@ const App = {
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                            text: response.data.message ?? 'Please check your data.',
-                            confirmButtonText: 'Try Again'
+                            title: state.deleteMode ? I18n.t('common.deleteFailed') : I18n.t('common.saveFailed'),
+                            text: response.data.message ?? I18n.t('common.checkYourData'),
+                            confirmButtonText: I18n.t('common.tryAgain')
                         });
                     }
                 } catch (error) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'An Error Occurred',
-                        text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
+                        title: I18n.t('common.errorOccurred'),
+                        text: error.response?.data?.message ?? I18n.t('common.pleaseTryAgain'),
+                        confirmButtonText: I18n.t('common.ok')
                     });
                 } finally {
                     state.isSubmitting = false;
@@ -164,12 +164,12 @@ const App = {
                     columns: [
                         { type: 'checkbox', width: 60 },
                         { field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false },
-                        { field: 'name', headerText: 'Name', width: 150 },
-                        { field: 'level', headerText: 'Level', width: 90, textAlign: 'Center' },
-                        { field: 'slaResponseHours', headerText: 'SLA Response (h)', width: 150, textAlign: 'Center' },
-                        { field: 'slaResolutionHours', headerText: 'SLA Resolution (h)', width: 160, textAlign: 'Center' },
-                        { field: 'isActive', headerText: 'Active', width: 100, textAlign: 'Center', displayAsCheckBox: true },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
+                        { field: 'name', headerText: I18n.t('common.name'), width: 150 },
+                        { field: 'level', headerText: I18n.t('ticketPriority.level'), width: 90, textAlign: 'Center' },
+                        { field: 'slaResponseHours', headerText: I18n.t('ticketPriority.slaResponseShort'), width: 150, textAlign: 'Center' },
+                        { field: 'slaResolutionHours', headerText: I18n.t('ticketPriority.slaResolutionShort'), width: 160, textAlign: 'Center' },
+                        { field: 'isActive', headerText: I18n.t('common.active'), width: 100, textAlign: 'Center', displayAsCheckBox: true },
+                        { field: 'createdAtUtc', headerText: I18n.t('common.createdAtUtc'), width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     // Colored swatch for a priority's ColorHex — queryCellInfo (not a column
                     // `template`) per this app's established Syncfusion Grid safe pattern.
@@ -197,9 +197,9 @@ const App = {
                     toolbar: [
                         'ExcelExport', 'Search',
                         { type: 'Separator' },
-                        { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
-                        { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
-                        { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
+                        { text: I18n.t('common.add'), tooltipText: I18n.t('common.add'), prefixIcon: 'e-add', id: 'AddCustom' },
+                        { text: I18n.t('common.edit'), tooltipText: I18n.t('common.edit'), prefixIcon: 'e-edit', id: 'EditCustom' },
+                        { text: I18n.t('common.delete'), tooltipText: I18n.t('common.delete'), prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
                     ],
                     toolbarClick: async (args) => {
@@ -207,7 +207,7 @@ const App = {
 
                         if (args.item.id === 'AddCustom') {
                             state.deleteMode = false;
-                            state.mainTitle = 'Add Ticket Priority';
+                            state.mainTitle = I18n.t('ticketPriority.addTitle');
                             resetFormState();
                             mainModal.obj.show();
                         }
@@ -215,7 +215,7 @@ const App = {
                             state.deleteMode = false;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const r = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Edit Ticket Priority';
+                                state.mainTitle = I18n.t('ticketPriority.editTitle');
                                 state.id = r.id ?? '';
                                 state.name = r.name ?? '';
                                 state.colorHex = r.colorHex || '#1b84ff';
@@ -230,7 +230,7 @@ const App = {
                             state.deleteMode = true;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const r = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Delete Ticket Priority?';
+                                state.mainTitle = I18n.t('ticketPriority.deleteTitle');
                                 state.id = r.id ?? '';
                                 state.name = r.name ?? '';
                                 mainModal.obj.show();
@@ -254,7 +254,7 @@ const App = {
             }
         };
 
-        return { mainGridRef, mainModalRef, nameRef, state, handler };
+        return { mainGridRef, mainModalRef, nameRef, state, handler, t: I18n.t };
     }
 };
 

@@ -45,7 +45,7 @@
                         {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
-                        { field: 'name', headerText: 'Name', width: 300, minWidth: 300 },
+                        { field: 'name', headerText: I18n.t('common.name'), width: 300, minWidth: 300 },
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

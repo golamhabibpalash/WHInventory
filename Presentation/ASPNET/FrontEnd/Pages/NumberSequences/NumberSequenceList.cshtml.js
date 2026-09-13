@@ -24,7 +24,7 @@ const App = {
             let isValid = true;
 
             if (state.lastUsedCount === null || state.lastUsedCount === '' || isNaN(Number(state.lastUsedCount))) {
-                state.errors.lastUsedCount = 'Last Used Count is required.';
+                state.errors.lastUsedCount = I18n.t('numberSequence.lastUsedCountRequired');
                 isValid = false;
             } else if (Number(state.lastUsedCount) < 0) {
                 state.errors.lastUsedCount = 'Last Used Count cannot be negative.';
@@ -90,8 +90,8 @@ const App = {
 
                         Swal.fire({
                             icon: 'success',
-                            title: 'Save Successful',
-                            text: 'Form will be closed...',
+                            title: I18n.t('common.saveSuccessful'),
+                            text: I18n.t('common.formWillClose'),
                             timer: 1000,
                             showConfirmButton: false
                         });
@@ -102,17 +102,17 @@ const App = {
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Save Failed',
+                            title: I18n.t('common.saveFailed'),
                             text: response.data.message ?? 'Please check your data.',
-                            confirmButtonText: 'Try Again'
+                            confirmButtonText: I18n.t('common.tryAgain')
                         });
                     }
                 } catch (error) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'An Error Occurred',
+                        title: I18n.t('common.errorOccurred'),
                         text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
+                        confirmButtonText: I18n.t('common.ok')
                     });
                 } finally {
                     state.isSubmitting = false;
@@ -160,16 +160,16 @@ const App = {
                         {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
-                        { field: 'entityName', headerText: 'Entity Name', width: 200, minWidth: 200 },
-                        { field: 'prefix', headerText: 'Prefix', width: 100, minWidth: 100 },
-                        { field: 'suffix', headerText: 'Suffix', width: 100, minWidth: 100 },
-                        { field: 'lastUsedCount', headerText: 'Last Used Count', width: 100, minWidth: 100 },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
+                        { field: 'entityName', headerText: I18n.t('numberSequence.entityName'), width: 200, minWidth: 200 },
+                        { field: 'prefix', headerText: I18n.t('numberSequence.prefix'), width: 100, minWidth: 100 },
+                        { field: 'suffix', headerText: I18n.t('numberSequence.suffix'), width: 100, minWidth: 100 },
+                        { field: 'lastUsedCount', headerText: I18n.t('numberSequence.lastUsedCount'), width: 100, minWidth: 100 },
+                        { field: 'createdAtUtc', headerText: I18n.t('common.createdAtUtc'), width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
                         { type: 'Separator' },
-                        { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
+                        { text: I18n.t('common.edit'), tooltipText: I18n.t('common.edit'), prefixIcon: 'e-edit', id: 'EditCustom' },
                     ],
                     beforeDataBound: () => { },
                     dataBound: function () {
@@ -241,7 +241,8 @@ const App = {
             mainModalRef,
             handler: {
                 handleSubmit: methods.handleFormSubmit
-            }
+            },
+            t: I18n.t,
         };
     }
 };

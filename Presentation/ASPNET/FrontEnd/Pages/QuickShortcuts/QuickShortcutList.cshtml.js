@@ -33,15 +33,15 @@ const App = {
             let isValid = true;
 
             if (!state.name) {
-                state.errors.name = 'Name is required.';
+                state.errors.name = I18n.t('common.nameRequired');
                 isValid = false;
             }
             if (!state.icon) {
-                state.errors.icon = 'Icon is required.';
+                state.errors.icon = I18n.t('quickShortcut.iconRequired');
                 isValid = false;
             }
             if (!state.url) {
-                state.errors.url = 'Link is required.';
+                state.errors.url = I18n.t('quickShortcut.linkRequired');
                 isValid = false;
             } else if (!state.url.startsWith('/')) {
                 state.errors.url = "Link must start with '/', e.g. /PurchaseOrders/PurchaseOrderList.";
@@ -135,7 +135,7 @@ const App = {
                         mainGrid.refresh();
 
                         if (!state.deleteMode) {
-                            state.mainTitle = 'Edit Quick Shortcut';
+                            state.mainTitle = I18n.t('quickShortcut.editTitle');
                             state.id = response?.data?.content?.data.id ?? '';
                             state.name = response?.data?.content?.data.name ?? '';
                             state.icon = response?.data?.content?.data.icon ?? '';
@@ -144,8 +144,8 @@ const App = {
 
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Save Successful',
-                                text: 'Form will be closed...',
+                                title: I18n.t('common.saveSuccessful'),
+                                text: I18n.t('common.formWillClose'),
                                 timer: 1000,
                                 showConfirmButton: false
                             });
@@ -156,8 +156,8 @@ const App = {
                         } else {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Delete Successful',
-                                text: 'Form will be closed...',
+                                title: I18n.t('common.deleteSuccessful'),
+                                text: I18n.t('common.formWillClose'),
                                 timer: 1000,
                                 showConfirmButton: false
                             });
@@ -170,18 +170,18 @@ const App = {
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                            text: response.data.message ?? 'Please check your data.',
-                            confirmButtonText: 'Try Again'
+                            title: state.deleteMode ? I18n.t('common.deleteFailed') : I18n.t('common.saveFailed'),
+                            text: response.data.message ?? I18n.t('common.checkYourData'),
+                            confirmButtonText: I18n.t('common.tryAgain')
                         });
                     }
 
                 } catch (error) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'An Error Occurred',
-                        text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
+                        title: I18n.t('common.errorOccurred'),
+                        text: error.response?.data?.message ?? I18n.t('common.pleaseTryAgain'),
+                        confirmButtonText: I18n.t('common.ok')
                     });
                 } finally {
                     state.isSubmitting = false;
@@ -240,19 +240,19 @@ const App = {
                             field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
                         },
                         {
-                            field: 'icon', headerText: 'Icon', width: 90, minWidth: 90, textAlign: 'Center'
+                            field: 'icon', headerText: I18n.t('quickShortcut.icon'), width: 90, minWidth: 90, textAlign: 'Center'
                         },
-                        { field: 'name', headerText: 'Name', width: 200, minWidth: 200 },
-                        { field: 'url', headerText: 'Link', width: 260, minWidth: 260 },
-                        { field: 'sortOrder', headerText: 'Sort Order', width: 110, minWidth: 110, textAlign: 'Center' },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
+                        { field: 'name', headerText: I18n.t('common.name'), width: 200, minWidth: 200 },
+                        { field: 'url', headerText: I18n.t('quickShortcut.link'), width: 260, minWidth: 260 },
+                        { field: 'sortOrder', headerText: I18n.t('common.sortOrder'), width: 110, minWidth: 110, textAlign: 'Center' },
+                        { field: 'createdAtUtc', headerText: I18n.t('common.createdAtUtc'), width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
                         { type: 'Separator' },
-                        { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
-                        { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
-                        { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
+                        { text: I18n.t('common.add'), tooltipText: I18n.t('common.add'), prefixIcon: 'e-add', id: 'AddCustom' },
+                        { text: I18n.t('common.edit'), tooltipText: I18n.t('common.edit'), prefixIcon: 'e-edit', id: 'EditCustom' },
+                        { text: I18n.t('common.delete'), tooltipText: I18n.t('common.delete'), prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
                     ],
                     // The Icon column shows the actual glyph rather than its raw class name.
@@ -298,7 +298,7 @@ const App = {
 
                         if (args.item.id === 'AddCustom') {
                             state.deleteMode = false;
-                            state.mainTitle = 'Add Quick Shortcut';
+                            state.mainTitle = I18n.t('quickShortcut.addTitle');
                             resetFormState();
                             mainModal.obj.show();
                         }
@@ -307,7 +307,7 @@ const App = {
                             state.deleteMode = false;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Edit Quick Shortcut';
+                                state.mainTitle = I18n.t('quickShortcut.editTitle');
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.icon = selectedRecord.icon ?? '';
@@ -321,7 +321,7 @@ const App = {
                             state.deleteMode = true;
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Delete Quick Shortcut?';
+                                state.mainTitle = I18n.t('quickShortcut.deleteTitle');
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.icon = selectedRecord.icon ?? '';
@@ -357,6 +357,7 @@ const App = {
             nameRef,
             state,
             handler,
+            t: I18n.t,
         };
     }
 };
