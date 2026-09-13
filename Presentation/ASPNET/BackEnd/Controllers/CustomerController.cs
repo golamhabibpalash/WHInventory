@@ -58,6 +58,24 @@ public class CustomerController : BaseApiController
     }
 
     [Authorize]
+    [HttpGet("GetCustomerSingle")]
+    public async Task<ActionResult<ApiSuccessResult<GetCustomerSingleResult>>> GetCustomerSingleAsync(
+        CancellationToken cancellationToken,
+        [FromQuery] string? id
+        )
+    {
+        var request = new GetCustomerSingleRequest { Id = id };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetCustomerSingleResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetCustomerSingleAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
     [HttpGet("GetCustomerList")]
     public async Task<ActionResult<ApiSuccessResult<GetCustomerListResult>>> GetCustomerListAsync(
         CancellationToken cancellationToken,

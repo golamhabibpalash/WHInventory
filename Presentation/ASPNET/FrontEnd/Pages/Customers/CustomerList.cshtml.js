@@ -33,7 +33,16 @@
                 name: '',
                 phoneNumber: '',
             },
-            isSubmitting: false
+            isSubmitting: false,
+            view: {
+                id: '', name: '', number: '', description: '',
+                customerGroupName: '', customerCategoryName: '',
+                street: '', city: '', state: '', zipCode: '', country: '',
+                phoneNumber: '', faxNumber: '', emailAddress: '', website: '',
+                whatsApp: '', linkedIn: '', facebook: '', instagram: '', twitterX: '', tikTok: '',
+                createdAtUtc: '',
+                contacts: []
+            }
         });
 
         const mainGridRef = Vue.ref(null);
@@ -59,11 +68,20 @@
         const tikTokRef = Vue.ref(null);
         const customerGroupIdRef = Vue.ref(null);
         const customerCategoryIdRef = Vue.ref(null);
+        const viewModalRef = Vue.ref(null);
 
         const services = {
             getMainData: async () => {
                 try {
                     const response = await AxiosManager.get('/Customer/GetCustomerList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getCustomerSingle: async (id) => {
+                try {
+                    const response = await AxiosManager.get('/Customer/GetCustomerSingle', { params: { id } });
                     return response;
                 } catch (error) {
                     throw error;
@@ -658,6 +676,81 @@
                     state.isSubmitting = false;
                 }
             },
+            openViewModal: async (id) => {
+                try {
+                    const response = await services.getCustomerSingle(id);
+                    const data = response?.data?.content?.data;
+                    if (!data) return;
+
+                    state.view = {
+                        id: data.id ?? '',
+                        name: data.name ?? '',
+                        number: data.number ?? '',
+                        description: data.description ?? '',
+                        customerGroupName: data.customerGroup?.name ?? '',
+                        customerCategoryName: data.customerCategory?.name ?? '',
+                        street: data.street ?? '',
+                        city: data.city ?? '',
+                        state: data.state ?? '',
+                        zipCode: data.zipCode ?? '',
+                        country: data.country ?? '',
+                        phoneNumber: data.phoneNumber ?? '',
+                        faxNumber: data.faxNumber ?? '',
+                        emailAddress: data.emailAddress ?? '',
+                        website: data.website ?? '',
+                        whatsApp: data.whatsApp ?? '',
+                        linkedIn: data.linkedIn ?? '',
+                        facebook: data.facebook ?? '',
+                        instagram: data.instagram ?? '',
+                        twitterX: data.twitterX ?? '',
+                        tikTok: data.tikTok ?? '',
+                        createdAtUtc: data.createdAtUtc ?? '',
+                        contacts: (data.customerContactList ?? []).map(c => ({
+                            id: c.id ?? '',
+                            name: c.name ?? '',
+                            emailAddress: c.emailAddress ?? '',
+                            phoneNumber: c.phoneNumber ?? ''
+                        }))
+                    };
+
+                    viewModal.obj.show();
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load customer details.' });
+                }
+            },
+            editFromView: () => {
+                const id = state.view.id;
+                viewModal.obj.hide();
+                if (id) {
+                    const record = state.mainData.find(r => r.id === id);
+                    if (record) {
+                        state.deleteMode = false;
+                        state.mainTitle = 'Edit Customer';
+                        state.id = record.id ?? '';
+                        state.number = record.number ?? '';
+                        state.name = record.name ?? '';
+                        state.customerGroupId = record.customerGroupId ?? null;
+                        state.customerCategoryId = record.customerCategoryId ?? null;
+                        state.description = record.description ?? '';
+                        state.street = record.street ?? '';
+                        state.city = record.city ?? '';
+                        state.state = record.state ?? '';
+                        state.zipCode = record.zipCode ?? '';
+                        state.country = record.country ?? '';
+                        state.phoneNumber = record.phoneNumber ?? '';
+                        state.faxNumber = record.faxNumber ?? '';
+                        state.emailAddress = record.emailAddress ?? '';
+                        state.website = record.website ?? '';
+                        state.whatsApp = record.whatsApp ?? '';
+                        state.linkedIn = record.linkedIn ?? '';
+                        state.facebook = record.facebook ?? '';
+                        state.instagram = record.instagram ?? '';
+                        state.twitterX = record.twitterX ?? '';
+                        state.tikTok = record.tikTok ?? '';
+                        mainModal.obj.show();
+                    }
+                }
+            }
         };
 
         const resetFormState = () => {
@@ -738,6 +831,17 @@
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'ManageContactCustom'], false);
                         mainGrid.obj.autoFitColumns(['name', 'customerGroupName', 'customerCategoryName', 'street', 'phoneNumber', 'emailAddress', 'createdAtUtc']);
+                    },
+                    queryCellInfo: (args) => {
+                        if (args.column.field === 'name' || args.column.field === 'number') {
+                            args.cell.style.cursor = 'pointer';
+                            args.cell.style.color = 'var(--primary)';
+                            args.cell.style.fontWeight = '600';
+                            args.cell.addEventListener('click', () => {
+                                const rowData = args.row?.data;
+                                if (rowData?.id) handler.openViewModal(rowData.id);
+                            });
+                        }
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -848,6 +952,13 @@
                     backdrop: 'static',
                     keyboard: false
                 });
+            }
+        };
+
+        const viewModal = {
+            obj: null,
+            create: () => {
+                viewModal.obj = new bootstrap.Modal(viewModalRef.value);
             }
         };
 
@@ -996,6 +1107,7 @@
                 tikTokText.create();
                 mainModal.create();
                 manageContactModal.create();
+                viewModal.create();
                 secondaryGrid.create([]);
             } catch (e) {
             } finally {
@@ -1027,6 +1139,7 @@
             tikTokRef,
             customerGroupIdRef,
             customerCategoryIdRef,
+            viewModalRef,
             state,
             handler,
         };

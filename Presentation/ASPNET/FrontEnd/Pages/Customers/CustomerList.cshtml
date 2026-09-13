@@ -221,6 +221,142 @@
             </div>
         </div>
     </div>
+
+    <!-- View Customer Modal -->
+    <div class="modal fade" ref="viewModalRef" id="ViewCustomerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user me-2 text-primary"></i>{{ state.view.name || 'Customer Details' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="text-muted small">Name</label>
+                            <div class="fw-semibold">{{ state.view.name || '—' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Number</label>
+                            <div class="fw-semibold">{{ state.view.number || '—' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Phone</label>
+                            <div class="fw-semibold">{{ state.view.phoneNumber || '—' }}</div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="text-muted small">Email</label>
+                            <div class="fw-semibold">{{ state.view.emailAddress || '—' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Group</label>
+                            <div class="fw-semibold">{{ state.view.customerGroupName || '—' }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Category</label>
+                            <div class="fw-semibold">{{ state.view.customerCategoryName || '—' }}</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4" v-if="state.view.description">
+                        <label class="text-muted small">Description</label>
+                        <div>{{ state.view.description }}</div>
+                    </div>
+
+                    <h6 class="mb-3"><i class="fas fa-map-marker-alt me-2 text-primary"></i>Address</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-12" v-if="state.view.street">
+                            <label class="text-muted small">Street</label>
+                            <div>{{ state.view.street }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.city">
+                            <label class="text-muted small">City</label>
+                            <div>{{ state.view.city }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.state">
+                            <label class="text-muted small">State</label>
+                            <div>{{ state.view.state }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.zipCode">
+                            <label class="text-muted small">Zip Code</label>
+                            <div>{{ state.view.zipCode }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.country">
+                            <label class="text-muted small">Country</label>
+                            <div>{{ state.view.country }}</div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3"><i class="fas fa-share-alt me-2 text-primary"></i>Social & Online</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3" v-if="state.view.whatsApp">
+                            <label class="text-muted small">WhatsApp</label>
+                            <div>{{ state.view.whatsApp }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.linkedIn">
+                            <label class="text-muted small">LinkedIn</label>
+                            <div>{{ state.view.linkedIn }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.facebook">
+                            <label class="text-muted small">Facebook</label>
+                            <div>{{ state.view.facebook }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.instagram">
+                            <label class="text-muted small">Instagram</label>
+                            <div>{{ state.view.instagram }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.twitterX">
+                            <label class="text-muted small">Twitter/X</label>
+                            <div>{{ state.view.twitterX }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.tikTok">
+                            <label class="text-muted small">TikTok</label>
+                            <div>{{ state.view.tikTok }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.website">
+                            <label class="text-muted small">Website</label>
+                            <div>{{ state.view.website }}</div>
+                        </div>
+                        <div class="col-md-3" v-if="state.view.faxNumber">
+                            <label class="text-muted small">Fax</label>
+                            <div>{{ state.view.faxNumber }}</div>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3"><i class="fas fa-address-book me-2 text-primary"></i>Contacts</h6>
+                    <div class="table-responsive" v-if="state.view.contacts.length">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="contact in state.view.contacts" v-bind:key="contact.id">
+                                    <td>{{ contact.name || '—' }}</td>
+                                    <td>{{ contact.phoneNumber || '—' }}</td>
+                                    <td>{{ contact.emailAddress || '—' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p v-else class="text-muted small mb-0">No contacts.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" v-on:click="handler.editFromView">
+                        <i class="fas fa-edit me-2"></i>Edit Customer
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section scripts {
