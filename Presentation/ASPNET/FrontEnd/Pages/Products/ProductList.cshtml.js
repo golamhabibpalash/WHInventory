@@ -1313,6 +1313,7 @@ const App = {
                         // fallback for the same result).
                         {
                             field: 'imageName', headerText: 'Image', width: 70, minWidth: 70, maxWidth: 70,
+                            headerTemplate: '<i class="fas fa-image" title="Image"></i>',
                             textAlign: 'Center', allowFiltering: false, allowSorting: false, allowResizing: false
                         },
                         {
