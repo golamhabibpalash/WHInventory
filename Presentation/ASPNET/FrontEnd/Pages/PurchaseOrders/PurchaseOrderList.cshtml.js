@@ -773,14 +773,14 @@ const App = {
                 let isValid = true;
 
                 if (!state.vendorQuickName) { errors.name = 'Name is required.'; isValid = false; }
-                if (!state.vendorQuickVendorGroupId) { errors.vendorGroupId = 'Vendor Group is required.'; isValid = false; }
-                if (!state.vendorQuickVendorCategoryId) { errors.vendorCategoryId = 'Vendor Category is required.'; isValid = false; }
-                if (!state.vendorQuickStreet) { errors.street = 'Street is required.'; isValid = false; }
-                if (!state.vendorQuickCity) { errors.city = 'City is required.'; isValid = false; }
-                if (!state.vendorQuickState) { errors.state = 'State is required.'; isValid = false; }
-                if (!state.vendorQuickZipCode) { errors.zipCode = 'Zip Code is required.'; isValid = false; }
-                if (!state.vendorQuickPhoneNumber) { errors.phoneNumber = 'Phone Number is required.'; isValid = false; }
-                if (!state.vendorQuickEmailAddress) { errors.emailAddress = 'Email Address is required.'; isValid = false; }
+                if (!state.vendorQuickPhoneNumber?.trim()) {
+                    errors.phoneNumber = 'Phone Number is required.'; isValid = false;
+                } else if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(state.vendorQuickPhoneNumber.trim().replace(/[\s-]/g, ''))) {
+                    errors.phoneNumber = 'Enter a valid phone number (e.g. 01711234567 or +8801711234567).'; isValid = false;
+                }
+                if (state.vendorQuickEmailAddress?.trim() && !/\S+@\S+\.\S+/.test(state.vendorQuickEmailAddress.trim())) {
+                    errors.emailAddress = 'Please enter a valid email address.'; isValid = false;
+                }
 
                 state.vendorQuickErrors = errors;
                 if (!isValid) return;

@@ -710,43 +710,15 @@
                         state.errors.name = 'Name is required.';
                         isValid = false;
                     }
-                    if (!state.vendorGroupId) {
-                        state.errors.vendorGroupId = 'Vendor Group is required.';
-                        isValid = false;
-                    }
-                    if (!state.vendorCategoryId) {
-                        state.errors.vendorCategoryId = 'Vendor Category is required.';
-                        isValid = false;
-                    }
-                    if (!state.street) {
-                        state.errors.street = 'Street is required.';
-                        isValid = false;
-                    }
-                    if (!state.city) {
-                        state.errors.city = 'City is required.';
-                        isValid = false;
-                    }
-                    if (!state.state) {
-                        state.errors.state = 'State is required.';
-                        isValid = false;
-                    }
-                    if (!state.zipCode) {
-                        state.errors.zipCode = 'Zip Code is required.';
-                        isValid = false;
-                    }
-                    if (!state.country) {
-                        state.errors.country = 'Country is required.';
-                        isValid = false;
-                    }
-                    if (!state.phoneNumber) {
+                    if (!state.phoneNumber?.trim()) {
                         state.errors.phoneNumber = 'Phone Number is required.';
                         isValid = false;
-                    } else if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(state.phoneNumber.replace(/[\s\-]/g, ''))) {
-                        state.errors.phoneNumber = 'Enter a valid Bangladeshi number (e.g. 01711234567 or +8801711234567).';
+                    } else if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(state.phoneNumber.trim().replace(/[\s-]/g, ''))) {
+                        state.errors.phoneNumber = 'Enter a valid phone number (e.g. 01711234567 or +8801711234567).';
                         isValid = false;
                     }
-                    if (!state.emailAddress) {
-                        state.errors.emailAddress = 'Email Address is required.';
+                    if (state.emailAddress?.trim() && !/\S+@\S+\.\S+/.test(state.emailAddress.trim())) {
+                        state.errors.emailAddress = 'Please enter a valid email address.';
                         isValid = false;
                     }
 
