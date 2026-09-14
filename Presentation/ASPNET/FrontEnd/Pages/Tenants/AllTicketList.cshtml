@@ -1,0 +1,55 @@
+@page
+@{
+    ViewData["Title"] = "All Tickets (All Tenants)";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/ticket-shared.css" asp-append-version="true" />
+}
+
+<div id="app" v-cloak>
+    <div class="alert alert-info d-flex align-items-center mb-3">
+        <i class="fas fa-globe me-2"></i>
+        <div>Platform view — every tenant's tickets, read-only. Open a ticket to view its full conversation and history; reply, attachments, and status changes remain that tenant's own agents' responsibility.</div>
+    </div>
+
+    <div class="ticket-filter-bar">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="small text-muted">Tenant</label>
+                <div ref="tenantRef"></div>
+            </div>
+            <div class="col-md-3">
+                <label class="small text-muted">Status</label>
+                <div ref="statusRef"></div>
+            </div>
+            <div class="col-md-3">
+                <label class="small text-muted">Search</label>
+                <input type="text" class="form-control" v-model="state.search" placeholder="Ticket #, subject, description...">
+            </div>
+        </div>
+        <div class="row g-2 align-items-center mt-2">
+            <div class="col-md-6">
+                <button type="button" class="btn btn-sm btn-outline-secondary ticket-quick-filter" v-bind:class="{ active: state.overdueOnly }" v-on:click="handler.toggleOverdue">
+                    <i class="fas fa-exclamation-circle me-1"></i>Overdue
+                </button>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <button type="button" class="btn btn-sm btn-primary" v-on:click="handler.search"><i class="fas fa-search me-1"></i>Search</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" v-on:click="handler.clearFilters"><i class="fas fa-times me-1"></i>Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-container">
+                <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Tenants/AllTicketList.cshtml.js"></script>
+}

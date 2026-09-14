@@ -1,6 +1,7 @@
 using Application.Common.Repositories;
 using Application.Common.Services.CurrentUserManager;
 using Application.Common.Services.FileDocumentManager;
+using Application.Common.Tenancy;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -39,44 +40,64 @@ public class DownloadTicketAttachmentHandler : IRequestHandler<DownloadTicketAtt
     private readonly ICommandRepository<Ticket> _ticketRepository;
     private readonly IFileDocumentService _fileDocumentService;
     private readonly ICurrentUserService _currentUser;
+    private readonly ITenantContext _tenantContext;
 
     public DownloadTicketAttachmentHandler(
         ICommandRepository<FileDocument> documentRepository,
         ICommandRepository<Ticket> ticketRepository,
         IFileDocumentService fileDocumentService,
-        ICurrentUserService currentUser
+        ICurrentUserService currentUser,
+        ITenantContext tenantContext
         )
     {
         _documentRepository = documentRepository;
         _ticketRepository = ticketRepository;
         _fileDocumentService = fileDocumentService;
         _currentUser = currentUser;
+        _tenantContext = tenantContext;
     }
 
     public async Task<DownloadTicketAttachmentResult> Handle(DownloadTicketAttachmentRequest request, CancellationToken cancellationToken)
     {
         var document = await _documentRepository.GetAsync(request.AttachmentId ?? string.Empty, cancellationToken);
+        var isCrossTenantView = false;
+
+        // The document itself is tenant-filtered too, so a cross-tenant attachment fails this
+        // first lookup exactly like the ticket lookups elsewhere in this module — same retry.
+        if (document == null && _currentUser.IsInRole(TicketAccessGuard.PlatformRole))
+        {
+            document = await TicketTenantElevation.RunAsync(_tenantContext, elevate: true,
+                () => _documentRepository.GetAsync(request.AttachmentId ?? string.Empty, cancellationToken));
+            isCrossTenantView = document != null;
+        }
+
         if (document == null || document.ModuleName != "Ticket" || string.IsNullOrEmpty(document.ModuleId))
         {
             throw new Exception("Attachment not found.");
         }
 
-        var ticket = await _ticketRepository.GetAsync(document.ModuleId, cancellationToken);
-        if (ticket == null)
+        return await TicketTenantElevation.RunAsync(_tenantContext, isCrossTenantView, async () =>
         {
-            throw new Exception("Attachment not found.");
-        }
+            var ticket = await _ticketRepository.GetAsync(document.ModuleId, cancellationToken);
+            if (ticket == null)
+            {
+                throw new Exception("Attachment not found.");
+            }
 
-        var isAgent = _currentUser.IsInRole(TicketAccessGuard.AgentRole);
-        TicketAccessGuard.EnsureCanAccess(ticket, _currentUser.UserId, isAgent);
+            if (!isCrossTenantView)
+            {
+                var isAgent = _currentUser.IsInRole(TicketAccessGuard.AgentRole);
+                TicketAccessGuard.EnsureCanAccess(ticket, _currentUser.UserId, isAgent);
+            }
 
-        var data = await _fileDocumentService.GetFileAsync(document.GeneratedName ?? string.Empty, cancellationToken);
+            var data = await _fileDocumentService.GetFileAsync(document.GeneratedName ?? string.Empty, cancellationToken);
 
-        return new DownloadTicketAttachmentResult
-        {
-            Data = data,
-            OriginalName = document.OriginalName,
-            Extension = document.Extension
-        };
+            return new DownloadTicketAttachmentResult
+            {
+                Data = data,
+                OriginalName = document.OriginalName,
+                Extension = document.Extension
+            };
+        });
     }
 }

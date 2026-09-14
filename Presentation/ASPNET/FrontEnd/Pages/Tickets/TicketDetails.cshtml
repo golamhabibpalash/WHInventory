@@ -13,6 +13,10 @@
     </div>
 
     <template v-else>
+        <div class="alert alert-warning d-flex align-items-center mb-3" v-if="state.ticket.isCrossTenantView">
+            <i class="fas fa-globe me-2"></i>
+            <div>Cross-tenant view (read-only) — Tenant: <strong>{{ state.ticket.tenantName || state.ticket.id }}</strong>. Reply, attachments, and status changes are only available to that tenant's own agents.</div>
+        </div>
         <div class="ticket-detail-header mb-3">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                 <div>
@@ -95,26 +99,28 @@
 
                         <hr />
 
-                        <textarea v-model="state.newComment" class="form-control mb-2" rows="3"
-                                  v-bind:placeholder="state.isInternalNote ? 'Write an internal note (not visible to the requester)...' : 'Write a reply...'"></textarea>
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div class="form-check" v-if="state.ticket.currentUserIsAgent">
-                                <input v-model="state.isInternalNote" id="IsInternalNote" type="checkbox" class="form-check-input">
-                                <label for="IsInternalNote" class="form-check-label">Internal note (agents only)</label>
+                        <template v-if="!state.ticket.isCrossTenantView">
+                            <textarea v-model="state.newComment" class="form-control mb-2" rows="3"
+                                      v-bind:placeholder="state.isInternalNote ? 'Write an internal note (not visible to the requester)...' : 'Write a reply...'"></textarea>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="form-check" v-if="state.ticket.currentUserIsAgent">
+                                    <input v-model="state.isInternalNote" id="IsInternalNote" type="checkbox" class="form-check-input">
+                                    <label for="IsInternalNote" class="form-check-label">Internal note (agents only)</label>
+                                </div>
+                                <div v-else></div>
+                                <button type="button" class="btn btn-primary btn-sm" v-on:click="handler.addComment" v-bind:disabled="state.isSubmittingComment || !state.newComment">
+                                    <span class="spinner-border spinner-border-sm me-1" v-if="state.isSubmittingComment"></span>
+                                    <i class="fas fa-paper-plane me-1" v-else></i>{{ state.isInternalNote ? 'Add Internal Note' : 'Reply' }}
+                                </button>
                             </div>
-                            <div v-else></div>
-                            <button type="button" class="btn btn-primary btn-sm" v-on:click="handler.addComment" v-bind:disabled="state.isSubmittingComment || !state.newComment">
-                                <span class="spinner-border spinner-border-sm me-1" v-if="state.isSubmittingComment"></span>
-                                <i class="fas fa-paper-plane me-1" v-else></i>{{ state.isInternalNote ? 'Add Internal Note' : 'Reply' }}
-                            </button>
-                        </div>
+                        </template>
                     </div>
                 </div>
 
                 <div class="card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-paperclip me-2 text-info"></i>Attachments</h5>
-                        <button type="button" class="btn btn-sm btn-outline-primary" v-on:click="handler.triggerAttachmentInput">
+                        <button type="button" class="btn btn-sm btn-outline-primary" v-if="!state.ticket.isCrossTenantView" v-on:click="handler.triggerAttachmentInput">
                             <i class="fas fa-upload me-1"></i>Upload
                         </button>
                         <input ref="attachmentInputRef" type="file" style="display:none" v-on:change="handler.onAttachmentSelected">
@@ -125,7 +131,7 @@
                             <i class="fas fa-file"></i>
                             <a href="#" v-on:click.prevent="handler.downloadAttachment(attachment)">{{ attachment.originalName }}</a>
                             <span class="text-muted">({{ formatFileSize(attachment.fileSize) }})</span>
-                            <button type="button" class="btn btn-sm btn-link text-danger p-0" v-on:click="handler.deleteAttachment(attachment)" title="Remove">
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0" v-if="!state.ticket.isCrossTenantView" v-on:click="handler.deleteAttachment(attachment)" title="Remove">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>

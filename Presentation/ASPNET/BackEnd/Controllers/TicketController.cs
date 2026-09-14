@@ -129,6 +129,17 @@ public class TicketController : BaseApiController
         return Ok(new ApiSuccessResult<GetTicketDashboardResult> { Code = StatusCodes.Status200OK, Message = $"Success executing {nameof(GetTicketDashboardAsync)}", Content = response });
     }
 
+    /// <summary>Platform administration: every tenant's tickets, read-only. Gated the same way
+    /// TenantController itself is — the "Tenants" role, which provisioning never grants a
+    /// tenant's own administrator.</summary>
+    [Authorize(Roles = "Tenants")]
+    [HttpGet("GetAllTenantsTicketList")]
+    public async Task<ActionResult<ApiSuccessResult<GetAllTenantsTicketListResult>>> GetAllTenantsTicketListAsync([FromQuery] GetAllTenantsTicketListRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _sender.Send(request, cancellationToken);
+        return Ok(new ApiSuccessResult<GetAllTenantsTicketListResult> { Code = StatusCodes.Status200OK, Message = $"Success executing {nameof(GetAllTenantsTicketListAsync)}", Content = response });
+    }
+
     [Authorize]
     [HttpPost("UploadTicketAttachment")]
     public async Task<ActionResult<ApiSuccessResult<UploadTicketAttachmentResult>>> UploadTicketAttachmentAsync([FromForm] string ticketId, IFormFile file, CancellationToken cancellationToken)

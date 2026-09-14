@@ -2,6 +2,7 @@ using Application.Common.CQS.Queries;
 using Application.Common.Repositories;
 using Application.Common.Services.CurrentUserManager;
 using Application.Common.Services.SecurityManager;
+using Application.Common.Tenancy;
 using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
@@ -49,6 +50,8 @@ public class GetTicketResult
     public string? ReferenceEntityId { get; init; }
     public bool CurrentUserIsAgent { get; init; }
     public bool CurrentUserCanEdit { get; init; }
+    public bool IsCrossTenantView { get; init; }
+    public string? TenantName { get; init; }
     public List<GetTicketCommentDto>? Comments { get; init; }
     public List<string>? TagIds { get; init; }
 }
@@ -72,30 +75,60 @@ public class GetTicketHandler : IRequestHandler<GetTicketRequest, GetTicketResul
     private readonly ICommandRepository<Ticket> _ticketRepository;
     private readonly ICurrentUserService _currentUser;
     private readonly ISecurityService _securityService;
+    private readonly ITenantContext _tenantContext;
 
     public GetTicketHandler(
         IQueryContext context,
         ICommandRepository<Ticket> ticketRepository,
         ICurrentUserService currentUser,
-        ISecurityService securityService
+        ISecurityService securityService,
+        ITenantContext tenantContext
         )
     {
         _context = context;
         _ticketRepository = ticketRepository;
         _currentUser = currentUser;
         _securityService = securityService;
+        _tenantContext = tenantContext;
     }
 
     public async Task<GetTicketResult> Handle(GetTicketRequest request, CancellationToken cancellationToken)
     {
         var ticket = await _ticketRepository.GetAsync(request.Id ?? string.Empty, cancellationToken);
+        var isCrossTenantView = false;
+
+        // Not found under the caller's own tenant — for a platform ("Tenants"-role) caller only,
+        // retry under root scope, since it may simply belong to a different tenant. Read-only:
+        // isCrossTenantView forces isAgent/CanEdit off below regardless of the caller's own roles,
+        // so the UI never offers an action that a write handler (none of which elevate) would 403.
+        if (ticket == null && _currentUser.IsInRole(TicketAccessGuard.PlatformRole))
+        {
+            ticket = await TicketTenantElevation.RunAsync(_tenantContext, elevate: true,
+                () => _ticketRepository.GetAsync(request.Id ?? string.Empty, cancellationToken));
+            isCrossTenantView = ticket != null;
+        }
+
         if (ticket == null)
         {
             throw new Exception($"Entity not found: {request.Id}");
         }
 
-        var isAgent = _currentUser.IsInRole(TicketAccessGuard.AgentRole);
-        TicketAccessGuard.EnsureCanAccess(ticket, _currentUser.UserId, isAgent);
+        var isAgent = !isCrossTenantView && _currentUser.IsInRole(TicketAccessGuard.AgentRole);
+        if (!isCrossTenantView)
+        {
+            TicketAccessGuard.EnsureCanAccess(ticket, _currentUser.UserId, isAgent);
+        }
+
+        return await TicketTenantElevation.RunAsync(_tenantContext, isCrossTenantView, async () => await BuildResultAsync(ticket, isAgent, isCrossTenantView, cancellationToken));
+    }
+
+    private async Task<GetTicketResult> BuildResultAsync(Ticket ticket, bool isAgent, bool isCrossTenantView, CancellationToken cancellationToken)
+    {
+        string? tenantName = null;
+        if (isCrossTenantView && ticket.TenantId != null)
+        {
+            tenantName = await _context.Tenant.AsNoTracking().Where(x => x.Id == ticket.TenantId).Select(x => x.Name).FirstOrDefaultAsync(cancellationToken);
+        }
 
         var category = ticket.CategoryId != null
             ? await _context.TicketCategory.AsNoTracking().FirstOrDefaultAsync(x => x.Id == ticket.CategoryId, cancellationToken)
@@ -156,6 +189,8 @@ public class GetTicketHandler : IRequestHandler<GetTicketRequest, GetTicketResul
             ReferenceEntityId = ticket.ReferenceEntityId,
             CurrentUserIsAgent = isAgent,
             CurrentUserCanEdit = isAgent || (ticket.RequesterId == _currentUser.UserId && ticket.Status == TicketStatus.New),
+            IsCrossTenantView = isCrossTenantView,
+            TenantName = tenantName,
             Comments = comments.Select(c => new GetTicketCommentDto
             {
                 Id = c.Id,

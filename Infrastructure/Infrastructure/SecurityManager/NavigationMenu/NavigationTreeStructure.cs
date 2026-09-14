@@ -421,6 +421,12 @@ public static class NavigationTreeStructure
                     "IsModule": false
                 },
                 {
+                    "URL": "/Tenants/AllTicketList",
+                    "Name": "All Tickets (All Tenants)",
+                    "Icon": "fas fa-globe",
+                    "IsModule": false
+                },
+                {
                     "URL": "/AuditLogs/AuditLogList",
                     "Name": "Audit Log",
                     "Icon": "fas fa-shield-alt",

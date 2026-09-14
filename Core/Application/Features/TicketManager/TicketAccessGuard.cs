@@ -19,6 +19,11 @@ public static class TicketAccessGuard
     /// <summary>Manage categories/priorities/tags.</summary>
     public const string ConfigRole = "TicketConfigurations";
 
+    /// <summary>Platform administration (same role name TenantController itself is gated on —
+    /// see RoleHelper.PlatformRoles). Never granted to a tenant's own administrator by
+    /// provisioning. Lets its holder view — never write — tickets across every tenant.</summary>
+    public const string PlatformRole = "Tenants";
+
     public static bool CanAccess(Ticket ticket, string? currentUserId, bool isAgent)
         => isAgent || (!string.IsNullOrEmpty(ticket.RequesterId) && ticket.RequesterId == currentUserId);
 

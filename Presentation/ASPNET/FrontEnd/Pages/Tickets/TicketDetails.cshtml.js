@@ -52,9 +52,12 @@ const App = {
             return new Date(state.ticket.slaResolutionDueAtUtc) < new Date();
         });
 
-        const canResolve = Vue.computed(() => state.ticket?.currentUserIsAgent && state.ticket?.status === 2);
-        const canClose = Vue.computed(() => state.ticket?.status === 5);
-        const canReopen = Vue.computed(() => state.ticket?.status === 5 || state.ticket?.status === 6);
+        // isCrossTenantView (a platform admin looking at another tenant's ticket) is read-only —
+        // none of the write handlers elevate tenant scope, so every action here must stay hidden
+        // for that case regardless of what currentUserIsAgent/status would otherwise allow.
+        const canResolve = Vue.computed(() => !state.ticket?.isCrossTenantView && state.ticket?.currentUserIsAgent && state.ticket?.status === 2);
+        const canClose = Vue.computed(() => !state.ticket?.isCrossTenantView && state.ticket?.status === 5);
+        const canReopen = Vue.computed(() => !state.ticket?.isCrossTenantView && (state.ticket?.status === 5 || state.ticket?.status === 6));
 
         // AxiosManager.get(url, config) only forwards config.headers/responseType — it does not
         // build a query string from config.params (see wwwroot/lib/indotalent/axios-manager.js),
