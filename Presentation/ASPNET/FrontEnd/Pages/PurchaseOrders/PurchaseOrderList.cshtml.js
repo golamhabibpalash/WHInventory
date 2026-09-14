@@ -504,11 +504,16 @@ const App = {
                         allowFiltering: true,
                         filtering: (e) => {
                             e.preventDefaultAction = true;
-                            let query = new ej.data.Query();
-                            if (e.text !== '') {
-                                query = query.where('name', 'startsWith', e.text, true);
+                            const term = (e.text || '').toLowerCase();
+                            if (!term) {
+                                e.updateData(state.vendorListLookupData);
+                                return;
                             }
-                            e.updateData(state.vendorListLookupData, query);
+                            const filtered = state.vendorListLookupData.filter(v =>
+                                (v.name || '').toLowerCase().includes(term) ||
+                                (v.phoneNumber || '').toLowerCase().includes(term)
+                            );
+                            e.updateData(filtered);
                         },
                         change: (e) => {
                             state.vendorId = e.value;
