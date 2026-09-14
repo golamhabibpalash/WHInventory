@@ -7,10 +7,58 @@
             roleUsers: [],
         });
 
-        const mainGridRef = Vue.ref(null);
         const manageUsersModalRef = Vue.ref(null);
 
         const changedUsers = Vue.reactive(new Set());
+
+        // ── Module grouping configuration (same as UserList) ───────────
+        const moduleConfig = [
+            { name: 'Dashboards', icon: 'fas fa-tachometer-alt', roles: ['Dashboards'] },
+            { name: 'Sales', icon: 'fas fa-chart-line', roles: ['CustomerGroups', 'CustomerCategories', 'Customers', 'CustomerContacts', 'SalesOrders', 'SalesReports', 'Warranties'] },
+            { name: 'Purchase', icon: 'fas fa-shopping-cart', roles: ['VendorGroups', 'VendorCategories', 'Vendors', 'VendorContacts', 'PurchaseOrders', 'PurchaseReports'] },
+            { name: 'Inventory', icon: 'fas fa-warehouse', roles: ['UnitMeasures', 'ProductGroups', 'Brands', 'Products', 'Warehouses', 'DeliveryOrders', 'SalesReturns', 'GoodsReceives', 'PurchaseReturns', 'TransferOuts', 'TransferIns', 'PositiveAdjustments', 'NegativeAdjustments', 'Scrappings', 'StockCounts', 'TransactionReports', 'StockReports', 'MovementReports'] },
+            { name: 'Pricing', icon: 'fas fa-tags', roles: ['PricePolicies', 'ProductPrices', 'Promotions', 'PriceReports'] },
+            { name: 'Utilities', icon: 'fas fa-tools', roles: ['Todos', 'TodoItems'] },
+            { name: 'Membership', icon: 'fas fa-users', roles: ['Users', 'Roles'] },
+            { name: 'Profiles', icon: 'fas fa-user-circle', roles: ['Profiles'] },
+            { name: 'Ticketing', icon: 'fas fa-ticket-alt', roles: ['Tickets', 'TicketAgent'] },
+            { name: 'Settings', icon: 'fas fa-cog', roles: ['Companies', 'Taxs', 'NumberSequences', 'QuickShortcuts', 'TicketConfigurations'] },
+            { name: 'Logs', icon: 'fas fa-history', roles: ['Tenants', 'AuditLogs', 'UserActivityLogs'] },
+        ];
+
+        function formatRoleName(roleName) {
+            return roleName
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, s => s.toUpperCase())
+                .trim();
+        }
+
+        const roleModules = Vue.computed(() => {
+            const modules = [];
+            let totalRoles = 0;
+
+            for (const cfg of moduleConfig) {
+                const roleItems = cfg.roles
+                    .map(roleName => {
+                        const found = state.mainData.find(r => r.name === roleName);
+                        return found
+                            ? { roleName: found.name, displayName: formatRoleName(found.name) }
+                            : null;
+                    })
+                    .filter(Boolean);
+
+                if (roleItems.length === 0) continue;
+
+                totalRoles += roleItems.length;
+                modules.push({
+                    name: cfg.name,
+                    icon: cfg.icon,
+                    roles: roleItems,
+                });
+            }
+
+            return { list: modules, totalRoles };
+        });
 
         const userModules = Vue.computed(() => {
             const groups = {};
@@ -71,95 +119,11 @@
             },
         };
 
-        const mainGrid = {
-            obj: null,
-            create: async (dataSource) => {
-                mainGrid.obj = new ej.grids.Grid({
-                    height: '240px',
-                    dataSource: dataSource,
-                    allowFiltering: true,
-                    allowSorting: true,
-                    allowSelection: true,
-                    allowGrouping: true,
-                    allowTextWrap: true,
-                    allowResizing: true,
-                    allowPaging: true,
-                    allowExcelExport: true,
-                    filterSettings: { type: 'CheckBox' },
-                    searchSettings: { keyDelay: 150, searchAsType: true },
-                    sortSettings: { columns: [{ field: 'name', direction: 'Ascending' }] },
-                    pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
-                    selectionSettings: { persistSelection: true, type: 'Single' },
-                    autoFit: true,
-                    showColumnMenu: true,
-                    gridLines: 'Horizontal',
-                    columns: [
-                        { type: 'checkbox', width: 60 },
-                        {
-                            field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
-                        },
-                        { field: 'name', headerText: 'Role Name', width: 300, minWidth: 300 },
-                    ],
-                    toolbar: [
-                        'ExcelExport', 'Search',
-                        { type: 'Separator' },
-                        { text: 'Manage Users', tooltipText: 'Manage users for this role', prefixIcon: 'e-user', id: 'ManageUsersCustom' },
-                    ],
-                    beforeDataBound: () => { },
-                    dataBound: function () {
-                        mainGrid.obj.toolbarModule.enableItems(['ManageUsersCustom'], false);
-                        mainGrid.obj.autoFitColumns(['name']);
-                    },
-                    excelExportComplete: () => { },
-                    rowSelected: () => {
-                        if (mainGrid.obj.getSelectedRecords().length == 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['ManageUsersCustom'], true);
-                        } else {
-                            mainGrid.obj.toolbarModule.enableItems(['ManageUsersCustom'], false);
-                        }
-                    },
-                    rowDeselected: () => {
-                        if (mainGrid.obj.getSelectedRecords().length == 1) {
-                            mainGrid.obj.toolbarModule.enableItems(['ManageUsersCustom'], true);
-                        } else {
-                            mainGrid.obj.toolbarModule.enableItems(['ManageUsersCustom'], false);
-                        }
-                    },
-                    rowSelecting: () => {
-                        if (mainGrid.obj.getSelectedRecords().length) {
-                            mainGrid.obj.clearSelection();
-                        }
-                    },
-                    toolbarClick: async (args) => {
-                        if (args.item.id === 'MainGrid_excelexport') {
-                            mainGrid.obj.excelExport();
-                        }
-
-                        if (args.item.id === 'ManageUsersCustom') {
-                            if (mainGrid.obj.getSelectedRecords().length) {
-                                const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.manageUsersTitle = 'Manage Users — ' + (selectedRecord.name ?? '');
-                                state.roleName = selectedRecord.name ?? '';
-                                await methods.populateRoleUsers(state.roleName);
-                                manageUsersModal.obj.show();
-                            }
-                        }
-                    }
-                });
-
-                mainGrid.obj.appendTo(mainGridRef.value);
-                GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
-            },
-            refresh: () => {
-                mainGrid.obj.setProperties({ dataSource: state.mainData });
-            }
-        };
-
         const methods = {
             populateMainData: async () => {
                 try {
                     const response = await services.getMainData();
-                    state.mainData = response?.data?.content?.data;
+                    state.mainData = response?.data?.content?.data ?? [];
                 } catch (error) {
                     state.mainData = [];
                 }
@@ -176,6 +140,12 @@
         };
 
         const handler = {
+            openManageUsers: async (roleName) => {
+                state.manageUsersTitle = 'Manage Users — ' + formatRoleName(roleName);
+                state.roleName = roleName;
+                await methods.populateRoleUsers(roleName);
+                manageUsersModal.obj.show();
+            },
             onUserToggle: (user) => {
                 changedUsers.add(user.userId);
             },
@@ -280,7 +250,6 @@
                 await SecurityManager.authorizePage(['Roles', 'Users']);
                 await SecurityManager.validateToken();
                 await methods.populateMainData();
-                await mainGrid.create(state.mainData);
                 manageUsersModal.create();
             } catch (e) {
             } finally {
@@ -290,9 +259,9 @@
 
         return {
             state,
-            mainGridRef,
             manageUsersModalRef,
             handler,
+            roleModules,
             userModules,
             userGrantedCount,
             hasUnsavedUserChanges,

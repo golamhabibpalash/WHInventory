@@ -5,13 +5,43 @@
 
 @section styles {
     <link rel="stylesheet" href="~/css/change-role-modal.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/role-list.css" asp-append-version="true" />
 }
 
 <div id="app" v-cloak>
     <div class="row">
         <div class="col-12">
-            <div class="grid-container">
-                <div ref="mainGridRef" id="MainGrid"></div>
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h3 class="card-title">Roles by Module</h3>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">{{ roleModules.totalRoles }} roles across {{ roleModules.list.length }} modules</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="cr-modules">
+                        <div class="cr-module-card" v-for="mod in roleModules.list" v-bind:key="mod.name">
+                            <div class="cr-module-header">
+                                <div class="cr-module-title">
+                                    <i v-bind:class="mod.icon"></i>
+                                    <span>{{ mod.name }}</span>
+                                    <span class="cr-module-count">{{ mod.roles.length }}</span>
+                                </div>
+                            </div>
+                            <div class="cr-module-body">
+                                <div class="rl-role-row" v-for="role in mod.roles" v-bind:key="role.roleName">
+                                    <div class="rl-role-info">
+                                        <span class="rl-role-name">{{ role.displayName }}</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            v-on:click="handler.openManageUsers(role.roleName)">
+                                        <i class="fas fa-users me-1"></i>Manage Users
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
