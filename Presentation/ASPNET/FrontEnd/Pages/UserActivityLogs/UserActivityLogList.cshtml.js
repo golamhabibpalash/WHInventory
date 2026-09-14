@@ -125,7 +125,7 @@ const App = {
         };
 
         Vue.onMounted(async () => {
-            SecurityManager.authorizePage(['UserActivityLogs']);
+            await SecurityManager.authorizePage(['UserActivityLogs']);
             mainGrid.create([]);
             await methods.populateMainData();
             filterDatePickers.create();

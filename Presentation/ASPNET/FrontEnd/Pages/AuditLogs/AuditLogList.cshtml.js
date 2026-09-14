@@ -197,7 +197,7 @@ const App = {
         };
 
         Vue.onMounted(async () => {
-            SecurityManager.authorizePage(['AuditLogs']);
+            await SecurityManager.authorizePage(['AuditLogs']);
             mainGrid.create([]);
             detailModal.create();
             await methods.populateMainData();

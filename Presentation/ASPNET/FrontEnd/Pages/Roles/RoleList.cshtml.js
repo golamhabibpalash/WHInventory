@@ -274,7 +274,7 @@
 
         Vue.onMounted(async () => {
             try {
-                await SecurityManager.authorizePage(['Roles']);
+                await SecurityManager.authorizePage(['Roles', 'Users']);
                 await SecurityManager.validateToken();
                 await methods.populateMainData();
                 await mainGrid.create(state.mainData);

@@ -12,7 +12,7 @@ public class UpdateAllUserRolesResult
 public class UpdateAllUserRolesRequest : IRequest<UpdateAllUserRolesResult>
 {
     public string? UserId { get; init; }
-    public bool? AccessGranted { get; init; }
+    public bool AccessGranted { get; init; }
 }
 
 public class UpdateAllUserRolesValidator : AbstractValidator<UpdateAllUserRolesRequest>
@@ -36,7 +36,7 @@ public class UpdateAllUserRolesHandler : IRequestHandler<UpdateAllUserRolesReque
     {
         var result = await _securityService.UpdateAllUserRolesAsync(
             request.UserId ?? "",
-            request.AccessGranted ?? true,
+            request.AccessGranted,
             cancellationToken
         );
 

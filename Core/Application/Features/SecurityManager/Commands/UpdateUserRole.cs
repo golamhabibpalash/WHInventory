@@ -15,7 +15,7 @@ public class UpdateUserRoleRequest : IRequest<UpdateUserRoleResult>
 {
     public string? UserId { get; init; }
     public string? RoleName { get; init; }
-    public bool? AccessGranted { get; init; }
+    public bool AccessGranted { get; init; }
 }
 
 public class UpdateUserRoleValidator : AbstractValidator<UpdateUserRoleRequest>
@@ -41,7 +41,7 @@ public class UpdateUserRoleHandler : IRequestHandler<UpdateUserRoleRequest, Upda
         var result = await _securityService.UpdateUserRoleAsync(
             request.UserId ?? "",
             request.RoleName ?? "",
-            request.AccessGranted ?? true,
+            request.AccessGranted,
             cancellationToken
             );
 

@@ -906,19 +906,27 @@ public class SecurityService : ISecurityService
         CancellationToken cancellationToken = default
     )
     {
-        var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
+        var isRoot = _tenantContext.IsRoot;
+        var tenantId = _tenantContext.TenantId;
+
         var allUsers = await _userManager.Users
-            .Where(u => u.IsDeleted == null || !u.IsDeleted.Value)
+            .Where(u => (isRoot || u.TenantId == tenantId)
+                     && (u.IsDeleted == null || !u.IsDeleted.Value))
             .ToListAsync(cancellationToken);
 
-        var result = allUsers.Select(u => new RoleUserDto
+        var result = new List<RoleUserDto>();
+        foreach (var u in allUsers)
         {
-            UserId = u.Id,
-            Email = u.Email ?? "",
-            FirstName = u.FirstName ?? "",
-            LastName = u.LastName ?? "",
-            AccessGranted = usersInRole.Any(ur => ur.Id == u.Id)
-        }).ToList();
+            var inRole = await _userManager.IsInRoleAsync(u, roleName);
+            result.Add(new RoleUserDto
+            {
+                UserId = u.Id,
+                Email = u.Email ?? "",
+                FirstName = u.FirstName ?? "",
+                LastName = u.LastName ?? "",
+                AccessGranted = inRole
+            });
+        }
 
         return result;
     }
