@@ -52,7 +52,7 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
 
     public async Task<GetOverviewDashboardResult> Handle(GetOverviewDashboardRequest request, CancellationToken cancellationToken)
     {
-        var todayStart = DateTime.UtcNow.Date;
+        var todayStart = DateTime.Now.Date;
         var tomorrowStart = todayStart.AddDays(1);
         var comparisonStart = todayStart.AddDays(-ComparisonDays);
         var trendStart = todayStart.AddDays(-(TrendDays - 1));

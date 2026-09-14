@@ -46,7 +46,7 @@ public class GetPriceReportHandler : IRequestHandler<GetPriceReportRequest, GetP
 
     public async Task<GetPriceReportResult> Handle(GetPriceReportRequest request, CancellationToken cancellationToken)
     {
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.Now.Date;
 
         var products = await _context.Product
             .AsNoTracking()

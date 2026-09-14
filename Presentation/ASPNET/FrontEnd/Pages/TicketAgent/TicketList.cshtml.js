@@ -48,8 +48,8 @@ const App = {
             if (state.priorityId) params.priorityId = state.priorityId;
             if (state.categoryId) params.categoryId = state.categoryId;
             if (state.assignedToId) params.assignedToId = state.assignedToId;
-            if (state.fromDate) params.fromDateUtc = new Date(state.fromDate).toISOString();
-            if (state.toDate) params.toDateUtc = new Date(state.toDate).toISOString();
+            if (state.fromDate) params.fromDateUtc = DateFormatManager.toApiDate(state.fromDate);
+            if (state.toDate) params.toDateUtc = DateFormatManager.toApiDate(state.toDate);
             if (state.quickFilter === 'unassigned') params.unassignedOnly = true;
             if (state.quickFilter === 'overdue') params.overdueOnly = true;
             if (state.quickFilter === 'myAssigned') params.assignedToId = StorageManager.getUserId();

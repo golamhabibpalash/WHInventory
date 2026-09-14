@@ -33,7 +33,7 @@ public class PriceResolutionEngine
         DateTime? saleDate,
         CancellationToken cancellationToken = default)
     {
-        var effectiveDate = saleDate ?? DateTime.UtcNow.Date;
+        var effectiveDate = saleDate ?? DateTime.Now.Date;
         var costPrice = await _wacService.GetWeightedAverageCostAsync(productId, cancellationToken);
 
         // 1. Promotional Price — highest priority

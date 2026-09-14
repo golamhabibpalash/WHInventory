@@ -1,5 +1,6 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
+using Application.Common.Services.SecurityManager;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
@@ -22,6 +23,8 @@ public record GetDeliveryOrderListDto
     public double TotalDeliveredQty { get; set; }
     public string? DeliveryStatus { get; set; }
     public DateTime? CreatedAtUtc { get; init; }
+    public string? CreatedById { get; init; }
+    public string? CreatedByName { get; set; }
 }
 
 public class GetDeliveryOrderListProfile : Profile
@@ -56,11 +59,13 @@ public class GetDeliveryOrderListHandler : IRequestHandler<GetDeliveryOrderListR
 {
     private readonly IMapper _mapper;
     private readonly IQueryContext _context;
+    private readonly ISecurityService _securityService;
 
-    public GetDeliveryOrderListHandler(IMapper mapper, IQueryContext context)
+    public GetDeliveryOrderListHandler(IMapper mapper, IQueryContext context, ISecurityService securityService)
     {
         _mapper = mapper;
         _context = context;
+        _securityService = securityService;
     }
 
     public async Task<GetDeliveryOrderListResult> Handle(GetDeliveryOrderListRequest request, CancellationToken cancellationToken)
@@ -75,6 +80,13 @@ public class GetDeliveryOrderListHandler : IRequestHandler<GetDeliveryOrderListR
         var entities = await query.Take(2000).ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<GetDeliveryOrderListDto>>(entities);
+
+        var users = await _securityService.GetUserListAsync(cancellationToken);
+        var userNames = users.ToDictionary(u => u.Id ?? string.Empty, u => $"{u.FirstName} {u.LastName}".Trim());
+        foreach (var dto in dtos)
+        {
+            dto.CreatedByName = dto.CreatedById != null && userNames.TryGetValue(dto.CreatedById, out var cn) ? cn : null;
+        }
 
         var doIds = dtos.Where(x => !string.IsNullOrEmpty(x.Id)).Select(x => x.Id!).ToList();
         if (doIds.Count > 0)

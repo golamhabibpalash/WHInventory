@@ -63,7 +63,7 @@ const App = {
         const formatDate = (val) => {
             if (!val) return '';
             const d = new Date(val);
-            return d.toISOString().replace('T', ' ').substring(0, 19);
+            return isNaN(d) ? '' : d.toLocaleString('sv-SE', { hour12: false }).replace('T', ' ').substring(0, 19);
         };
 
         const formatJson = (val) => {

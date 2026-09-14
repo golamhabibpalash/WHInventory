@@ -940,7 +940,8 @@ const App = {
                         { field: 'orderStatusName', headerText: 'Status', width: 150, minWidth: 150 },
                         { field: 'taxName', headerText: 'Tax', width: 150, minWidth: 150 },
                         { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2' },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' },
+                        { field: 'createdByName', headerText: 'Created By', width: 150, minWidth: 150 }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
@@ -1462,7 +1463,7 @@ const App = {
                 formatPaymentDate: (value) => {
                     if (!value) return '';
                     const d = new Date(value);
-                    return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+                    return isNaN(d) ? '' : DateFormatManager.toApiDate(d);
                 },
                 payFullBalance: () => {
                     state.paymentError = '';

@@ -27,6 +27,7 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      TZ: Asia/Dhaka
       ConnectionStrings__DefaultConnection: >-
         Host=db;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
     volumes:

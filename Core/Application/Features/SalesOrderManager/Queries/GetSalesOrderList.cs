@@ -1,5 +1,6 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
+using Application.Common.Services.SecurityManager;
 using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,8 @@ public record GetSalesOrderListDto
     public double? TaxAmount { get; init; }
     public double? AfterTaxAmount { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
+    public string? CreatedById { get; init; }
+    public string? CreatedByName { get; init; }
 }
 
 public class GetSalesOrderListResult
@@ -38,37 +41,62 @@ public class GetSalesOrderListRequest : IRequest<GetSalesOrderListResult>
 public class GetSalesOrderListHandler : IRequestHandler<GetSalesOrderListRequest, GetSalesOrderListResult>
 {
     private readonly IQueryContext _context;
+    private readonly ISecurityService _securityService;
 
-    public GetSalesOrderListHandler(IQueryContext context)
+    public GetSalesOrderListHandler(IQueryContext context, ISecurityService securityService)
     {
         _context = context;
+        _securityService = securityService;
     }
 
     public async Task<GetSalesOrderListResult> Handle(GetSalesOrderListRequest request, CancellationToken cancellationToken)
     {
-        var dtos = await _context
+        var page = await _context
             .SalesOrder
             .AsNoTracking()
             .ApplyIsDeletedFilter(request.IsDeleted)
-            .Select(x => new GetSalesOrderListDto
+            .Select(x => new
             {
-                Id = x.Id,
-                Number = x.Number,
-                OrderDate = x.OrderDate,
-                OrderStatus = x.OrderStatus,
-                OrderStatusName = x.OrderStatus.HasValue ? x.OrderStatus.Value.ToFriendlyName() : string.Empty,
-                Description = x.Description,
-                CustomerId = x.CustomerId,
+                x.Id,
+                x.Number,
+                x.OrderDate,
+                x.OrderStatus,
+                x.Description,
+                x.CustomerId,
                 CustomerName = x.Customer != null ? x.Customer.Name : string.Empty,
-                TaxId = x.TaxId,
+                x.TaxId,
                 TaxName = x.Tax != null ? x.Tax.Name : string.Empty,
-                BeforeTaxAmount = x.BeforeTaxAmount,
-                TaxAmount = x.TaxAmount,
-                AfterTaxAmount = x.AfterTaxAmount,
-                CreatedAtUtc = x.CreatedAtUtc
+                x.BeforeTaxAmount,
+                x.TaxAmount,
+                x.AfterTaxAmount,
+                x.CreatedAtUtc,
+                x.CreatedById
             })
             .Take(2000)
             .ToListAsync(cancellationToken);
+
+        var users = await _securityService.GetUserListAsync(cancellationToken);
+        var userNames = users.ToDictionary(u => u.Id ?? string.Empty, u => $"{u.FirstName} {u.LastName}".Trim());
+
+        var dtos = page.Select(x => new GetSalesOrderListDto
+        {
+            Id = x.Id,
+            Number = x.Number,
+            OrderDate = x.OrderDate,
+            OrderStatus = x.OrderStatus,
+            OrderStatusName = x.OrderStatus.HasValue ? x.OrderStatus.Value.ToFriendlyName() : string.Empty,
+            Description = x.Description,
+            CustomerId = x.CustomerId,
+            CustomerName = x.CustomerName,
+            TaxId = x.TaxId,
+            TaxName = x.TaxName,
+            BeforeTaxAmount = x.BeforeTaxAmount,
+            TaxAmount = x.TaxAmount,
+            AfterTaxAmount = x.AfterTaxAmount,
+            CreatedAtUtc = x.CreatedAtUtc,
+            CreatedById = x.CreatedById,
+            CreatedByName = x.CreatedById != null && userNames.TryGetValue(x.CreatedById, out var cn) ? cn : null
+        }).ToList();
 
         return new GetSalesOrderListResult
         {

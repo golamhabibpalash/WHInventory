@@ -492,7 +492,8 @@ const App = {
                             field: 'deliveryStatus', headerText: 'Delivery Status', width: 130, minWidth: 130,
                             template: '<span class="badge" style="font-size:.75rem;font-weight:600;" v-bind:class="{"bg-success": data.deliveryStatus === "Complete", "bg-warning text-dark": data.deliveryStatus === "Partial", "bg-secondary": data.deliveryStatus === "Not Started" || data.deliveryStatus === "N/A"}">${deliveryStatus}</span>'
                         },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
+                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' },
+                        { field: 'createdByName', headerText: 'Created By', width: 150, minWidth: 150 }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',

@@ -51,8 +51,8 @@ const App = {
                 try {
                     let url = '/PurchaseOrderItem/GetPurchaseOrderItemList';
                     const queryParts = [];
-                    if (dateFrom) queryParts.push('dateFrom=' + encodeURIComponent(dateFrom.toISOString()));
-                    if (dateTo) queryParts.push('dateTo=' + encodeURIComponent(dateTo.toISOString()));
+                    if (dateFrom) queryParts.push('dateFrom=' + encodeURIComponent(DateFormatManager.toApiDate(dateFrom)));
+                    if (dateTo) queryParts.push('dateTo=' + encodeURIComponent(DateFormatManager.toApiDate(dateTo)));
                     if (queryParts.length > 0) url += '?' + queryParts.join('&');
                     const response = await AxiosManager.get(url, {});
                     return response;
