@@ -373,6 +373,20 @@ public class SecurityController : BaseApiController
         });
     }
 
+    [Authorize(Roles = "Users")]
+    [HttpPost("GetRoleUsers")]
+    public async Task<ActionResult<ApiSuccessResult<GetRoleUsersResult>>> GetRoleUsersAsync(GetRoleUsersRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetRoleUsersResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetRoleUsersAsync)}",
+            Content = response
+        });
+    }
+
     [Authorize]
     [HttpPost("UpdateMyProfileAvatar")]
     public async Task<ActionResult<ApiSuccessResult<UpdateMyProfileAvatarResult>>> UpdateMyProfileAvatarAsync(UpdateMyProfileAvatarRequest request, CancellationToken cancellationToken)

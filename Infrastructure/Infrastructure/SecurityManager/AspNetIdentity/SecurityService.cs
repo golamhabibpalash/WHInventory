@@ -901,6 +901,28 @@ public class SecurityService : ISecurityService
         return updatedRoles.ToList();
     }
 
+    public async Task<List<RoleUserDto>> GetRoleUsersAsync(
+        string roleName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var usersInRole = await _userManager.GetUsersInRoleAsync(roleName);
+        var allUsers = await _userManager.Users
+            .Where(u => u.IsDeleted == null || !u.IsDeleted.Value)
+            .ToListAsync(cancellationToken);
+
+        var result = allUsers.Select(u => new RoleUserDto
+        {
+            UserId = u.Id,
+            Email = u.Email ?? "",
+            FirstName = u.FirstName ?? "",
+            LastName = u.LastName ?? "",
+            AccessGranted = usersInRole.Any(ur => ur.Id == u.Id)
+        }).ToList();
+
+        return result;
+    }
+
     public async Task ChangeAvatarAsync(
         string userId,
         string avatar,

@@ -3,11 +3,77 @@
     ViewData["Title"] = "Role List";
 }
 
+@section styles {
+    <link rel="stylesheet" href="~/css/change-role-modal.css" asp-append-version="true" />
+}
+
 <div id="app" v-cloak>
     <div class="row">
         <div class="col-12">
             <div class="grid-container">
                 <div ref="mainGridRef" id="MainGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade change-role-modal" ref="manageUsersModalRef" id="ManageUsersModal" aria-hidden="true" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">{{ state.manageUsersTitle }}</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="cr-summary">
+                        <span class="cr-summary-text">
+                            <strong>{{ userGrantedCount }}</strong> of <strong>{{ userModules.totalUsers }}</strong> users have this role
+                        </span>
+                        <div class="cr-summary-actions">
+                            <button type="button" class="btn btn-sm btn-outline-success" v-on:click="handler.grantAllUsers">
+                                <i class="fas fa-check-double me-1"></i>Grant All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" v-on:click="handler.revokeAllUsers">
+                                <i class="fas fa-times-circle me-1"></i>Revoke All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary" v-on:click="handler.saveUserChanges"
+                                    v-bind:disabled="!hasUnsavedUserChanges">
+                                <i class="fas fa-save me-1"></i>Save
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cr-modules">
+                        <div class="cr-module-card" v-for="group in userModules.list" v-bind:key="group.letter">
+                            <div class="cr-module-header">
+                                <div class="cr-module-title">
+                                    <i class="fas fa-users"></i>
+                                    <span>{{ group.letter }}</span>
+                                    <span class="cr-module-count">{{ group.grantedCount }}/{{ group.users.length }}</span>
+                                </div>
+                                <label class="cr-module-toggle">
+                                    <input type="checkbox"
+                                           v-bind:checked="group.allGranted"
+                                           v-on:change="handler.toggleUserGroup(group, $event.target.checked)">
+                                    All
+                                </label>
+                            </div>
+                            <div class="cr-module-body">
+                                <div class="cr-role-item" v-for="user in group.users" v-bind:key="user.userId">
+                                    <input type="checkbox"
+                                           v-bind:id="'user-' + user.userId"
+                                           v-model="user.accessGranted"
+                                           v-on:change="handler.onUserToggle(user)">
+                                    <label class="cr-role-label" v-bind:for="'user-' + user.userId">{{ user.firstName }} {{ user.lastName }} <span class="text-muted small">({{ user.email }})</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                </div>
             </div>
         </div>
     </div>

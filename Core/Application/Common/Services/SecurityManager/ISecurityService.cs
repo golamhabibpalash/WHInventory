@@ -130,9 +130,23 @@ public interface ISecurityService
         CancellationToken cancellationToken = default
         );
 
+    Task<List<RoleUserDto>> GetRoleUsersAsync(
+        string roleName,
+        CancellationToken cancellationToken = default
+        );
+
     Task ChangeAvatarAsync(
         string userId,
         string avatar,
         CancellationToken cancellationToken
         );
+}
+
+public class RoleUserDto
+{
+    public string UserId { get; init; } = "";
+    public string Email { get; init; } = "";
+    public string FirstName { get; init; } = "";
+    public string LastName { get; init; } = "";
+    public bool AccessGranted { get; init; }
 }
