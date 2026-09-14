@@ -32,6 +32,7 @@
             errors: {
                 name: '',
                 phoneNumber: '',
+                emailAddress: '',
             },
             isSubmitting: false,
             view: {
@@ -577,6 +578,7 @@
         watcherStops.push(Vue.watch(
             () => state.emailAddress,
             (newVal, oldVal) => {
+                state.errors.emailAddress = '';
                 emailAddressText.refresh();
             }
         ));
@@ -592,8 +594,15 @@
                         state.errors.name = 'Name is required.';
                         isValid = false;
                     }
-                    if (!state.phoneNumber) {
+                    if (!state.phoneNumber?.trim()) {
                         state.errors.phoneNumber = 'Phone Number is required.';
+                        isValid = false;
+                    } else if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(state.phoneNumber.trim().replace(/[\s-]/g, ''))) {
+                        state.errors.phoneNumber = 'Enter a valid phone number (e.g. 01711234567 or +8801711234567).';
+                        isValid = false;
+                    }
+                    if (state.emailAddress?.trim() && !/\S+@\S+\.\S+/.test(state.emailAddress.trim())) {
+                        state.errors.emailAddress = 'Please enter a valid email address.';
                         isValid = false;
                     }
 

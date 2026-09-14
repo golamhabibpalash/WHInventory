@@ -42,7 +42,12 @@ public class UpdateCustomerValidator : AbstractValidator<UpdateCustomerRequest>
     {
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.Name).NotEmpty();
-        RuleFor(x => x.PhoneNumber).NotEmpty();
+        RuleFor(x => x.PhoneNumber)
+            .NotEmpty().WithMessage("Phone Number is required.")
+            .Matches(@"^(?:\+?88)?01[3-9]\d{8}$").WithMessage("Enter a valid phone number (e.g. 01711234567 or +8801711234567).");
+        RuleFor(x => x.EmailAddress)
+            .EmailAddress().WithMessage("Enter a valid email address.")
+            .When(x => !string.IsNullOrWhiteSpace(x.EmailAddress));
     }
 }
 
