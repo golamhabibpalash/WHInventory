@@ -849,7 +849,7 @@
                             args.cell.style.color = 'var(--primary)';
                             args.cell.style.fontWeight = '600';
                             args.cell.onclick = () => {
-                                const rowData = args.row?.data;
+                                const rowData = args.rowData;
                                 if (rowData?.id) handler.openViewModal(rowData.id);
                             };
                         }
