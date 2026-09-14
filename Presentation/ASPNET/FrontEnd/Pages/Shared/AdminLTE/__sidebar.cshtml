@@ -198,6 +198,13 @@
                 if (mainMenu) mainMenu.destroy();
                 const mainMenuEl = document.getElementById('mainMenu');
                 if (mainMenuEl) mainMenuEl.innerHTML = '';
+                const freshRoles = StorageManager.getUserRoles();
+                const rawSort = StorageManager.getNavSortOrder();
+                menuData = applySortOrder(StorageManager.getMenuNavigation(), rawSort);
+                const filteredMenu = filterMenu(menuData, freshRoles);
+                const urlParts = window.location.pathname.split('/');
+                const firstSegment = urlParts.length > 2 ? urlParts[1] : '';
+                menuData = updateMenuSelection(filteredMenu, firstSegment);
                 renderMenu();
             });
 

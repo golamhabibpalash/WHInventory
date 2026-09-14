@@ -226,7 +226,7 @@ public class SecurityController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "Users")]
     [HttpGet("GetRoleList")]
     public async Task<ActionResult<ApiSuccessResult<GetRoleListResult>>> GetRoleListAsync(
         CancellationToken cancellationToken

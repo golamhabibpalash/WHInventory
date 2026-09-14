@@ -4,28 +4,46 @@
         const isAuthorized = userRoles?.some(role => requiredRoles.includes(role));
         if (!isAuthorized) {
             SecurityManager.forceReLogin('Unauthorized');
+            throw new Error('Unauthorized');
         }
     },
 
-    // Every page's onMounted awaits this before it may render anything. The check itself is a
-    // network round trip the page doesn't otherwise need: AxiosManager already refreshes an
-    // expired access token silently on a 498 response (see axios-manager.js), so a token that is
-    // merely expired self-heals on the page's own first API call. This only needs to catch a
-    // token that is invalid beyond refresh (revoked, wrong tenant, etc.) — that's rare, so it
-    // runs in the background instead of gating first paint. Callers keep `await`ing it; the
-    // returned promise just resolves immediately rather than after the round trip.
+    // Calls the server to validate the current access token. If invalid or revoked the user is
+    // redirected to login. Unlike before, this now truly gates rendering — callers that `await`
+    // this will not proceed until the check completes.
     validateToken: async () => {
-        AxiosManager.post('/Security/ValidateToken', {})
-            .then((response) => {
-                if (response?.data?.code !== 200) {
-                    SecurityManager.forceReLogin('Token not valid');
-                }
-            })
-            .catch((error) => {
-                SecurityManager.forceReLogin(error?.response?.data?.message || 'Error validating token');
-            });
+        try {
+            const response = await AxiosManager.post('/Security/ValidateToken', {});
+            if (response?.data?.code !== 200) {
+                SecurityManager.forceReLogin('Token not valid');
+                throw new Error('Token not valid');
+            }
+        } catch (error) {
+            if (error.message === 'Token not valid') throw error;
+            SecurityManager.forceReLogin(error?.response?.data?.message || 'Error validating token');
+            throw error;
+        }
+    },
 
-        return true;
+    // Re-fetches the current user's roles from the server and updates localStorage + sidebar.
+    // Call after any role change to keep the admin's own state fresh.
+    refreshSession: async () => {
+        try {
+            const refreshToken = StorageManager.getRefreshToken();
+            if (!refreshToken) return;
+            const response = await AxiosManager.post('/Security/RefreshToken', { refreshToken });
+            if (response?.data?.code === 200) {
+                StorageManager.saveLoginResult(response?.data);
+                SecurityManager.reloadSidebar();
+            }
+        } catch (e) {
+            // Silent — refresh failed, will self-heal on next 498
+        }
+    },
+
+    // Re-renders the sidebar using the current (possibly updated) roles from localStorage.
+    reloadSidebar: () => {
+        document.dispatchEvent(new CustomEvent('i18n:locale-changed'));
     },
 
     forceReLogin: (title) => {

@@ -204,6 +204,7 @@
                         }
                     }
                     await methods.populateRoleUsers(state.roleName);
+                    await SecurityManager.refreshSession();
                     Swal.fire({ icon: 'success', title: 'Role Granted to All Users' });
                 } catch (error) {
                     Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
@@ -228,6 +229,7 @@
                         }
                     }
                     await methods.populateRoleUsers(state.roleName);
+                    await SecurityManager.refreshSession();
                     Swal.fire({ icon: 'success', title: 'Role Revoked from All Users' });
                 } catch (error) {
                     Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
@@ -252,6 +254,7 @@
                     await methods.populateRoleUsers(state.roleName);
 
                     if (allSuccess) {
+                        await SecurityManager.refreshSession();
                         Swal.fire({ icon: 'success', title: 'Users Updated', timer: 1000, showConfirmButton: false });
                     } else {
                         Swal.fire({ icon: 'warning', title: 'Partial Update', text: 'Some users could not be updated.', confirmButtonText: 'OK' });

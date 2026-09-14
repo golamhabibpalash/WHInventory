@@ -573,6 +573,7 @@
                     const response = await services.updateAllUserRolesData(state.userId, true);
                     if (response.data.code === 200) {
                         await methods.populateSecondaryData(state.userId);
+                        await SecurityManager.refreshSession();
                         Swal.fire({ icon: 'success', title: 'All Roles Granted' });
                     } else {
                         Swal.fire({ icon: 'error', title: 'Failed', text: response.data.message ?? 'Please try again.', confirmButtonText: 'OK' });
@@ -597,6 +598,7 @@
                     const response = await services.updateAllUserRolesData(state.userId, false);
                     if (response.data.code === 200) {
                         await methods.populateSecondaryData(state.userId);
+                        await SecurityManager.refreshSession();
                         Swal.fire({ icon: 'success', title: 'All Roles Revoked' });
                     } else {
                         Swal.fire({ icon: 'error', title: 'Failed', text: response.data.message ?? 'Please try again.', confirmButtonText: 'OK' });
@@ -624,6 +626,7 @@
                     await methods.populateSecondaryData(state.userId);
 
                     if (allSuccess) {
+                        await SecurityManager.refreshSession();
                         Swal.fire({ icon: 'success', title: 'Roles Updated', timer: 1000, showConfirmButton: false });
                     } else {
                         Swal.fire({ icon: 'warning', title: 'Partial Update', text: 'Some roles could not be updated.', confirmButtonText: 'OK' });
