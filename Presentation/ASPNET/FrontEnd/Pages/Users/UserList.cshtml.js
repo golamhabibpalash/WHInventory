@@ -37,10 +37,117 @@
         const mainModalRef = Vue.ref(null);
         const changePasswordModalRef = Vue.ref(null);
         const changeRoleModalRef = Vue.ref(null);
-        const secondaryGridRef = Vue.ref(null);
         const firstNameRef = Vue.ref(null);
         const lastNameRef = Vue.ref(null);
         const emailRef = Vue.ref(null);
+
+        // ── Module grouping configuration ──────────────────────────────
+        const moduleConfig = [
+            {
+                name: 'Dashboards',
+                icon: 'fas fa-tachometer-alt',
+                roles: ['Dashboards']
+            },
+            {
+                name: 'Sales',
+                icon: 'fas fa-chart-line',
+                roles: ['CustomerGroups', 'CustomerCategories', 'Customers', 'CustomerContacts', 'SalesOrders', 'SalesReports', 'Warranties']
+            },
+            {
+                name: 'Purchase',
+                icon: 'fas fa-shopping-cart',
+                roles: ['VendorGroups', 'VendorCategories', 'Vendors', 'VendorContacts', 'PurchaseOrders', 'PurchaseReports']
+            },
+            {
+                name: 'Inventory',
+                icon: 'fas fa-warehouse',
+                roles: ['UnitMeasures', 'ProductGroups', 'Brands', 'Products', 'Warehouses', 'DeliveryOrders', 'SalesReturns', 'GoodsReceives', 'PurchaseReturns', 'TransferOuts', 'TransferIns', 'PositiveAdjustments', 'NegativeAdjustments', 'Scrappings', 'StockCounts', 'TransactionReports', 'StockReports', 'MovementReports']
+            },
+            {
+                name: 'Pricing',
+                icon: 'fas fa-tags',
+                roles: ['PricePolicies', 'ProductPrices', 'Promotions', 'PriceReports']
+            },
+            {
+                name: 'Utilities',
+                icon: 'fas fa-tools',
+                roles: ['Todos', 'TodoItems']
+            },
+            {
+                name: 'Membership',
+                icon: 'fas fa-users',
+                roles: ['Users', 'Roles']
+            },
+            {
+                name: 'Profiles',
+                icon: 'fas fa-user-circle',
+                roles: ['Profiles']
+            },
+            {
+                name: 'Ticketing',
+                icon: 'fas fa-ticket-alt',
+                roles: ['Tickets', 'TicketAgent']
+            },
+            {
+                name: 'Settings',
+                icon: 'fas fa-cog',
+                roles: ['Companies', 'Taxs', 'NumberSequences', 'QuickShortcuts', 'TicketConfigurations']
+            },
+            {
+                name: 'Logs',
+                icon: 'fas fa-history',
+                roles: ['Tenants', 'AuditLogs', 'UserActivityLogs']
+            }
+        ];
+
+        const changedRoles = Vue.reactive(new Set());
+
+        const roleModules = Vue.computed(() => {
+            const modules = [];
+            let totalRoles = 0;
+
+            for (const cfg of moduleConfig) {
+                const roleItems = cfg.roles
+                    .map(roleName => {
+                        const found = state.secondaryData.find(r => r.roleName === roleName);
+                        return found
+                            ? { roleName: found.roleName, displayName: formatRoleName(found.roleName), accessGranted: found.accessGranted }
+                            : null;
+                    })
+                    .filter(Boolean);
+
+                if (roleItems.length === 0) continue;
+
+                totalRoles += roleItems.length;
+                const grantedCount = roleItems.filter(r => r.accessGranted).length;
+
+                modules.push({
+                    name: cfg.name,
+                    icon: cfg.icon,
+                    roles: roleItems,
+                    grantedCount,
+                    allGranted: grantedCount === roleItems.length,
+                    someGranted: grantedCount > 0 && grantedCount < roleItems.length
+                });
+            }
+
+            return { list: modules, totalRoles };
+        });
+
+        const roleGrantedCount = Vue.computed(() => {
+            return state.secondaryData.filter(r => r.accessGranted).length;
+        });
+
+        const hasUnsavedChanges = Vue.computed(() => {
+            return changedRoles.size > 0;
+        });
+
+        function formatRoleName(roleName) {
+            return roleName
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, s => s.toUpperCase())
+                .trim();
+        }
 
         const firstNameText = {
             obj: null,
@@ -317,6 +424,7 @@
                         }));
 
                     state.secondaryData = result;
+                    changedRoles.clear();
                 } catch (error) {
                     state.secondaryData = [];
                 }
@@ -439,7 +547,91 @@
                 } finally {
                     state.isChangePasswordSubmitting = false;
                 }
-            }
+            },
+            onRoleToggle: (role) => {
+                changedRoles.add(role.roleName);
+            },
+            toggleModule: (mod, checked) => {
+                for (const role of mod.roles) {
+                    role.accessGranted = checked;
+                    changedRoles.add(role.roleName);
+                }
+            },
+            grantAllRoles: async () => {
+                const confirm = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Are you sure?',
+                    text: 'This will grant ALL roles to this user.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, proceed',
+                    cancelButtonText: 'Cancel'
+                });
+
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    const response = await services.updateAllUserRolesData(state.userId, true);
+                    if (response.data.code === 200) {
+                        await methods.populateSecondaryData(state.userId);
+                        Swal.fire({ icon: 'success', title: 'All Roles Granted' });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Failed', text: response.data.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                }
+            },
+            revokeAllRoles: async () => {
+                const confirm = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Are you sure?',
+                    text: 'This will remove ALL roles from this user.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, proceed',
+                    cancelButtonText: 'Cancel'
+                });
+
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    const response = await services.updateAllUserRolesData(state.userId, false);
+                    if (response.data.code === 200) {
+                        await methods.populateSecondaryData(state.userId);
+                        Swal.fire({ icon: 'success', title: 'All Roles Revoked' });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Failed', text: response.data.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                }
+            },
+            saveRoleChanges: async () => {
+                if (changedRoles.size === 0) return;
+
+                try {
+                    const rolesToUpdate = Array.from(changedRoles);
+                    let allSuccess = true;
+
+                    for (const roleName of rolesToUpdate) {
+                        const row = state.secondaryData.find(r => r.roleName === roleName);
+                        if (!row) continue;
+                        const response = await services.updateUserRoleData(state.userId, roleName, row.accessGranted);
+                        if (response.data.code !== 200) {
+                            allSuccess = false;
+                        }
+                    }
+
+                    await methods.populateSecondaryData(state.userId);
+
+                    if (allSuccess) {
+                        Swal.fire({ icon: 'success', title: 'Roles Updated', timer: 1000, showConfirmButton: false });
+                    } else {
+                        Swal.fire({ icon: 'warning', title: 'Partial Update', text: 'Some roles could not be updated.', confirmButtonText: 'OK' });
+                    }
+                } catch (error) {
+                    Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
+                }
+            },
         };
 
         Vue.onMounted(async () => {
@@ -449,7 +641,6 @@
 
                 await methods.populateMainData();
                 await mainGrid.create(state.mainData);
-                await secondaryGrid.create(state.secondaryData);
 
                 firstNameText.create();
                 lastNameText.create();
@@ -604,10 +795,9 @@
                         if (args.item.id === 'ChangeRoleCustom') {
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.changeRoleTitle = 'Change Roles';
+                                state.changeRoleTitle = 'Change Roles — ' + (selectedRecord.firstName ?? '') + ' ' + (selectedRecord.lastName ?? '');
                                 state.userId = selectedRecord.id ?? '';
                                 await methods.populateSecondaryData(state.userId);
-                                secondaryGrid.refresh();
                                 changeRoleModal.obj.show();
                             }
                         }
@@ -619,185 +809,6 @@
             },
             refresh: () => {
                 mainGrid.obj.setProperties({ dataSource: state.mainData });
-            }
-        };
-
-        const secondaryGrid = {
-            obj: null,
-            changedRoles: new Set(),
-            create: async (dataSource) => {
-                secondaryGrid.obj = new ej.grids.Grid({
-                    height: 400,
-                    dataSource: dataSource,
-                    allowFiltering: false,
-                    allowSorting: true,
-                    allowSelection: true,
-                    allowGrouping: false,
-                    allowTextWrap: true,
-                    allowResizing: true,
-                    allowPaging: false,
-                    allowExcelExport: true,
-                    filterSettings: { type: 'CheckBox' },
-                    sortSettings: { columns: [{ field: 'roleName', direction: 'Descending' }] },
-                    pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
-                    selectionSettings: { persistSelection: true, type: 'Single' },
-                    autoFit: true,
-                    showColumnMenu: false,
-                    gridLines: 'Horizontal',
-                    columns: [
-                        { type: 'checkbox', width: 60 },
-                        {
-                            field: 'id', isPrimaryKey: true, headerText: 'Id', visible: false
-                        },
-                        { field: 'roleName', headerText: 'Role', width: 200, minWidth: 200 },
-                        {
-                            field: 'accessGranted', headerText: 'Access Granted', textAlign: 'Center', width: 150, minWidth: 150
-                        },
-                    ],
-                    toolbar: [
-                        'ExcelExport',
-                        { type: 'Separator' },
-                        { text: 'Save Changes', tooltipText: 'Save all role changes', prefixIcon: 'e-save', id: 'SaveRoleChanges' },
-                        { type: 'Separator' },
-                        { text: 'Grant All', tooltipText: 'Grant all roles to this user', prefixIcon: 'e-check', id: 'GrantAllRoles' },
-                        { text: 'Revoke All', tooltipText: 'Revoke all roles from this user', prefixIcon: 'e-close', id: 'RevokeAllRoles' },
-                    ],
-                    // The Access Granted column used to render its checkbox via a string `template`
-                    // with multiple ${...} placeholders mixed into HTML — Syncfusion's vanilla-JS
-                    // Grid template compiler collapses that down to just the last expression's
-                    // result (the literal text "checked"/""), never producing an actual <input>.
-                    // That silently broke the whole feature: with no checkbox in the DOM, nothing
-                    // could fire the `change` listener that enables "Save Changes" below, so the
-                    // button looked permanently hidden/disabled. queryCellInfo (direct cell DOM
-                    // patch) is the proven-safe alternative — same fix used on Products/ProductList.
-                    queryCellInfo: (args) => {
-                        if (args.column.field === 'accessGranted') {
-                            args.cell.innerHTML = `<input type="checkbox" class="role-access-toggle" data-role-name="${args.data.roleName}" ${args.data.accessGranted ? 'checked' : ''} />`;
-                        }
-                    },
-                    beforeDataBound: () => { },
-                    dataBound: function () {
-                        secondaryGrid.obj.toolbarModule.enableItems(['SaveRoleChanges'], false);
-                        secondaryGrid.obj.autoFitColumns(['roleName', 'accessGranted']);
-                        secondaryGrid.changedRoles.clear();
-                        const checkboxes = secondaryGridRef.value?.querySelectorAll('.role-access-toggle') ?? [];
-                        checkboxes.forEach(cb => {
-                            cb.addEventListener('change', (e) => {
-                                const roleName = e.target.getAttribute('data-role-name');
-                                secondaryGrid.changedRoles.add(roleName);
-                                secondaryGrid.obj.toolbarModule.enableItems(['SaveRoleChanges'], secondaryGrid.changedRoles.size > 0);
-                            });
-                        });
-                    },
-                    excelExportComplete: () => { },
-                    rowSelected: () => { },
-                    rowDeselected: () => { },
-                    rowSelecting: () => {
-                        if (secondaryGrid.obj.getSelectedRecords().length) {
-                            secondaryGrid.obj.clearSelection();
-                        }
-                    },
-                    toolbarClick: async (args) => {
-                        if (args.item.id === 'SecondaryGrid_excelexport') {
-                            secondaryGrid.obj.excelExport();
-                        }
-
-                        if (args.item.id === 'SaveRoleChanges') {
-                            if (secondaryGrid.changedRoles.size === 0) return;
-
-                            try {
-                                const rolesToUpdate = Array.from(secondaryGrid.changedRoles);
-                                const dataSource = secondaryGrid.obj.dataSource;
-                                let allSuccess = true;
-
-                                for (const roleName of rolesToUpdate) {
-                                    const row = dataSource.find(r => r.roleName === roleName);
-                                    if (!row) continue;
-                                    const response = await services.updateUserRoleData(state.userId, roleName, row.accessGranted);
-                                    if (response.data.code !== 200) {
-                                        allSuccess = false;
-                                    }
-                                }
-
-                                await methods.populateSecondaryData(state.userId);
-                                secondaryGrid.refresh();
-
-                                if (allSuccess) {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Roles Updated',
-                                        timer: 1000,
-                                        showConfirmButton: false
-                                    });
-                                } else {
-                                    Swal.fire({
-                                        icon: 'warning',
-                                        title: 'Partial Update',
-                                        text: 'Some roles could not be updated.',
-                                        confirmButtonText: 'OK'
-                                    });
-                                }
-                            } catch (error) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'An Error Occurred',
-                                    text: error.response?.data?.message ?? 'Please try again.',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        }
-
-                        if (args.item.id === 'GrantAllRoles' || args.item.id === 'RevokeAllRoles') {
-                            const accessGranted = args.item.id === 'GrantAllRoles';
-                            const confirmText = accessGranted
-                                ? 'This will grant ALL roles to this user.'
-                                : 'This will remove ALL roles from this user.';
-
-                            const confirm = await Swal.fire({
-                                icon: 'warning',
-                                title: 'Are you sure?',
-                                text: confirmText,
-                                showCancelButton: true,
-                                confirmButtonText: 'Yes, proceed',
-                                cancelButtonText: 'Cancel'
-                            });
-
-                            if (!confirm.isConfirmed) return;
-
-                            try {
-                                const response = await services.updateAllUserRolesData(state.userId, accessGranted);
-                                if (response.data.code === 200) {
-                                    await methods.populateSecondaryData(state.userId);
-                                    secondaryGrid.refresh();
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: accessGranted ? 'All Roles Granted' : 'All Roles Revoked',
-                                    });
-                                } else {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Failed',
-                                        text: response.data.message ?? 'Please try again.',
-                                        confirmButtonText: 'OK'
-                                    });
-                                }
-                            } catch (error) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'An Error Occurred',
-                                    text: error.response?.data?.message ?? 'Please try again.',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        }
-                    },
-                });
-                secondaryGrid.obj.appendTo(secondaryGridRef.value);
-                GridHeightManager.apply(secondaryGrid.obj, secondaryGridRef.value);
-
-            },
-            refresh: () => {
-                secondaryGrid.obj.setProperties({ dataSource: state.secondaryData });
             }
         };
 
@@ -836,12 +847,15 @@
             mainModalRef,
             changePasswordModalRef,
             changeRoleModalRef,
-            secondaryGridRef,
             firstNameRef,
             lastNameRef,
             emailRef,
             state,
             handler,
+            roleModules,
+            roleGrantedCount,
+            hasUnsavedChanges,
+            changedRoles,
         };
     }
 };
