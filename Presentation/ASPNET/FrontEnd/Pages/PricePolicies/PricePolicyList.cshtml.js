@@ -38,7 +38,7 @@ const App = {
             createMainData: async (name, code, description, priority, isActive, effectiveFrom, effectiveTo, createdById) => {
                 try {
                     const response = await AxiosManager.post('/PricePolicy/CreatePricePolicy', {
-                        name, code, description, priority, isActive, effectiveFrom, effectiveTo, createdById
+                        name, code, description, priority, isActive, effectiveFrom: DateFormatManager.toApiDate(effectiveFrom), effectiveTo: DateFormatManager.toApiDate(effectiveTo), createdById
                     });
                     return response;
                 } catch (error) {
@@ -48,7 +48,7 @@ const App = {
             updateMainData: async (id, name, code, description, priority, isActive, effectiveFrom, effectiveTo, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/PricePolicy/UpdatePricePolicy', {
-                        id, name, code, description, priority, isActive, effectiveFrom, effectiveTo, updatedById
+                        id, name, code, description, priority, isActive, effectiveFrom: DateFormatManager.toApiDate(effectiveFrom), effectiveTo: DateFormatManager.toApiDate(effectiveTo), updatedById
                     });
                     return response;
                 } catch (error) {

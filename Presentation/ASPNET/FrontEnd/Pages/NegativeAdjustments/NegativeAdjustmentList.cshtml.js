@@ -143,7 +143,7 @@ const App = {
             createMainData: async (adjustmentDate, description, status, createdById) => {
                 try {
                     const response = await AxiosManager.post('/NegativeAdjustment/CreateNegativeAdjustment', {
-                        adjustmentDate, description, status, createdById
+                        adjustmentDate: DateFormatManager.toApiDate(adjustmentDate), description, status, createdById
                     });
                     return response;
                 } catch (error) {
@@ -153,7 +153,7 @@ const App = {
             updateMainData: async (id, adjustmentDate, description, status, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/NegativeAdjustment/UpdateNegativeAdjustment', {
-                        id, adjustmentDate, description, status, updatedById
+                        id, adjustmentDate: DateFormatManager.toApiDate(adjustmentDate), description, status, updatedById
                     });
                     return response;
                 } catch (error) {

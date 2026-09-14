@@ -246,7 +246,7 @@ const App = {
             createMainData: async (transferReleaseDate, description, status, warehouseFromId, warehouseToId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/TransferOut/CreateTransferOut', {
-                        transferReleaseDate, description, status, warehouseFromId, warehouseToId, createdById
+                        transferReleaseDate: DateFormatManager.toApiDate(transferReleaseDate), description, status, warehouseFromId, warehouseToId, createdById
                     });
                     return response;
                 } catch (error) {
@@ -256,7 +256,7 @@ const App = {
             updateMainData: async (id, transferReleaseDate, description, status, warehouseFromId, warehouseToId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/TransferOut/UpdateTransferOut', {
-                        id, transferReleaseDate, description, status, warehouseFromId, warehouseToId, updatedById
+                        id, transferReleaseDate: DateFormatManager.toApiDate(transferReleaseDate), description, status, warehouseFromId, warehouseToId, updatedById
                     });
                     return response;
                 } catch (error) {

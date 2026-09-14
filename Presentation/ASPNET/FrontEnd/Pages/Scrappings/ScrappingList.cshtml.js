@@ -190,7 +190,7 @@ const App = {
             createMainData: async (scrappingDate, description, status, warehouseId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Scrapping/CreateScrapping', {
-                        scrappingDate, description, status, warehouseId, createdById
+                        scrappingDate: DateFormatManager.toApiDate(scrappingDate), description, status, warehouseId, createdById
                     });
                     return response;
                 } catch (error) {
@@ -200,7 +200,7 @@ const App = {
             updateMainData: async (id, scrappingDate, description, status, warehouseId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Scrapping/UpdateScrapping', {
-                        id, scrappingDate, description, status, warehouseId, updatedById
+                        id, scrappingDate: DateFormatManager.toApiDate(scrappingDate), description, status, warehouseId, updatedById
                     });
                     return response;
                 } catch (error) {

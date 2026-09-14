@@ -201,7 +201,7 @@ const App = {
             createMainData: async (receiveDate, description, status, purchaseOrderId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/GoodsReceive/CreateGoodsReceive', {
-                        receiveDate, description, status, purchaseOrderId, createdById
+                        receiveDate: DateFormatManager.toApiDate(receiveDate), description, status, purchaseOrderId, createdById
                     });
                     return response;
                 } catch (error) {
@@ -211,7 +211,7 @@ const App = {
             updateMainData: async (id, receiveDate, description, status, purchaseOrderId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/GoodsReceive/UpdateGoodsReceive', {
-                        id, receiveDate, description, status, purchaseOrderId, updatedById
+                        id, receiveDate: DateFormatManager.toApiDate(receiveDate), description, status, purchaseOrderId, updatedById
                     });
                     return response;
                 } catch (error) {

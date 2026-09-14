@@ -190,7 +190,7 @@ const App = {
             createMainData: async (countDate, description, status, warehouseId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/StockCount/CreateStockCount', {
-                        countDate, description, status, warehouseId, createdById
+                        countDate: DateFormatManager.toApiDate(countDate), description, status, warehouseId, createdById
                     });
                     return response;
                 } catch (error) {
@@ -200,7 +200,7 @@ const App = {
             updateMainData: async (id, countDate, description, status, warehouseId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/StockCount/UpdateStockCount', {
-                        id, countDate, description, status, warehouseId, updatedById
+                        id, countDate: DateFormatManager.toApiDate(countDate), description, status, warehouseId, updatedById
                     });
                     return response;
                 } catch (error) {

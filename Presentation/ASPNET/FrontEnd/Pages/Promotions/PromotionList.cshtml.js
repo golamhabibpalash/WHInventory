@@ -175,7 +175,7 @@ const App = {
                         name: state.name, code: state.code, description: state.description,
                         productId: state.productId, pricePolicyId: state.pricePolicyId,
                         promotionalPrice: state.promotionalPrice, discountPercent: state.discountPercent,
-                        startDate: state.startDate, endDate: state.endDate,
+                        startDate: DateFormatManager.toApiDate(state.startDate), endDate: DateFormatManager.toApiDate(state.endDate),
                         priority: state.priority, isActive: state.isActive,
                     };
 

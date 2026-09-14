@@ -194,7 +194,7 @@ const App = {
             createMainData: async (transferReceiveDate, description, status, transferOutId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/TransferIn/CreateTransferIn', {
-                        transferReceiveDate, description, status, transferOutId, createdById
+                        transferReceiveDate: DateFormatManager.toApiDate(transferReceiveDate), description, status, transferOutId, createdById
                     });
                     return response;
                 } catch (error) {
@@ -204,7 +204,7 @@ const App = {
             updateMainData: async (id, transferReceiveDate, description, status, transferOutId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/TransferIn/UpdateTransferIn', {
-                        id, transferReceiveDate, description, status, transferOutId, updatedById
+                        id, transferReceiveDate: DateFormatManager.toApiDate(transferReceiveDate), description, status, transferOutId, updatedById
                     });
                     return response;
                 } catch (error) {
