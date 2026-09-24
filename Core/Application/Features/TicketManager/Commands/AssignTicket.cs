@@ -90,7 +90,7 @@ public class AssignTicketHandler : IRequestHandler<AssignTicketRequest, AssignTi
 
         if (newAssignee != null)
         {
-            _ = _notificationService.NotifyTicketAssignedAsync(newAssignee.Email, entity.TicketNumber ?? string.Empty, entity.Subject ?? string.Empty);
+            _ = _notificationService.NotifyTicketAssignedAsync(newAssignee.Email, entity.TicketNumber ?? string.Empty, entity.Subject ?? string.Empty, newAssignee.Id, entity.Id, request.UpdatedById);
         }
 
         return new AssignTicketResult { Data = entity };

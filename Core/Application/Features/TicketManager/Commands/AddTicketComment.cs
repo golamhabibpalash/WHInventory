@@ -116,6 +116,6 @@ public class AddTicketCommentHandler : IRequestHandler<AddTicketCommentRequest, 
         var targetId = authorIsAgent ? ticket.RequesterId : ticket.AssignedToId;
         var targetEmail = users.FirstOrDefault(u => u.Id == targetId)?.Email;
 
-        _ = _notificationService.NotifyTicketRepliedAsync(targetEmail, ticket.TicketNumber ?? string.Empty, ticket.Subject ?? string.Empty);
+        _ = _notificationService.NotifyTicketRepliedAsync(targetEmail, ticket.TicketNumber ?? string.Empty, ticket.Subject ?? string.Empty, targetId, ticket.Id, _currentUser.UserId);
     }
 }

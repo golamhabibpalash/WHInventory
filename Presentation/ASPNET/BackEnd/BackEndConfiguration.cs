@@ -1,6 +1,8 @@
 using Application;
+using Application.Features.NotificationManager;
 using ASPNET.BackEnd.Common.Filters;
 using ASPNET.BackEnd.Common.Handlers;
+using ASPNET.BackEnd.Hubs;
 using Infrastructure;
 using Infrastructure.DataAccessManager.EFCore;
 using Infrastructure.SeedManager;
@@ -77,12 +79,17 @@ public static class BackEndConfiguration
             x.SuppressModelStateInvalidFilter = true;
         });
 
+        //>>> Live notifications (SignalR + per-user groups)
+        services.AddSignalR();
+        services.AddScoped<INotificationBroadcaster, SignalRNotificationBroadcaster>();
+
         return services;
     }
 
     public static IEndpointRouteBuilder MapBackEndRoutes(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapControllers();
+        endpoints.MapHub<NotificationHub>("/hubs/notifications");
 
         return endpoints;
     }

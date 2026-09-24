@@ -87,6 +87,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<TicketPriority> TicketPriority { get; set; }
     public DbSet<TicketTag> TicketTag { get; set; }
     public DbSet<TicketTagMap> TicketTagMap { get; set; }
+    public DbSet<Notification> Notification { get; set; }
 
     /// <summary>
     /// Stamps the ambient tenant onto new rows. Lives on the base context so that every writer
@@ -196,6 +197,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new TicketPriorityConfiguration());
         modelBuilder.ApplyConfiguration(new TicketTagConfiguration());
         modelBuilder.ApplyConfiguration(new TicketTagMapConfiguration());
+        modelBuilder.ApplyConfiguration(new NotificationConfiguration());
 
         ApplyTenantFilters(modelBuilder);
     }

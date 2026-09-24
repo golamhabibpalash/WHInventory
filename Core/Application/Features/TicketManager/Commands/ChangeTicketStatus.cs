@@ -101,12 +101,12 @@ public class ChangeTicketStatusHandler : IRequestHandler<ChangeTicketStatusReque
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);
 
-        await NotifyAsync(entity, request.Status, cancellationToken);
+        await NotifyAsync(entity, request.Status, request.UpdatedById, cancellationToken);
 
         return new ChangeTicketStatusResult { Data = entity };
     }
 
-    private async Task NotifyAsync(Ticket entity, TicketStatus newStatus, CancellationToken cancellationToken)
+    private async Task NotifyAsync(Ticket entity, TicketStatus newStatus, string? actorId, CancellationToken cancellationToken)
     {
         if (newStatus != TicketStatus.Resolved && newStatus != TicketStatus.Reopened) return;
 
@@ -116,13 +116,13 @@ public class ChangeTicketStatusHandler : IRequestHandler<ChangeTicketStatusReque
         {
             // The requester is told their ticket is resolved.
             var requesterEmail = users.FirstOrDefault(u => u.Id == entity.RequesterId)?.Email;
-            _ = _notificationService.NotifyTicketResolvedAsync(requesterEmail, entity.TicketNumber ?? string.Empty, entity.Subject ?? string.Empty);
+            _ = _notificationService.NotifyTicketResolvedAsync(requesterEmail, entity.TicketNumber ?? string.Empty, entity.Subject ?? string.Empty, entity.RequesterId, entity.Id, actorId);
         }
         else
         {
             // The assigned agent is told the requester wasn't satisfied and reopened it.
             var agentEmail = users.FirstOrDefault(u => u.Id == entity.AssignedToId)?.Email;
-            _ = _notificationService.NotifyTicketReopenedAsync(agentEmail, entity.TicketNumber ?? string.Empty, entity.Subject ?? string.Empty);
+            _ = _notificationService.NotifyTicketReopenedAsync(agentEmail, entity.TicketNumber ?? string.Empty, entity.Subject ?? string.Empty, entity.AssignedToId, entity.Id, actorId);
         }
     }
 }

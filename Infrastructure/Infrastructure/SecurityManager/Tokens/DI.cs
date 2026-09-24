@@ -60,6 +60,21 @@ public static class DI
                         }
                     }
 
+                    // SignalR browser clients cannot set headers on the WebSocket handshake,
+                    // so the live notification hub passes the JWT as ?access_token= instead.
+                    if (string.IsNullOrEmpty(context.Token))
+                    {
+                        var path = context.HttpContext.Request.Path;
+                        if (path.StartsWithSegments("/hubs"))
+                        {
+                            var queryToken = context.Request.Query["access_token"].FirstOrDefault();
+                            if (!string.IsNullOrEmpty(queryToken))
+                            {
+                                context.Token = queryToken;
+                            }
+                        }
+                    }
+
                     return Task.CompletedTask;
                 },
 

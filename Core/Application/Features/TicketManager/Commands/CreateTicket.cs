@@ -169,7 +169,7 @@ public class CreateTicketHandler : IRequestHandler<CreateTicketRequest, CreateTi
         _historyRecorder.Record(entity.Id, "Created", null, entity.TicketNumber, request.CreatedById);
         await _unitOfWork.SaveAsync(cancellationToken);
 
-        _ = _notificationService.NotifyTicketCreatedAsync(await GetRequesterEmailAsync(requesterId, cancellationToken), entity.TicketNumber ?? string.Empty, entity.Subject ?? string.Empty);
+        _ = _notificationService.NotifyTicketCreatedAsync(await GetRequesterEmailAsync(requesterId, cancellationToken), entity.TicketNumber ?? string.Empty, entity.Subject ?? string.Empty, requesterId, entity.Id, request.CreatedById);
 
         return new CreateTicketResult { Data = entity };
     }
