@@ -97,7 +97,6 @@ const App = {
         const paymentDateRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const orderDateRef = Vue.ref(null);
-        const numberRef = Vue.ref(null);
         const customerIdRef = Vue.ref(null);
         const taxIdRef = Vue.ref(null);
         const orderStatusRef = Vue.ref(null);
@@ -129,6 +128,28 @@ const App = {
             const belowMin = state.productHint.minPrice !== null && price < state.productHint.minPrice;
             const aboveMax = state.productHint.maxPrice !== null && price > state.productHint.maxPrice;
             return belowMin || aboveMax;
+        });
+
+        // One mapping for the grid, stat strip and view modal (SalesOrderStatus: Draft/Cancelled/Confirmed/Archived).
+        const statusPillClass = (statusName) => {
+            const key = String(statusName ?? '').toLowerCase();
+            return ['draft', 'confirmed', 'cancelled', 'archived'].includes(key)
+                ? `status-pill status-pill--${key}`
+                : 'status-pill';
+        };
+
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+        const listStats = Vue.computed(() => {
+            const rows = state.mainData ?? [];
+            const isStatus = (row, name) => String(row.orderStatusName ?? '').toLowerCase() === name;
+            const confirmed = rows.filter(row => isStatus(row, 'confirmed'));
+            return {
+                total: rows.length,
+                draft: rows.filter(row => isStatus(row, 'draft')).length,
+                confirmed: confirmed.length,
+                confirmedValue: confirmed.reduce((sum, row) => sum + (row.afterTaxAmount || 0), 0)
+            };
         });
 
         const formatQty = (value) => Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -684,11 +705,16 @@ const App = {
                         allowFiltering: true,
                         filtering: (e) => {
                             e.preventDefaultAction = true;
-                            let query = new ej.data.Query();
-                            if (e.text !== '') {
-                                query = query.where('name', 'startsWith', e.text, true);
+                            const term = (e.text || '').toLowerCase();
+                            if (!term) {
+                                e.updateData(state.customerListLookupData);
+                                return;
                             }
-                            e.updateData(state.customerListLookupData, query);
+                            const filtered = state.customerListLookupData.filter(c =>
+                                (c.name || '').toLowerCase().includes(term) ||
+                                (c.phoneNumber || '').toLowerCase().includes(term)
+                            );
+                            e.updateData(filtered);
                         },
                         change: (e) => {
                             state.customerId = e.value;
@@ -862,17 +888,6 @@ const App = {
             }
         };
 
-        const numberText = {
-            obj: null,
-            create: () => {
-                numberText.obj = new ej.inputs.TextBox({
-                    placeholder: '[auto]',
-                    readonly: true
-                });
-                numberText.obj.appendTo(numberRef.value);
-            }
-        };
-
         const watcherStops = [];
 
         watcherStops.push(Vue.watch(
@@ -937,16 +952,15 @@ const App = {
                         { field: 'number', headerText: 'Number', width: 150, minWidth: 150 },
                         { field: 'orderDate', headerText: 'SO Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'customerName', headerText: 'Customer', width: 200, minWidth: 200 },
-                        { field: 'orderStatusName', headerText: 'Status', width: 150, minWidth: 150 },
+                        { field: 'orderStatusName', headerText: 'Status', width: 140, minWidth: 120 },
                         { field: 'taxName', headerText: 'Tax', width: 150, minWidth: 150 },
-                        { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2' },
-                        { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' },
+                        { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2', textAlign: 'Right' },
+                        { field: 'createdAtUtc', headerText: 'Created At', width: 150, format: 'dd/MM/yyyy HH:mm' },
                         { field: 'createdByName', headerText: 'Created By', width: 150, minWidth: 150 }
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
                         { type: 'Separator' },
-                        { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
                         { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
@@ -957,6 +971,10 @@ const App = {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], false);
                     },
                     queryCellInfo: (args) => {
+                        if (args.column.field === 'orderStatusName') {
+                            const name = args.data?.orderStatusName;
+                            args.cell.innerHTML = `<span class="${statusPillClass(name)}">${escapeHtml(name || '—')}</span>`;
+                        }
                         if (args.column.field === 'number') {
                             args.cell.style.cursor = 'pointer';
                             args.cell.style.color = 'var(--primary)';
@@ -999,13 +1017,6 @@ const App = {
                             mainGrid.obj.excelExport({ fileName: `SalesOrders_${date}.xlsx` });
                         }
 
-                        if (args.item.id === 'AddCustom') {
-                            state.deleteMode = false;
-                            state.mainTitle = 'Add Sales Order';
-                            resetFormState();
-                            mainModal.obj.show();
-                        }
-
                         if (args.item.id === 'EditCustom') {
                             state.deleteMode = false;
                             state.paymentError = '';
@@ -1013,7 +1024,7 @@ const App = {
                             resetProductPick();
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = `Sales Order ${selectedRecord.number ?? ''}`;
+                                state.mainTitle = 'Edit Sales Order';
                                 state.id = selectedRecord.id ?? '';
                                 state.number = selectedRecord.number ?? '';
                                 state.orderDate = selectedRecord.orderDate ? new Date(selectedRecord.orderDate) : null;
@@ -1097,7 +1108,7 @@ const App = {
                             return;
                         }
                         state.productPick.productId = product.id;
-                        state.productPick.unitPrice = product.unitPrice ?? 0;
+                        state.productPick.unitPrice = product.minSellingPrice ?? product.unitPrice ?? 0;
                         state.productPick.quantity = 1;
                         state.productHint = {
                             name: product.name,
@@ -1348,7 +1359,6 @@ const App = {
                 viewModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
                 orderDatePicker.create();
-                numberText.create();
 
                 Promise.all([
                     methods.populateCustomerListLookupData(),
@@ -1382,7 +1392,6 @@ const App = {
             mainModalRef.value?.removeEventListener('shown.bs.modal', onMainModalShown);
             mainGrid.obj?.destroy();
             orderDatePicker.obj?.destroy();
-            numberText.obj?.destroy();
             customerListLookup.obj?.destroy();
             taxListLookup.obj?.destroy();
             salesOrderStatusListLookup.obj?.destroy();
@@ -1398,7 +1407,6 @@ const App = {
             paymentDateRef,
             mainModalRef,
             orderDateRef,
-            numberRef,
             customerIdRef,
             taxIdRef,
             orderStatusRef,
@@ -1416,8 +1424,15 @@ const App = {
             viewModalRef,
             state,
             methods,
+            listStats,
             handler: {
                 handleSubmit: methods.handleFormSubmit,
+                openAddModal: () => {
+                    state.deleteMode = false;
+                    state.mainTitle = 'New Sales Order';
+                    resetFormState();
+                    mainModal.obj.show();
+                },
                 formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
                 formatQty: formatQty,
                 formatDate: (value) => {
@@ -1762,7 +1777,8 @@ const App = {
                         }
 
                         const matchedProduct = state.productListLookupData.find(p => p.id === product.id);
-                        const unitPrice = matchedProduct?.unitPrice ?? product.unitPrice ?? 0;
+                        const unitPrice = matchedProduct?.minSellingPrice ?? product.minSellingPrice
+                            ?? matchedProduct?.unitPrice ?? product.unitPrice ?? 0;
                         const quantity = 1;
 
                         if (product.physical) {
@@ -1806,19 +1822,12 @@ const App = {
                         const data = response?.data?.content?.data;
                         if (!data) return;
 
-                        const statusMap = {
-                            1: 'text-bg-info',
-                            2: 'text-bg-warning',
-                            3: 'text-bg-success',
-                            4: 'text-bg-danger'
-                        };
-
                         state.view = {
                             id: data.id ?? '',
                             number: data.number ?? '',
                             orderDate: data.orderDate ?? '',
                             orderStatusName: data.orderStatusName ?? '',
-                            statusClass: statusMap[data.orderStatus] ?? 'text-bg-secondary',
+                            statusClass: statusPillClass(data.orderStatusName),
                             description: data.description ?? '',
                             customerName: data.customer?.name ?? '',
                             taxName: data.tax?.name ?? '',
