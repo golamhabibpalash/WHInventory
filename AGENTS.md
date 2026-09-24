@@ -9,9 +9,9 @@ dotnet run --project Presentation/ASPNET/ASPNET.csproj  # dev server on http://l
 dotnet run --project Presentation/ASPNET/ASPNET.csproj --environment Development  # Swagger at /swagger (Dev only)
 ```
 
-- Targets **.NET 9** (`net9.0`). `Directory.Build.props` sets `TreatWarningsAsErrors` for `IDE*` + `EnforceCodeStyleInBuild` — code-style violations fail the build, not just warn.
+- Targets **.NET 9** (`net9.0`). There are **two** `.sln` files — build the root `WHInventory.sln`; `Presentation/ASPNET/ASPNET.sln` contains only the ASPNET project.
 - No test projects. No EF migrations — schema is `EnsureCreated()` at startup. To reset: drop the DB and restart.
-- Dev run expects a local PostgreSQL (`appsettings.json` → `ConnectionStrings:DefaultConnection`). App binds `http://+:8080` (`appsettings.json` → `Kestrel`); 8080 is also the container port.
+- Dev run expects a local PostgreSQL. The dev DB is the compose `db` service: `docker compose up -d db` → `appsettings.json` → `ConnectionStrings:DefaultConnection` already points at `localhost:5434` (matches compose's `5434:5432`). App binds `http://+:8080` (`appsettings.json` → `Kestrel`); 8080 is also the container port.
 
 ## Architecture
 
@@ -110,5 +110,5 @@ docker compose up -d db app      # skip tunnel
 bash update.sh                   # VPS-only deploy: git pull + rebuild app image + health-check on :8080
 ```
 
-- `.env` is gitignored — copy from `.env.example` (DB creds, JWT key, admin, SMTP).
+- `.env` is gitignored; copy `.env.example`. The repo compose only consumes `DB_NAME`/`DB_USER`/`DB_PASSWORD`/`CLOUDFLARE_TUNNEL_TOKEN` — the `JWT_KEY`/`ADMIN_*`/`SMTP_*` entries in `.env.example` are not wired to compose or the app (the container runs on `appsettings.json` defaults unless overridden separately).
 - Business dates use `appsettings.json` → `TimeZoneId` (`Asia/Dhaka`) — must match `TZ` env in compose; uploads live under `wwwroot/app_data/` (persisted volume in compose).
