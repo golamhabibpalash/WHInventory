@@ -73,6 +73,12 @@ public static class NavigationTreeStructure
                     "IsModule": false
                 },
                 {
+                    "URL": "/Dues/DueList",
+                    "Name": "Customer Due",
+                    "Icon": "fas fa-hand-holding-usd",
+                    "IsModule": false
+                },
+                {
                     "URL": "/SalesReports/SalesReportList",
                     "Name": "Sales Report",
                     "Icon": "fas fa-chart-bar",
