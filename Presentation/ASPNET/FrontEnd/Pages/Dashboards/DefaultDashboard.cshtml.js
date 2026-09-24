@@ -33,6 +33,7 @@ const App = {
                 todayPurchaseAmount: 0,
                 todaySalesAmount: 0,
                 todayDueAmount: 0,
+                totalDueAmount: 0,
                 totalStockValue: 0,
                 pendingDeliveryCount: 0,
                 pendingDeliveryOrderCount: 0,

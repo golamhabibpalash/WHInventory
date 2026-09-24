@@ -1,5 +1,6 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
+using Application.Features.CustomerManager.Services;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
@@ -44,10 +45,12 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
     private const int RecentActivityCount = 6;
 
     private readonly IQueryContext _context;
+    private readonly CustomerDueService _dueService;
 
-    public GetOverviewDashboardHandler(IQueryContext context)
+    public GetOverviewDashboardHandler(IQueryContext context, CustomerDueService dueService)
     {
         _context = context;
+        _dueService = dueService;
     }
 
     public async Task<GetOverviewDashboardResult> Handle(GetOverviewDashboardRequest request, CancellationToken cancellationToken)
@@ -156,6 +159,10 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
                 x.PaymentDate >= todayStart && x.PaymentDate < tomorrowStart)
             .SumAsync(x => (double?)x.Amount, cancellationToken) ?? 0.0;
 
+        // Reads through the shared due service, so the tile always equals the due list total.
+        var dueAggregates = await _dueService.GetAggregatesAsync(cancellationToken: cancellationToken);
+        var totalDueAmount = dueAggregates.Sum(x => x.DueAmount).ToMoney();
+
         // Pull a generous slice of lines so the roll-up below still yields enough distinct documents.
         var activityRows = await ledger
             .OrderByDescending(x => x.CreatedAtUtc)
@@ -225,6 +232,7 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             TodayPurchaseAmount = todayPurchaseAmount,
             TodaySalesAmount = todaySalesAmount,
             TodayDueAmount = todayDueAmount,
+            TotalDueAmount = totalDueAmount,
             TotalStockValue = totalStockValue,
             PendingDeliveryCount = reserved,
             PendingDeliveryOrderCount = reservedOrderCount,
