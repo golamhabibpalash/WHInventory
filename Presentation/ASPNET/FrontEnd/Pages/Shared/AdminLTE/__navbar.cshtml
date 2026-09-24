@@ -13,6 +13,26 @@
 
     <span class="mt-0" id="topbarContent">Currency: </span>
     <ul class="navbar-nav ml-auto">
+        <li class="nav-item dropdown" id="NotificationBell">
+            <a class="nav-link" data-bs-toggle="dropdown" href="#" title="Notifications" id="notificationBellToggle">
+                <i class="fas fa-bell"></i>
+                <span class="badge badge-danger navbar-badge" id="notificationBadge" style="display:none;">0</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right notification-dropdown">
+                <span class="dropdown-header" id="notificationDropdownHeader">Notifications</span>
+                <div class="dropdown-divider"></div>
+                <div id="notificationDropdownList">
+                    <span class="dropdown-item dropdown-item--empty">Loading…</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item dropdown-footer" id="notificationMarkAllRead">
+                    <i class="fas fa-check-double me-2"></i>Mark all as read
+                </a>
+                <a href="/Notifications" class="dropdown-item dropdown-footer">
+                    <i class="fas fa-list me-2"></i>See all notifications
+                </a>
+            </div>
+        </li>
         <li class="nav-item dropdown" id="LanguageSwitcher">
             <a class="nav-link" data-bs-toggle="dropdown" href="#" title="Language">
                 <i class="fas fa-globe"></i>
