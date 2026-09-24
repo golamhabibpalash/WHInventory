@@ -667,7 +667,13 @@ const App = {
         const methods = {
             populateCustomerListLookupData: async () => {
                 const response = await services.getCustomerListLookupData();
-                state.customerListLookupData = response?.data?.content?.data;
+                const data = response?.data?.content?.data ?? [];
+                // Precompute the "Name - Mobile" label the dropdown shows (see customerListLookup).
+                // Raw name/phoneNumber are preserved on each item so the search still matches both.
+                state.customerListLookupData = data.map(c => ({
+                    ...c,
+                    displayName: c.phoneNumber ? `${c.name} - ${c.phoneNumber}` : c.name
+                }));
             },
             populateTaxListLookupData: async () => {
                 const response = await services.getTaxListLookupData();
@@ -868,9 +874,9 @@ const App = {
                 if (state.customerListLookupData && Array.isArray(state.customerListLookupData)) {
                     customerListLookup.obj = new ej.dropdowns.DropDownList({
                         dataSource: state.customerListLookupData,
-                        fields: { value: 'id', text: 'name' },
+                        fields: { value: 'id', text: 'displayName' },
                         placeholder: 'Select a Customer',
-                        filterBarPlaceholder: 'Search',
+                        filterBarPlaceholder: 'Search by name or mobile',
                         sortOrder: 'Ascending',
                         allowFiltering: true,
                         filtering: (e) => {
