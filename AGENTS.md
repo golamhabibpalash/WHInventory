@@ -35,7 +35,7 @@ Each `Commands/{Create,Update,Delete}*.cs` / `Queries/Get*.cs` co-locates:
 4. `*Handler : IRequestHandler<*Request, *Result>`
 
 **Must call** `SaveAsync()` after every write via `ICommandRepository<T>` + `IUnitOfWork`.
-**Must call** `ApplyIsDeletedFilter(false)` on every read query to exclude soft-deleted rows. (Tenant filtering, by contrast, is automatic — see below.)
+**Must call** `ApplyIsDeletedFilter(...)` on every read query to exclude soft-deleted rows (list queries pass `request.IsDeleted`, singles pass `false`; default param is `false`). Tenant filtering, by contrast, is automatic — see below.
 
 ## Dual DbContext
 
@@ -65,20 +65,20 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 ## Seeding
 
 - System seed runs unconditionally at startup: default admin, roles, default tenant, company, system warehouses
-- Demo seed runs only when `"IsDemoVersion": true` in `appsettings.json`
+- Demo seed runs only when `"IsDemoVersion": true` in `appsettings.json` (true in dev, false in `appsettings.Production.json`)
 - Tenant creation is also a seeding concern (`TenantSeeder` + `TenantProvisioningService`)
 
 ## Security
 
 - ASP.NET Identity + JWT Bearer. Default admin: `admin@root.com` / `123456` (configurable in `appsettings.json` → `AspNetIdentity:DefaultAdmin`)
 - `RequireConfirmedEmail: true` by default — admin-created users bypass this; SMTP must be configured for self-registration
-- `AllowPublicTenantSignUp` — when true, anyone can create an org at `/Accounts/SignUp` (off by default in prod compose)
+- `AllowPublicTenantSignUp` — when true, anyone can create an org at `/Accounts/SignUp` (true in dev `appsettings.json`, false in `appsettings.Production.json`)
 - `Npgsql.EnableLegacyTimestampBehavior = true` set in `Program.cs` line 5
 
 ## Frontend
 
 - Razor Pages root: `/FrontEnd/Pages` (not `/Pages`)
-- Each page has a paired `.cshtml.js` file — Vue 3 Composition API + Syncfusion EJ2 Grid/Charts + Bootstrap 5 modals + SweetAlert2 + AJAX via `AxiosManager` (custom wrapper in `wwwroot/lib/indotalent/`)
+- Each page has a paired `.cshtml.js` file — Vue 3 Composition API + Syncfusion EJ2 Grid/Charts + Bootstrap modals + SweetAlert2 + AJAX via `AxiosManager` (custom wrapper in `wwwroot/lib/indotalent/`)
 - `SecurityManager.authorizePage(permissions)` and `validateToken()` called in every JS `setup()`
 - **UI standard (binding): `docs/FRONTEND-UI-STANDARD.md`** — read §22 before editing markup/CSS, "done" is §24. Reuse `.card`/`.form-card*`/modals/SweetAlert2/Syncfusion instead of new variants; use only the app tokens (`--primary` `#1b84ff`, border `#dee2e6`, muted `#6c757d`, surface `#f8f9fa`, control border `#ced4da`, radius `.25rem`); Font Awesome 5 solid only (no emoji); page CSS goes in `wwwroot/css/*.css` via `@section styles`, never an inline `<style>` block or a block duplicated across pages.
 
@@ -105,6 +105,8 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 ```bash
 docker compose up -d             # full stack: db + app + Cloudflare tunnel
 docker compose up -d db app      # skip tunnel
+bash update.sh                   # VPS-only deploy: git pull + rebuild app image + health-check on :8080
 ```
 
 - `.env` is gitignored — copy from `.env.example` (DB creds, JWT key, admin, SMTP).
+- Business dates use `appsettings.json` → `TimeZoneId` (`Asia/Dhaka`) — must match `TZ` env in compose; uploads live under `wwwroot/app_data/` (persisted volume in compose).
