@@ -155,9 +155,17 @@
                                     </div>
                                     <div class="pos-field-error" v-if="state.errors.taxId">{{ state.errors.taxId }}</div>
                                 </div>
-                                <div class="pos-span-all">
-                                    <label for="Description" class="pos-field-label">Note</label>
-                                    <textarea id="Description" class="form-control" rows="1" v-model="state.description" placeholder="Optional note for this order"></textarea>
+                                <div class="pos-span-all pos-note-row">
+                                    <div class="pos-note-col">
+                                        <label for="Description" class="pos-field-label">Note</label>
+                                        <textarea id="Description" class="form-control" rows="1" v-model="state.description" placeholder="Optional note for this order"></textarea>
+                                    </div>
+                                    <div class="pos-due-col">
+                                        <label for="PreviousDue" class="pos-field-label">Previous Due</label>
+                                        <input id="PreviousDue" type="text" class="form-control text-end pos-previous-due" readonly
+                                               v-bind:value="handler.formatAmount(state.previousDue)"
+                                               title="Outstanding balance from this customer's earlier confirmed orders">
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -17,6 +17,7 @@ public record GetSalesOrderListDto
     public string? Description { get; init; }
     public string? CustomerId { get; init; }
     public string? CustomerName { get; init; }
+    public string? CustomerPhoneNumber { get; init; }
     public string? TaxId { get; init; }
     public string? TaxName { get; init; }
     public double? BeforeTaxAmount { get; init; }
@@ -64,6 +65,7 @@ public class GetSalesOrderListHandler : IRequestHandler<GetSalesOrderListRequest
                 x.Description,
                 x.CustomerId,
                 CustomerName = x.Customer != null ? x.Customer.Name : string.Empty,
+                CustomerPhoneNumber = x.Customer != null ? x.Customer.PhoneNumber : string.Empty,
                 x.TaxId,
                 TaxName = x.Tax != null ? x.Tax.Name : string.Empty,
                 x.BeforeTaxAmount,
@@ -88,6 +90,7 @@ public class GetSalesOrderListHandler : IRequestHandler<GetSalesOrderListRequest
             Description = x.Description,
             CustomerId = x.CustomerId,
             CustomerName = x.CustomerName,
+            CustomerPhoneNumber = x.CustomerPhoneNumber,
             TaxId = x.TaxId,
             TaxName = x.TaxName,
             BeforeTaxAmount = x.BeforeTaxAmount,

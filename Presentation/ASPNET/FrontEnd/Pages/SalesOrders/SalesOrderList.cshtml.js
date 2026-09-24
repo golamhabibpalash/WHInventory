@@ -23,6 +23,7 @@ const App = {
             number: '',
             orderDate: new Date(),
             description: '',
+            previousDue: 0,
             customerId: null,
             taxId: null,
             orderStatus: null,
@@ -412,6 +413,7 @@ const App = {
             state.number = '';
             state.orderDate = new Date();
             state.description = '';
+            state.previousDue = 0;
             state.customerId = null;
             state.taxId = null;
             state.orderStatus = null;
@@ -485,6 +487,19 @@ const App = {
             getCustomerListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/Customer/GetCustomerList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getCustomerDue: async (customerId, excludeSalesOrderId) => {
+                try {
+                    // AxiosManager.get ignores config.params, so the query is built into the URL.
+                    let url = `/Customer/GetCustomerDue?customerId=${encodeURIComponent(customerId)}`;
+                    if (excludeSalesOrderId) {
+                        url += `&excludeSalesOrderId=${encodeURIComponent(excludeSalesOrderId)}`;
+                    }
+                    const response = await AxiosManager.get(url, {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -674,6 +689,20 @@ const App = {
                     ...c,
                     displayName: c.phoneNumber ? `${c.name} - ${c.phoneNumber}` : c.name
                 }));
+            },
+            populatePreviousDue: async (customerId) => {
+                // No customer selected → nothing owed to show.
+                if (!customerId) {
+                    state.previousDue = 0;
+                    return;
+                }
+                try {
+                    // Exclude the order currently open for edit so it isn't counted as its own "previous" due.
+                    const response = await services.getCustomerDue(customerId, state.id || null);
+                    state.previousDue = response?.data?.content?.data?.previousDue ?? 0;
+                } catch (error) {
+                    state.previousDue = 0;
+                }
             },
             populateTaxListLookupData: async () => {
                 const response = await services.getTaxListLookupData();
@@ -1079,6 +1108,8 @@ const App = {
             (newVal, oldVal) => {
                 customerListLookup.refresh();
                 state.errors.customerId = '';
+                // Show the customer's outstanding receivable (0 when none / when cleared).
+                methods.populatePreviousDue(newVal);
             }
         ));
 
