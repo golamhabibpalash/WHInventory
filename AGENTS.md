@@ -11,6 +11,7 @@ dotnet run --project Presentation/ASPNET/ASPNET.csproj --environment Development
 
 - Targets **.NET 9** (`net9.0`). `Directory.Build.props` sets `TreatWarningsAsErrors` for `IDE*` + `EnforceCodeStyleInBuild` — code-style violations fail the build, not just warn.
 - No test projects. No EF migrations — schema is `EnsureCreated()` at startup. To reset: drop the DB and restart.
+- Dev run expects a local PostgreSQL (`appsettings.json` → `ConnectionStrings:DefaultConnection`). App binds `http://+:8080` (`appsettings.json` → `Kestrel`); 8080 is also the container port.
 
 ## Architecture
 
@@ -25,6 +26,7 @@ Presentation/ASPNET   → controllers (REST API) + Razor Pages (Vue 3 + Syncfusi
 - **Controllers** inherit `BaseApiController` → inject `ISender`, call `_sender.Send(request, ct)`, wrap in `ApiSuccessResult<T>`
 - **MediatR pipeline** (in order): `LoggingBehaviour` → `ValidationBehaviour` (FluentValidation auto-run; throws `ValidationException`, caught by `GlobalApiExceptionHandlerMiddleware`)
 - **Autowired audit**: `AuditFieldActionFilter` injects JWT `NameIdentifier` into `CreatedById`/`UpdatedById` fields before handlers run
+- **Live notifications**: SignalR hub at `/hubs/notifications` (per-user groups), driven by the `NotificationManager` feature
 
 ## CQRS Pattern (one file = four classes)
 
@@ -65,14 +67,14 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 ## Seeding
 
 - System seed runs unconditionally at startup: default admin, roles, default tenant, company, system warehouses
-- Demo seed runs only when `"IsDemoVersion": true` in `appsettings.json` (true in dev, false in `appsettings.Production.json`)
+- Demo seed runs only when `IsDemoVersion: true` (true in dev `appsettings.json`). ⚠️ No `appsettings.Production.json` exists and compose sets no override — a Production build from this tree still seeds demo data unless `IsDemoVersion=false` is supplied.
 - Tenant creation is also a seeding concern (`TenantSeeder` + `TenantProvisioningService`)
 
 ## Security
 
 - ASP.NET Identity + JWT Bearer. Default admin: `admin@root.com` / `123456` (configurable in `appsettings.json` → `AspNetIdentity:DefaultAdmin`)
 - `RequireConfirmedEmail: true` by default — admin-created users bypass this; SMTP must be configured for self-registration
-- `AllowPublicTenantSignUp` — when true, anyone can create an org at `/Accounts/SignUp` (true in dev `appsettings.json`, false in `appsettings.Production.json`)
+- `AllowPublicTenantSignUp` — when true, anyone can create an org at `/Accounts/SignUp` (true in `appsettings.json`; compose does not disable it for Production)
 - `Npgsql.EnableLegacyTimestampBehavior = true` set in `Program.cs` line 5
 
 ## Frontend
