@@ -100,22 +100,40 @@ const NotificationManager = (() => {
     const renderDropdown = () => {
         const list = document.getElementById('notificationDropdownList');
         if (!list) return;
-        const header = document.getElementById('notificationDropdownHeader');
-        if (header) header.textContent = unreadCount > 0 ? `${unreadCount} unread` : 'Notifications';
+        const count = document.getElementById('notificationDropdownHeader');
+        if (count) {
+            if (unreadCount > 0) {
+                count.textContent = unreadCount > 99 ? '99+ new' : `${unreadCount} new`;
+                count.hidden = false;
+            } else {
+                count.hidden = true;
+            }
+        }
 
         if (items.length === 0) {
-            list.innerHTML = '<span class="dropdown-item dropdown-item--empty">You are all caught up.</span>';
+            list.innerHTML = `
+                <div class="notification-dropdown__empty">
+                    <span class="notification-dropdown__empty-icon"><i class="fas fa-bell-slash"></i></span>
+                    <span class="notification-dropdown__empty-title">You're all caught up</span>
+                    <span class="notification-dropdown__empty-text">No new notifications right now.</span>
+                </div>`;
             return;
         }
 
         list.innerHTML = items.map((n) => {
             const sev = severityOf(n);
-            return `<a href="#" class="dropdown-item notification-dropdown-item${n.isRead ? '' : ' notification-dropdown-item--unread'}" data-id="${escapeHtml(n.id)}" data-link="${escapeHtml(n.linkUrl || '')}">
-                <span class="notification-dropdown-icon" style="color:${sev.color}"><i class="${sev.icon}"></i></span>
-                <span class="notification-dropdown-body">
-                    <span class="notification-dropdown-title">${escapeHtml(n.title)}</span>
-                    <span class="notification-dropdown-time">${escapeHtml(timeAgo(n.createdAtUtc))}</span>
+            const sevKey = (n.severity || 'Info').toLowerCase();
+            const message = n.message
+                ? `<span class="notification-item__message">${escapeHtml(n.message)}</span>`
+                : '';
+            return `<a href="#" class="notification-item${n.isRead ? '' : ' notification-item--unread'}" role="menuitem" data-id="${escapeHtml(n.id)}" data-link="${escapeHtml(n.linkUrl || '')}">
+                <span class="notification-item__icon notification-item__icon--${sevKey}"><i class="${sev.icon}"></i></span>
+                <span class="notification-item__content">
+                    <span class="notification-item__title">${escapeHtml(n.title)}</span>
+                    ${message}
+                    <span class="notification-item__time">${escapeHtml(timeAgo(n.createdAtUtc))}</span>
                 </span>
+                <span class="notification-item__dot" aria-hidden="true"></span>
             </a>`;
         }).join('');
     };
