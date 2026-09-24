@@ -89,7 +89,7 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
             .Where(x => x.Physical == true)
-            .Select(x => new { x.Id, GroupName = x.ProductGroup!.Name, x.CreatedAtUtc })
+            .Select(x => new { x.Id, GroupName = x.ProductGroup!.Name, x.CreatedAtUtc, x.LowStockThreshold, x.UnitPrice })
             .ToListAsync(cancellationToken);
 
         var trendRows = await ledger
@@ -182,13 +182,18 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
         var totalInventory = stockNowByProduct.Values.Sum();
         var totalInventoryThen = stockThenByProduct.Values.Sum();
 
+        // On-hand valuation: available quantity per product (negatives clamped out) × its unit price.
+        // Reuses the already-materialised stock map and catalogue, so it adds no extra query.
+        var totalStockValue = products
+            .Sum(p => Math.Max(stockNowByProduct.GetValueOrDefault(p.Id, 0.0), 0.0) * (p.UnitPrice ?? 0.0));
+
         var lowStockCount = products
-            .Count(p => stockNowByProduct.GetValueOrDefault(p.Id, 0.0) <= LowStockThreshold);
+            .Count(p => stockNowByProduct.GetValueOrDefault(p.Id, 0.0) <= EffectiveThreshold(p.LowStockThreshold));
 
         // Products that did not exist a month ago cannot be part of the month-ago baseline.
         var lowStockCountThen = products
             .Count(p => p.CreatedAtUtc < comparisonStart &&
-                        stockThenByProduct.GetValueOrDefault(p.Id, 0.0) <= LowStockThreshold);
+                        stockThenByProduct.GetValueOrDefault(p.Id, 0.0) <= EffectiveThreshold(p.LowStockThreshold));
 
         var inboundToday = trendRows
             .Where(x => x.TransType == InventoryTransType.In && x.MovementDate >= todayStart)
@@ -220,6 +225,7 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             TodayPurchaseAmount = todayPurchaseAmount,
             TodaySalesAmount = todaySalesAmount,
             TodayDueAmount = todayDueAmount,
+            TotalStockValue = totalStockValue,
             PendingDeliveryCount = reserved,
             PendingDeliveryOrderCount = reservedOrderCount,
             PendingGoodsReceiveCount = onOrder,
@@ -441,6 +447,12 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
         if (baseline <= 0) return null;
         return Math.Round((current - baseline) / baseline * 100, 1);
     }
+
+    /// <summary>
+    /// Product-level override of the low-stock threshold, falling back to the shared default.
+    /// </summary>
+    private static double EffectiveThreshold(double? productThreshold)
+        => productThreshold ?? Constants.InventoryConsts.LowStockThreshold;
 
     private static string DescribeModule(string? moduleName) => moduleName switch
     {

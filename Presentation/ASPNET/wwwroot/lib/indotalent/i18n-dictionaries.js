@@ -155,6 +155,8 @@ const I18nDictionaries = {
                 todaysSales: "Today's Sales",
                 todaysCollections: "Today's Collections",
                 paymentsReceivedToday: 'payments received today',
+                totalStockValue: 'Total Stock Value',
+                currentStockValuation: 'value of stock on hand',
             },
             panel: {
                 inventoryStatus: 'Inventory Status',
@@ -421,6 +423,8 @@ const I18nDictionaries = {
                 todaysSales: 'আজকের বিক্রয়',
                 todaysCollections: 'আজকের আদায়',
                 paymentsReceivedToday: 'আজ প্রাপ্ত পেমেন্ট',
+                totalStockValue: 'মোট স্টক মূল্য',
+                currentStockValuation: 'হাতে থাকা স্টকের মূল্য',
             },
             panel: {
                 inventoryStatus: 'ইনভেন্টরি অবস্থা',

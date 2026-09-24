@@ -363,6 +363,25 @@
                 </div>
             </div>
         </div>
+        <div class="col-sm-6 col-xl-3">
+            <a v-bind:href="methods.stockReportUrl()" class="kpi-tile-link" title="View the stock report">
+                <div class="kpi-tile">
+                    <div class="kpi-tile-icon" style="--kt-bg:rgba(20,184,166,.12); --kt-fg:#14b8a6;">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div>
+                        <div class="kpi-tile-label">{{ t('dashboard.kpi.totalStockValue') }}</div>
+                        <div class="kpi-tile-value">
+                            {{ methods.formatCurrency(state.kpi.totalStockValue) }}
+                            <i class="fas fa-chevron-right kpi-tile-cta"></i>
+                        </div>
+                        <div class="kpi-tile-foot">
+                            <span>{{ t('dashboard.kpi.currentStockValuation') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 
     <!-- ── Inventory status + movement trend ────────────────── -->
