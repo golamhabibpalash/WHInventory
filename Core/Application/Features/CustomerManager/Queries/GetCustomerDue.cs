@@ -1,10 +1,6 @@
-using Application.Common.CQS.Queries;
-using Application.Common.Extensions;
-using Domain.Entities;
-using Domain.Enums;
+using Application.Features.CustomerManager.Services;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.CustomerManager.Queries;
 
@@ -43,48 +39,23 @@ public class GetCustomerDueValidator : AbstractValidator<GetCustomerDueRequest>
 
 public class GetCustomerDueHandler : IRequestHandler<GetCustomerDueRequest, GetCustomerDueResult>
 {
-    private readonly IQueryContext _context;
+    private readonly CustomerDueService _dueService;
 
-    public GetCustomerDueHandler(IQueryContext context)
+    public GetCustomerDueHandler(CustomerDueService dueService)
     {
-        _context = context;
+        _dueService = dueService;
     }
 
     public async Task<GetCustomerDueResult> Handle(GetCustomerDueRequest request, CancellationToken cancellationToken)
     {
-        // Receivable = value billed to the customer on confirmed sales orders, less payments received
-        // against those same orders. Both sides are aggregated in the database (no rows pulled into
-        // memory), mirroring how PaymentService derives a single document's outstanding balance.
-        var orders = _context.SalesOrder
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(x => x.CustomerId == request.CustomerId && x.OrderStatus == SalesOrderStatus.Confirmed);
-
-        if (!string.IsNullOrWhiteSpace(request.ExcludeSalesOrderId))
-        {
-            orders = orders.Where(x => x.Id != request.ExcludeSalesOrderId);
-        }
-
-        var billed = await orders.SumAsync(x => (double?)x.AfterTaxAmount ?? 0.0, cancellationToken);
-
-        var paid = await _context.Payment
-            .AsNoTracking()
-            .ApplyIsDeletedFilter(false)
-            .Where(p =>
-                p.Direction == PaymentDirection.Received &&
-                p.ModuleName == nameof(SalesOrder) &&
-                orders.Any(o => o.Id == p.ModuleId))
-            .SumAsync(p => (double?)p.Amount ?? 0.0, cancellationToken);
-
-        // An overpayment leaves the customer in credit, which is not a "due".
-        var due = Math.Max(billed - paid, 0.0);
+        var due = await _dueService.GetDueAsync(request.CustomerId, request.ExcludeSalesOrderId, cancellationToken);
 
         return new GetCustomerDueResult
         {
             Data = new GetCustomerDueDto
             {
                 CustomerId = request.CustomerId,
-                PreviousDue = due.ToMoney()
+                PreviousDue = due
             }
         };
     }
