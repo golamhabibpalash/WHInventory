@@ -131,6 +131,14 @@
                                             </div>
                                         </div>
                                         <div class="row mb-2">
+                                            <div class="col-md-6">
+                                                <label for="LowStockThreshold">Low Stock Threshold</label>
+                                                <input ref="lowStockThresholdRef">
+                                                <small class="text-muted d-block">On-hand quantity at or below this counts as low stock. Leave empty to use the app default.</small>
+                                                <label class="text-danger">{{ state.errors.lowStockThreshold }}</label>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
                                             <div class="col-md-8">
                                                 <label for="Barcode">Barcode / SKU</label>
                                                 <div class="input-group">
@@ -286,6 +294,10 @@
                                 <div class="pv-fact">
                                     <span class="pv-fact-label">Max Selling Price</span>
                                     <span class="pv-fact-value">{{ state.view.maxSellingPrice !== null ? handler.formatAmount(state.view.maxSellingPrice) : 'No ceiling' }}</span>
+                                </div>
+                                <div class="pv-fact">
+                                    <span class="pv-fact-label">Low Stock Threshold</span>
+                                    <span class="pv-fact-value">{{ state.view.lowStockThreshold !== null ? state.view.lowStockThreshold : 'Default' }}</span>
                                 </div>
                                 <div class="pv-fact">
                                     <span class="pv-fact-label">Unit Measure</span>
@@ -507,6 +519,7 @@
                                 <tr><td>Barcode</td><td><span class="badge bg-secondary">No</span></td><td>Barcode / SKU</td></tr>
                                 <tr><td>Description</td><td><span class="badge bg-secondary">No</span></td><td>Product description</td></tr>
                                 <tr><td>IsWarrantyApplicable</td><td><span class="badge bg-secondary">No</span></td><td>TRUE or FALSE (defaults to FALSE)</td></tr>
+                                    <tr><td>LowStockThreshold</td><td><span class="badge bg-secondary">No</span></td><td>On-hand quantity below/at which this product counts as low stock (e.g. 10)</td></tr>
                             </tbody>
                         </table>
                     </div>

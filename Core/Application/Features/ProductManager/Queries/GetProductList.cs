@@ -27,6 +27,7 @@ public record GetProductListDto
     public string? Barcode { get; init; }
     public bool? IsWarrantyApplicable { get; init; }
     public int? WarrantyDays { get; init; }
+    public double? LowStockThreshold { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
 

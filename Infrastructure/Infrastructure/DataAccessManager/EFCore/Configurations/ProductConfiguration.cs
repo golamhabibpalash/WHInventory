@@ -26,6 +26,7 @@ public class ProductConfiguration : BaseEntityConfiguration<Product>
         builder.Property(x => x.Barcode).HasMaxLength(100).IsRequired(false);
         builder.Property(x => x.IsWarrantyApplicable).IsRequired(false);
         builder.Property(x => x.WarrantyDays).IsRequired(false);
+        builder.Property(x => x.LowStockThreshold).IsRequired(false);
 
         builder.HasOne(x => x.Brand).WithMany().HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.SetNull);
 

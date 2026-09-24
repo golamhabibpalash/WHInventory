@@ -27,6 +27,7 @@ public class UpdateProductRequest : IRequest<UpdateProductResult>
     public string? Barcode { get; init; }
     public bool? IsWarrantyApplicable { get; init; } = false;
     public int? WarrantyDays { get; init; }
+    public double? LowStockThreshold { get; init; }
     public string? UpdatedById { get; init; }
 }
 
@@ -50,6 +51,9 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductRequest>
         RuleFor(x => x.Physical).NotEmpty();
         RuleFor(x => x.UnitMeasureId).NotEmpty();
         RuleFor(x => x.ProductGroupId).NotEmpty();
+        RuleFor(x => x.LowStockThreshold)
+            .GreaterThanOrEqualTo(0).When(x => x.LowStockThreshold.HasValue)
+            .WithMessage("Low stock threshold cannot be negative.");
     }
 }
 
@@ -92,6 +96,7 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, Update
         entity.Barcode = string.IsNullOrWhiteSpace(request.Barcode) ? null : request.Barcode.Trim();
         entity.IsWarrantyApplicable = request.IsWarrantyApplicable;
         entity.WarrantyDays = (request.IsWarrantyApplicable == true) ? request.WarrantyDays : null;
+        entity.LowStockThreshold = request.LowStockThreshold;
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

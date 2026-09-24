@@ -98,6 +98,7 @@ public class BulkCreateProductHandler : IRequestHandler<BulkCreateProductRequest
             var barcode = row.Cell(6).GetString().Trim();
             var description = row.Cell(7).GetString().Trim();
             var isWarrantyText = row.Cell(8).GetString().Trim();
+            var lowStockThresholdText = row.Cell(9).GetString().Trim();
 
             var rowErrors = new List<string>();
 
@@ -112,6 +113,19 @@ public class BulkCreateProductHandler : IRequestHandler<BulkCreateProductRequest
 
             if (string.IsNullOrWhiteSpace(productGroupName))
                 rowErrors.Add("ProductGroupName is required.");
+
+            double? lowStockThreshold = null;
+            if (!string.IsNullOrWhiteSpace(lowStockThresholdText))
+            {
+                if (!double.TryParse(lowStockThresholdText, out var parsedThreshold) || parsedThreshold < 0)
+                {
+                    rowErrors.Add("LowStockThreshold must be a non-negative number.");
+                }
+                else
+                {
+                    lowStockThreshold = parsedThreshold;
+                }
+            }
 
             if (rowErrors.Count > 0)
             {
@@ -179,6 +193,7 @@ public class BulkCreateProductHandler : IRequestHandler<BulkCreateProductRequest
             entity.BrandId = brand?.Id;
             entity.Barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
             entity.IsWarrantyApplicable = isWarranty;
+            entity.LowStockThreshold = lowStockThreshold;
 
             await _repository.CreateAsync(entity, cancellationToken);
             successCount++;
