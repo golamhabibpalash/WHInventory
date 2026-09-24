@@ -2,6 +2,14 @@ const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
+            filterOpen: false,
+            filter: {
+                statusId: null,
+                vendorId: null,
+                taxId: null,
+                fromDate: null,
+                toDate: null,
+            },
             deleteMode: false,
             vendorListLookupData: [],
             taxListLookupData: [],
@@ -85,6 +93,12 @@ const App = {
         });
 
         const mainGridRef = Vue.ref(null);
+        const filterPanelRef = Vue.ref(null);
+        const filterStatusRef = Vue.ref(null);
+        const filterVendorRef = Vue.ref(null);
+        const filterTaxRef = Vue.ref(null);
+        const filterFromDateRef = Vue.ref(null);
+        const filterToDateRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const orderDateRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
@@ -104,6 +118,56 @@ const App = {
         const posLineTotal = Vue.computed(() => (state.productPick.unitPrice || 0) * (state.productPick.quantity || 0));
 
         const formatQty = (value) => Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+        // ── List filtering (client-side over the already-fetched list; no API change) ──────────
+        const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+        const endOfDay = (d) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; };
+
+        const getFilteredData = () => {
+            let data = state.mainData || [];
+            const f = state.filter;
+            if (f.statusId !== null && f.statusId !== undefined && f.statusId !== '') {
+                data = data.filter(x => Number(x.orderStatus) === Number(f.statusId));
+            }
+            if (f.vendorId) data = data.filter(x => x.vendorId === f.vendorId);
+            if (f.taxId) data = data.filter(x => x.taxId === f.taxId);
+            if (f.fromDate) {
+                const from = startOfDay(f.fromDate);
+                data = data.filter(x => x.createdAtUtc instanceof Date && x.createdAtUtc >= from);
+            }
+            if (f.toDate) {
+                const to = endOfDay(f.toDate);
+                data = data.filter(x => x.createdAtUtc instanceof Date && x.createdAtUtc <= to);
+            }
+            return data;
+        };
+
+        const activeFilterCount = Vue.computed(() => {
+            const f = state.filter;
+            let count = 0;
+            if (f.statusId !== null && f.statusId !== undefined && f.statusId !== '') count++;
+            if (f.vendorId) count++;
+            if (f.taxId) count++;
+            if (f.fromDate) count++;
+            if (f.toDate) count++;
+            return count;
+        });
+
+        // Re-run the filter and push the result into the grid (keeps the grid's own paging/sorting).
+        const applyFilter = () => {
+            if (mainGrid.obj) mainGrid.obj.setProperties({ dataSource: getFilteredData() });
+        };
+
+        // Drop the panel directly beneath the grid toolbar, spanning the grid width.
+        const positionFilterPanel = () => {
+            const wrap = mainGridRef.value?.closest('.po-grid-wrap');
+            const toolbar = mainGridRef.value?.querySelector('.e-toolbar');
+            if (!wrap || !toolbar || !filterPanelRef.value) return;
+            const top = toolbar.getBoundingClientRect().bottom - wrap.getBoundingClientRect().top;
+            filterPanelRef.value.style.top = `${top}px`;
+        };
+
+        const onWindowResize = () => { if (state.filterOpen) positionFilterPanel(); };
 
         const resetProductPick = () => {
             state.productPick = { productId: null, unitPrice: 0, quantity: 1 };
@@ -631,6 +695,113 @@ const App = {
             }
         };
 
+        // ── Filter-panel controls (live filtering) ────────────────────────────────────────────
+        const filterStatusDropdown = {
+            obj: null,
+            create: () => {
+                filterStatusDropdown.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.purchaseOrderStatusListLookupData ?? [],
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'All statuses',
+                    showClearButton: true,
+                    change: (e) => { state.filter.statusId = e.value; applyFilter(); }
+                });
+                filterStatusDropdown.obj.appendTo(filterStatusRef.value);
+            }
+        };
+
+        const filterVendorDropdown = {
+            obj: null,
+            create: () => {
+                filterVendorDropdown.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.vendorListLookupData ?? [],
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'All vendors',
+                    sortOrder: 'Ascending',
+                    allowFiltering: true,
+                    showClearButton: true,
+                    filterBarPlaceholder: 'Search vendor',
+                    filtering: (e) => {
+                        e.preventDefaultAction = true;
+                        const term = (e.text || '').toLowerCase();
+                        const source = state.vendorListLookupData ?? [];
+                        e.updateData(term ? source.filter(v => (v.name || '').toLowerCase().includes(term)) : source);
+                    },
+                    change: (e) => { state.filter.vendorId = e.value; applyFilter(); }
+                });
+                filterVendorDropdown.obj.appendTo(filterVendorRef.value);
+            }
+        };
+
+        const filterTaxDropdown = {
+            obj: null,
+            create: () => {
+                filterTaxDropdown.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.taxListLookupData ?? [],
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'All taxes',
+                    sortOrder: 'Ascending',
+                    showClearButton: true,
+                    change: (e) => { state.filter.taxId = e.value; applyFilter(); }
+                });
+                filterTaxDropdown.obj.appendTo(filterTaxRef.value);
+            }
+        };
+
+        const filterFromDatePicker = {
+            obj: null,
+            create: () => {
+                filterFromDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'From date',
+                    showClearButton: true,
+                    change: (e) => { state.filter.fromDate = e.value; applyFilter(); }
+                });
+                filterFromDatePicker.obj.appendTo(filterFromDateRef.value);
+            }
+        };
+
+        const filterToDatePicker = {
+            obj: null,
+            create: () => {
+                filterToDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'To date',
+                    showClearButton: true,
+                    change: (e) => { state.filter.toDate = e.value; applyFilter(); }
+                });
+                filterToDatePicker.obj.appendTo(filterToDateRef.value);
+            }
+        };
+
+        const createFilterControls = () => {
+            filterStatusDropdown.create();
+            filterVendorDropdown.create();
+            filterTaxDropdown.create();
+            filterFromDatePicker.create();
+            filterToDatePicker.create();
+        };
+
+        const filterHandler = {
+            toggle: () => {
+                state.filterOpen = !state.filterOpen;
+                if (state.filterOpen) Vue.nextTick(positionFilterPanel);
+            },
+            clear: () => {
+                state.filter.statusId = null;
+                state.filter.vendorId = null;
+                state.filter.taxId = null;
+                state.filter.fromDate = null;
+                state.filter.toDate = null;
+                filterStatusDropdown.obj?.setProperties({ value: null });
+                filterVendorDropdown.obj?.setProperties({ value: null });
+                filterTaxDropdown.obj?.setProperties({ value: null });
+                filterFromDatePicker.obj?.setProperties({ value: null });
+                filterToDatePicker.obj?.setProperties({ value: null });
+                applyFilter();
+            }
+        };
+
         const orderDatePicker = {
             obj: null,
             create: () => {
@@ -1025,7 +1196,7 @@ const App = {
                     filterSettings: { type: 'CheckBox' },
                     searchSettings: { keyDelay: 150, searchAsType: true },
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
-                    pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
+                    pageSettings: { currentPage: 1, pageSize: 20, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
                     showColumnMenu: true,
                     gridLines: 'Horizontal',
@@ -1045,6 +1216,8 @@ const App = {
                     ],
                     toolbar: [
                         'ExcelExport', 'Search',
+                        { type: 'Separator' },
+                        { text: 'Filter', tooltipText: 'Show / hide filters', prefixIcon: 'e-filter', id: 'FilterCustom' },
                         { type: 'Separator' },
                         { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
@@ -1093,6 +1266,10 @@ const App = {
                         if (args.item.id === 'MainGrid_excelexport') {
                             const date = new Date().toISOString().slice(0, 10);
                             mainGrid.obj.excelExport({ fileName: `PurchaseOrders_${date}.xlsx` });
+                        }
+
+                        if (args.item.id === 'FilterCustom') {
+                            filterHandler.toggle();
                         }
 
                         if (args.item.id === 'AddCustom') {
@@ -1157,7 +1334,8 @@ const App = {
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
             },
             refresh: () => {
-                mainGrid.obj.setProperties({ dataSource: state.mainData });
+                // Preserve any active filter selection when the underlying list is reloaded.
+                mainGrid.obj.setProperties({ dataSource: getFilteredData() });
             }
         };
 
@@ -1399,6 +1577,14 @@ const App = {
                 await methods.populateMainData();
                 await mainGrid.create(state.mainData);
 
+                // Reflect the active-filter count on the toolbar Filter button (primary tint + badge).
+                watcherStops.push(Vue.watch(activeFilterCount, (count) => {
+                    const el = document.getElementById('FilterCustom');
+                    if (!el) return;
+                    el.classList.toggle('po-filter-active', count > 0);
+                    el.setAttribute('data-filter-count', count);
+                }));
+
                 mainModal.create();
                 viewModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
@@ -1421,7 +1607,10 @@ const App = {
                     taxListLookup.create();
                     purchaseOrderStatusListLookup.create();
                     productPickLookup.create();
+                    createFilterControls();
                 });
+
+                window.addEventListener('resize', onWindowResize);
             } catch (e) {
             } finally {
                 
@@ -1430,6 +1619,7 @@ const App = {
 
         Vue.onUnmounted(() => {
             watcherStops.forEach(stop => stop());
+            window.removeEventListener('resize', onWindowResize);
             mainModalRef.value?.removeEventListener('hidden.bs.modal', methods.onMainModalHidden);
             mainModalRef.value?.removeEventListener('shown.bs.modal', onMainModalShown);
             mainGrid.obj?.destroy();
@@ -1439,10 +1629,22 @@ const App = {
             taxListLookup.obj?.destroy();
             purchaseOrderStatusListLookup.obj?.destroy();
             productPickLookup.obj?.destroy();
+            filterStatusDropdown.obj?.destroy();
+            filterVendorDropdown.obj?.destroy();
+            filterTaxDropdown.obj?.destroy();
+            filterFromDatePicker.obj?.destroy();
+            filterToDatePicker.obj?.destroy();
         });
 
         return {
             mainGridRef,
+            filterPanelRef,
+            filterStatusRef,
+            filterVendorRef,
+            filterTaxRef,
+            filterFromDateRef,
+            filterToDateRef,
+            activeFilterCount,
             mainModalRef,
             orderDateRef,
             numberRef,
@@ -1462,6 +1664,8 @@ const App = {
             methods,
             handler: {
                 handleSubmit: methods.handleFormSubmit,
+                toggleFilter: filterHandler.toggle,
+                clearFilters: filterHandler.clear,
                 formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
                 formatQty: formatQty,
                 formatDate: (value) => {
