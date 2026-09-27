@@ -131,7 +131,9 @@ public class SalesOrderService
             .Where(x => x.SalesOrderId == salesOrderId)
             .ToListAsync();
 
-        salesOrder.BeforeTaxAmount = salesOrderItems.Sum(x => x.Total ?? 0).ToMoney();
+        salesOrder.SubTotalAmount = salesOrderItems.Sum(x => (x.UnitPrice ?? 0) * (x.Quantity ?? 0)).ToMoney();
+        salesOrder.DiscountAmount = salesOrderItems.Sum(x => (x.CommissionRate ?? 0) * (x.Quantity ?? 0)).ToMoney();
+        salesOrder.BeforeTaxAmount = ((salesOrder.SubTotalAmount ?? 0) - (salesOrder.DiscountAmount ?? 0)).ToMoney();
 
         var taxPercentage = salesOrder.Tax?.Percentage ?? 0;
         salesOrder.TaxAmount = ((salesOrder.BeforeTaxAmount ?? 0) * taxPercentage / 100).ToMoney();

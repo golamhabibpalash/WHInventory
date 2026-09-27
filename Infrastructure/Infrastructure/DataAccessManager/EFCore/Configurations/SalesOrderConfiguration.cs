@@ -17,6 +17,8 @@ public class SalesOrderConfiguration : BaseEntityConfiguration<SalesOrder>
         builder.Property(x => x.Description).HasMaxLength(DescriptionConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.CustomerId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.TaxId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
+        builder.Property(x => x.SubTotalAmount).IsRequired(false);
+        builder.Property(x => x.DiscountAmount).IsRequired(false);
         builder.Property(x => x.BeforeTaxAmount).IsRequired(false);
         builder.Property(x => x.TaxAmount).IsRequired(false);
         builder.Property(x => x.AfterTaxAmount).IsRequired(false);

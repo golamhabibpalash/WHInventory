@@ -17,6 +17,7 @@ public record GetPurchaseOrderItemByPurchaseOrderIdListDto
     public string? ProductNumber { get; init; }
     public string? Remark { get; init; }
     public double? UnitPrice { get; init; }
+    public double? CommissionRate { get; init; }
     public double? Quantity { get; init; }
     public double? Total { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
