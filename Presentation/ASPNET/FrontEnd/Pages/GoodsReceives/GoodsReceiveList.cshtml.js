@@ -2,6 +2,13 @@ const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
+            filterOpen: false,
+            filter: {
+                statusId: null,
+                receivingStatus: null,
+                fromDate: null,
+                toDate: null,
+            },
             deleteMode: false,
             purchaseOrderListLookupData: [],
             goodsReceiveStatusListLookupData: [],
@@ -36,6 +43,156 @@ const App = {
         const purchaseOrderIdRef = Vue.ref(null);
         const statusRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
+        const filterPanelRef = Vue.ref(null);
+        const filterStatusRef = Vue.ref(null);
+        const filterReceivingStatusRef = Vue.ref(null);
+        const filterFromDateRef = Vue.ref(null);
+        const filterToDateRef = Vue.ref(null);
+
+        // ── List filtering (client-side over the already-fetched list; no API change) ──────────
+        const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+        const endOfDay = (d) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; };
+
+        const getFilteredData = () => {
+            let data = state.mainData || [];
+            const f = state.filter;
+            if (f.statusId !== null && f.statusId !== undefined && f.statusId !== '') {
+                data = data.filter(x => Number(x.status) === Number(f.statusId));
+            }
+            if (f.receivingStatus) data = data.filter(x => x.receivingStatus === f.receivingStatus);
+            if (f.fromDate) {
+                const from = startOfDay(f.fromDate);
+                data = data.filter(x => x.receiveDate instanceof Date && x.receiveDate >= from);
+            }
+            if (f.toDate) {
+                const to = endOfDay(f.toDate);
+                data = data.filter(x => x.receiveDate instanceof Date && x.receiveDate <= to);
+            }
+            return data;
+        };
+
+        const activeFilterCount = Vue.computed(() => {
+            const f = state.filter;
+            let count = 0;
+            if (f.statusId !== null && f.statusId !== undefined && f.statusId !== '') count++;
+            if (f.receivingStatus) count++;
+            if (f.fromDate) count++;
+            if (f.toDate) count++;
+            return count;
+        });
+
+        // Re-run the filter and push the result into the grid (keeps the grid's own paging/sorting).
+        const applyFilter = () => {
+            if (mainGrid.obj) mainGrid.obj.setProperties({ dataSource: getFilteredData() });
+        };
+
+        // Distinct receiving-status values found in the loaded list, for the filter dropdown.
+        const getReceivingStatusOptions = () => {
+            const set = new Set();
+            (state.mainData || []).forEach(x => { if (x.receivingStatus) set.add(x.receivingStatus); });
+            return Array.from(set).sort();
+        };
+
+        // Drop the panel directly beneath the grid toolbar, spanning the grid width.
+        const positionFilterPanel = () => {
+            const wrap = mainGridRef.value?.closest('.po-grid-wrap');
+            const toolbar = mainGridRef.value?.querySelector('.e-toolbar');
+            if (!wrap || !toolbar || !filterPanelRef.value) return;
+            const top = toolbar.getBoundingClientRect().bottom - wrap.getBoundingClientRect().top;
+            filterPanelRef.value.style.top = `${top}px`;
+        };
+
+        const onWindowResize = () => { if (state.filterOpen) positionFilterPanel(); };
+
+        // ── Filter-panel controls (live filtering) ────────────────────────────────────────────
+        const filterStatusDropdown = {
+            obj: null,
+            create: () => {
+                filterStatusDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
+                    dataSource: state.goodsReceiveStatusListLookupData ?? [],
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'All statuses',
+                    showClearButton: true,
+                    change: (e) => { state.filter.statusId = e.value; applyFilter(); }
+                });
+                filterStatusDropdown.obj.appendTo(filterStatusRef.value);
+            }
+        };
+
+        const filterReceivingStatusDropdown = {
+            obj: null,
+            create: () => {
+                filterReceivingStatusDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
+                    dataSource: getReceivingStatusOptions(),
+                    placeholder: 'All receiving statuses',
+                    showClearButton: true,
+                    change: (e) => { state.filter.receivingStatus = e.value; applyFilter(); }
+                });
+                filterReceivingStatusDropdown.obj.appendTo(filterReceivingStatusRef.value);
+            },
+            refreshData: () => {
+                if (filterReceivingStatusDropdown.obj) {
+                    filterReceivingStatusDropdown.obj.setProperties({ dataSource: getReceivingStatusOptions() });
+                }
+            }
+        };
+
+        const filterFromDatePicker = {
+            obj: null,
+            create: () => {
+                filterFromDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'From date',
+                    showClearButton: true,
+                    change: (e) => { state.filter.fromDate = e.value; applyFilter(); }
+                });
+                filterFromDatePicker.obj.appendTo(filterFromDateRef.value);
+            }
+        };
+
+        const filterToDatePicker = {
+            obj: null,
+            create: () => {
+                filterToDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'To date',
+                    showClearButton: true,
+                    change: (e) => { state.filter.toDate = e.value; applyFilter(); }
+                });
+                filterToDatePicker.obj.appendTo(filterToDateRef.value);
+            }
+        };
+
+        const createFilterControls = () => {
+            filterStatusDropdown.create();
+            filterReceivingStatusDropdown.create();
+            filterFromDatePicker.create();
+            filterToDatePicker.create();
+        };
+
+        const filterHandler = {
+            toggle: () => {
+                state.filterOpen = !state.filterOpen;
+                if (state.filterOpen) Vue.nextTick(positionFilterPanel);
+            },
+            clear: () => {
+                state.filter.statusId = null;
+                state.filter.receivingStatus = null;
+                state.filter.fromDate = null;
+                state.filter.toDate = null;
+                filterStatusDropdown.obj?.setProperties({ value: null });
+                filterReceivingStatusDropdown.obj?.setProperties({ value: null });
+                filterFromDatePicker.obj?.setProperties({ value: null });
+                filterToDatePicker.obj?.setProperties({ value: null });
+                applyFilter();
+            }
+        };
+
+        const filterWatcherStops = [];
 
         const validateForm = function () {
             state.errors.receiveDate = '';
@@ -166,7 +323,8 @@ const App = {
                         dataSource: state.goodsReceiveStatusListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select Status',
-                        allowFiltering: false,
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         change: (e) => {
                             state.status = e.value;
                         }
@@ -511,16 +669,34 @@ const App = {
                 purchaseOrderListLookup.create();
                 goodsReceiveStatusListLookup.create();
 
+                createFilterControls();
+
+                // Reflect the active-filter count on the toolbar Filter button (primary tint + badge).
+                filterWatcherStops.push(Vue.watch(activeFilterCount, (count) => {
+                    const el = document.getElementById('FilterCustom');
+                    if (!el) return;
+                    el.classList.toggle('po-filter-active', count > 0);
+                    el.setAttribute('data-filter-count', count);
+                }));
+
+                window.addEventListener('resize', onWindowResize);
+
                 await secondaryGrid.create(state.secondaryData);
 
             } catch (e) {
             } finally {
-                
+
             }
         });
 
         Vue.onUnmounted(() => {
+            filterWatcherStops.forEach(stop => stop());
+            window.removeEventListener('resize', onWindowResize);
             mainModalRef.value?.removeEventListener('hidden.bs.modal', methods.onMainModalHidden);
+            filterStatusDropdown.obj?.destroy();
+            filterReceivingStatusDropdown.obj?.destroy();
+            filterFromDatePicker.obj?.destroy();
+            filterToDatePicker.obj?.destroy();
         });
 
         const mainGrid = {
@@ -564,7 +740,9 @@ const App = {
                         { field: 'createdByName', headerText: 'Created By', width: 150, minWidth: 150 }
                     ],
                     toolbar: [
-                        'ExcelExport', 'Search',
+                        'ExcelExport',
+                        { text: 'Filter', tooltipText: 'Show / hide filters', prefixIcon: 'e-filter', id: 'FilterCustom' },
+                        'Search',
                         { type: 'Separator' },
                         { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
@@ -600,6 +778,10 @@ const App = {
                     toolbarClick: async (args) => {
                         if (args.item.id === 'MainGrid_excelexport') {
                             mainGrid.obj.excelExport();
+                        }
+
+                        if (args.item.id === 'FilterCustom') {
+                            filterHandler.toggle();
                         }
 
                         if (args.item.id === 'AddCustom') {
@@ -661,7 +843,9 @@ const App = {
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
             },
             refresh: () => {
-                mainGrid.obj.setProperties({ dataSource: state.mainData });
+                // Preserve any active filter selection when the underlying list is reloaded.
+                filterReceivingStatusDropdown.refreshData();
+                mainGrid.obj.setProperties({ dataSource: getFilteredData() });
             }
         };
 
@@ -715,6 +899,8 @@ const App = {
                                 },
                                 write: function (args) {
                                     warehouseObj = new ej.dropdowns.DropDownList({
+                                        allowFiltering: true,
+                                        filterType: 'Contains',
                                         dataSource: state.warehouseListLookupData,
                                         fields: { value: 'id', text: 'name' },
                                         value: args.rowData.warehouseId,
@@ -748,6 +934,8 @@ const App = {
                                 },
                                 write: function (args) {
                                     productObj = new ej.dropdowns.DropDownList({
+                                        allowFiltering: true,
+                                        filterType: 'Contains',
                                         dataSource: state.poProductListLookupData,
                                         fields: { value: 'id', text: 'numberName' },
                                         value: args.rowData.productId,
@@ -954,8 +1142,18 @@ const App = {
             receiveDateRef,
             purchaseOrderIdRef,
             statusRef,
+            filterPanelRef,
+            filterStatusRef,
+            filterReceivingStatusRef,
+            filterFromDateRef,
+            filterToDateRef,
+            activeFilterCount,
             state,
-            handler,
+            handler: {
+                ...handler,
+                toggleFilter: filterHandler.toggle,
+                clearFilters: filterHandler.clear,
+            },
         };
     }
 };
