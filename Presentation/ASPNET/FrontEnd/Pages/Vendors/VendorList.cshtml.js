@@ -219,6 +219,8 @@
             create: () => {
                 if (state.vendorGroupListLookupData && Array.isArray(state.vendorGroupListLookupData)) {
                     vendorGroupListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.vendorGroupListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Vendor Group',
@@ -242,6 +244,8 @@
             create: () => {
                 if (state.vendorCategoryListLookupData && Array.isArray(state.vendorCategoryListLookupData)) {
                     vendorCategoryListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.vendorCategoryListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Vendor Category',

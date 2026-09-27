@@ -41,6 +41,8 @@ const App = {
             obj: null,
             create: () => {
                 productGroupIdLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: state.productGroupListLookupData,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All Groups',
@@ -55,6 +57,8 @@ const App = {
             obj: null,
             create: () => {
                 productIdLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: state.productListLookupData,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All Products',

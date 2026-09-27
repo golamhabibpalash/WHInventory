@@ -61,6 +61,7 @@
                     placeholder: '-- No Parent --',
                     popupHeight: '200px',
                     allowFiltering: true,
+                    filterType: 'Contains',
                     showClearButton: true,
                     change: (e) => {
                         state.parentId = e.value ?? '';

@@ -167,7 +167,8 @@ const App = {
                         dataSource: state.statusListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select Status',
-                        allowFiltering: false,
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         change: (e) => {
                             state.status = e.value;
                         }
@@ -656,6 +657,8 @@ const App = {
                                 },
                                 write: function (args) {
                                     warehouseObj = new ej.dropdowns.DropDownList({
+                                        allowFiltering: true,
+                                        filterType: 'Contains',
                                         dataSource: state.warehouseListLookupData,
                                         fields: { value: 'id', text: 'name' },
                                         value: args.rowData.warehouseId,
@@ -689,6 +692,8 @@ const App = {
                                 },
                                 write: function (args) {
                                     productObj = new ej.dropdowns.DropDownList({
+                                        allowFiltering: true,
+                                        filterType: 'Contains',
                                         dataSource: state.productListLookupData,
                                         fields: { value: 'id', text: 'numberName' },
                                         value: args.rowData.productId,

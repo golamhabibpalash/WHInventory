@@ -102,6 +102,8 @@ const App = {
             obj: null,
             create: () => {
                 statusDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: STATUS_OPTIONS,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All Statuses',
@@ -116,6 +118,8 @@ const App = {
             create: async () => {
                 const response = await services.getPriorityList();
                 priorityDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: response?.data?.content?.data ?? [],
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All Priorities',
@@ -130,6 +134,8 @@ const App = {
             create: async () => {
                 const response = await services.getCategoryList();
                 categoryDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: response?.data?.content?.data ?? [],
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All Categories',
@@ -144,6 +150,8 @@ const App = {
             create: async () => {
                 const response = await services.getUserList();
                 assigneeDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: response?.data?.content?.data ?? [],
                     fields: { value: 'id', text: 'email' },
                     placeholder: 'All Agents',

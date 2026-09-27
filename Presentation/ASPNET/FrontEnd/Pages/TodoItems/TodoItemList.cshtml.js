@@ -41,6 +41,8 @@
             create: () => {
                 if (state.todoListLookupData && Array.isArray(state.todoListLookupData)) {
                     todoListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.todoListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Todo',

@@ -76,6 +76,8 @@ const App = {
             create: async () => {
                 const response = await services.getTenantList();
                 tenantDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: response?.data?.content?.data ?? [],
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All Tenants',
@@ -89,6 +91,8 @@ const App = {
             obj: null,
             create: () => {
                 statusDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: STATUS_OPTIONS,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All Statuses',

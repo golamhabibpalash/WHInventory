@@ -499,6 +499,7 @@ const App = {
                         placeholder: 'Select a Product Group',
                         popupHeight: '200px',
                         allowFiltering: true,
+                        filterType: 'Contains',
                         change: (e) => {
                             state.productGroupId = e.value;
                         }
@@ -519,6 +520,8 @@ const App = {
             create: () => {
                 if (state.unitMeasureListLookupData && Array.isArray(state.unitMeasureListLookupData)) {
                     unitMeasureListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.unitMeasureListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Unit Measure',
@@ -548,6 +551,7 @@ const App = {
                         placeholder: '-- No Brand --',
                         popupHeight: '200px',
                         allowFiltering: true,
+                        filterType: 'Contains',
                         showClearButton: true,
                         change: (e) => {
                             state.brandId = e.value ?? null;
@@ -902,6 +906,7 @@ const App = {
                     placeholder: '-- No Parent --',
                     popupHeight: '200px',
                     allowFiltering: true,
+                    filterType: 'Contains',
                     showClearButton: true,
                     change: (e) => {
                         state.productGroupQuickParentId = e.value ?? '';

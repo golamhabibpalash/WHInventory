@@ -94,6 +94,8 @@ const App = {
             obj: null,
             create: () => {
                 productIdLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: state.productListLookupData,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'Select Product',
@@ -108,6 +110,8 @@ const App = {
             obj: null,
             create: () => {
                 pricePolicyIdLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: state.pricePolicyListLookupData,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'Select Policy (optional)',
@@ -123,6 +127,8 @@ const App = {
             obj: null,
             create: () => {
                 calculationMethodLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: CALC_METHODS,
                     fields: { value: 'id', text: 'name' },
                     value: 0,
