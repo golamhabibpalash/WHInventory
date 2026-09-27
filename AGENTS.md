@@ -62,7 +62,7 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 - **Never hard-delete** — use entity `Delete()` method which sets `IsDeleted = true`
 - **6 system warehouses** (`Customer`, `Vendor`, `Transfer`, `Adjustment`, `StockCount`, `Scrapping`) — `SystemWarehouse = true`. Tenant-scoped but seeded per-tenant; never delete or modify. Real warehouses are selected with `.Where(x => x.SystemWarehouse == false)`.
 - `InventoryTransaction` is the central ledger; every movement creates child records linked by `ModuleName` (entity class name) + `ModuleId`
-- `NumberSequenceService.GenerateNumber(entityName, prefix, suffix)` is the thread-safe path to human-readable document numbers (e.g. `SO`)
+- `NumberSequenceService.GenerateNumber(entityName, prefix, suffix)` (plus optional `useDate`, `padding`) is the thread-safe path to human-readable document numbers (e.g. `SO`)
 
 ## Seeding
 
@@ -75,7 +75,7 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 - ASP.NET Identity + JWT Bearer. Default admin: `admin@root.com` / `123456` (configurable in `appsettings.json` → `AspNetIdentity:DefaultAdmin`)
 - `RequireConfirmedEmail: true` by default — admin-created users bypass this; SMTP must be configured for self-registration
 - `AllowPublicTenantSignUp` — when true, anyone can create an org at `/Accounts/SignUp` (true in `appsettings.json`; compose does not disable it for Production)
-- `Npgsql.EnableLegacyTimestampBehavior = true` set in `Program.cs` line 5
+- `Npgsql.EnableLegacyTimestampBehavior = true` set in `Program.cs` (do not remove)
 
 ## Frontend
 
@@ -107,8 +107,8 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 ```bash
 docker compose up -d             # full stack: db + app + Cloudflare tunnel
 docker compose up -d db app      # skip tunnel
-bash update.sh                   # VPS-only deploy: git pull + rebuild app image + health-check on :8080
+bash update.sh                   # VPS-only (hardcoded /opt/platform paths): git pull + rebuild app + health-check on :8080
 ```
 
-- `.env` is gitignored; copy `.env.example`. The repo compose only consumes `DB_NAME`/`DB_USER`/`DB_PASSWORD`/`CLOUDFLARE_TUNNEL_TOKEN` — the `JWT_KEY`/`ADMIN_*`/`SMTP_*` entries in `.env.example` are not wired to compose or the app (the container runs on `appsettings.json` defaults unless overridden separately).
+- `.env` is gitignored; copy `.env.example`. Compose only consumes `DB_NAME`/`DB_USER`/`DB_PASSWORD`/`CLOUDFLARE_TUNNEL_TOKEN` — the `APP_PORT`/`JWT_KEY`/`ADMIN_*`/`SMTP_*` entries in `.env.example` are not wired to compose or the app (the container runs on `appsettings.json` defaults unless overridden separately; the `app` service also publishes no host port).
 - Business dates use `appsettings.json` → `TimeZoneId` (`Asia/Dhaka`) — must match `TZ` env in compose; uploads live under `wwwroot/app_data/` (persisted volume in compose).

@@ -85,7 +85,8 @@
       "Bash(sed -n '/getMainData:/,/},/p' Presentation/ASPNET/FrontEnd/Pages/Customers/CustomerList.cshtml.js)",
       "Bash(grep -rln \"authorizePage\" Presentation/ASPNET/wwwroot Presentation/ASPNET/FrontEnd)",
       "Bash(xargs grep -ln \"role\\\\|Role\\\\|Seed\")",
-      "PowerShell(dotnet build *)"
+      "PowerShell(dotnet build *)",
+      "Bash(git log *)"
     ]
   }
 }
