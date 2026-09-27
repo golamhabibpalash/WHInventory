@@ -10,7 +10,7 @@ dotnet run --project Presentation/ASPNET/ASPNET.csproj --environment Development
 ```
 
 - Targets **.NET 9** (`net9.0`). `Directory.Build.props` sets `TreatWarningsAsErrors` for `IDE*` + `EnforceCodeStyleInBuild` — code-style violations fail the build, not just warn.
-- No test projects. No EF migrations — schema is `EnsureCreated()` at startup. To reset: drop the DB and restart.
+- No test projects, no CI workflows, no lint/typecheck beyond the build — `dotnet build WHInventory.sln` is the full verification. No EF migrations — schema is `EnsureCreated()` at startup (`Infrastructure/.../EFCore/DI.cs`). To reset: drop the DB and restart.
 
 ## Architecture
 
@@ -21,10 +21,10 @@ Infrastructure/       → EF Core, Identity, JWT, SMTP, Serilog, seeding (implem
 Presentation/ASPNET   → controllers (REST API) + Razor Pages (Vue 3 + Syncfusion EJ2)
 ```
 
-- **API routing**: `api/{controller}/{ActionName}` (RPC-style, not RESTful — controllers override `BaseApiController`'s `api/[controller]/[action]` with `api/[controller]`, action names come from `[HttpPost("CreateWarehouse")]` / `[HttpGet("GetWarehouseList")]` attributes)
+- **API routing** (effective URL `api/{Controller}/{ActionName}`, RPC-style not RESTful): concrete controllers declare `[Route("api/[controller]")]` (overriding `BaseApiController`'s `api/[controller]/[action]`) and put the action name in the verb attribute (`[HttpPost("CreateWarehouse")]` / `[HttpGet("GetWarehouseList")]`). New controllers are picked up automatically via `MapControllers()` — no route registration needed.
 - **Controllers** inherit `BaseApiController` → inject `ISender`, call `_sender.Send(request, ct)`, wrap in `ApiSuccessResult<T>`
 - **MediatR pipeline** (in order): `LoggingBehaviour` → `ValidationBehaviour` (FluentValidation auto-run; throws `ValidationException`, caught by `GlobalApiExceptionHandlerMiddleware`)
-- **Autowired audit**: `AuditFieldActionFilter` injects JWT `NameIdentifier` into `CreatedById`/`UpdatedById` fields before handlers run
+- **Autowired audit**: `AuditFieldActionFilter` overwrites `CreatedById`/`UpdatedById`/`DeletedById` (string props) on action arguments from the JWT `NameIdentifier` before handlers run — do not set these by hand
 
 ## CQRS Pattern (one file = four classes)
 
@@ -34,7 +34,7 @@ Each `Commands/{Create,Update,Delete}*.cs` / `Queries/Get*.cs` co-locates:
 3. `*Validator : AbstractValidator<*Request>`
 4. `*Handler : IRequestHandler<*Request, *Result>`
 
-**Must call** `SaveAsync()` after every write via `ICommandRepository<T>` + `IUnitOfWork`.
+**Must call** `SaveAsync()` after every write via `ICommandRepository<T>` + `IUnitOfWork` (a sync `Save()` exists for sync paths — `NumberSequenceService` uses it).
 **Must call** `ApplyIsDeletedFilter(...)` on every read query to exclude soft-deleted rows (list queries pass `request.IsDeleted`, singles pass `false`; default param is `false`). Tenant filtering, by contrast, is automatic — see below.
 
 ## Dual DbContext
@@ -47,7 +47,7 @@ Provider: PostgreSQL (default) or SQL Server, set by `appsettings.json` → `Dat
 ## Multi-tenancy (automatic, do not re-implement)
 
 Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enforce tenant scoping on every read **automatically** — do not add manual `TenantId` filters:
-`IsRootScope || (CurrentTenantId != null && e.TenantId == CurrentTenantId)`. An unresolved request yields zero rows (fail-closed, no leakage).
+`IsRootScope || (CurrentTenantId != null && e.TenantId == CurrentTenantId)`. An unresolved request yields zero rows (fail-closed, no leakage). Exception: `TicketCategory` and `TicketPriority` are global types with no tenant filter (`DataContext.ApplyTenantFilters`).
 
 - **New rows are stamped automatically**: `DataContext.SaveChangesAsync` calls `StampTenant()`. Don't set `TenantId` by hand.
 - **Tenant resolution** (`TenantResolutionMiddleware`, runs after `UseAuthentication`): 1) JWT `TenantId` claim, 2) host subdomain slug (`acme.ustock.app` → tenant "acme"). Claim and host must agree or the request is 403. First label of an IP/apex host is never a slug; slug→tenant lookups are cached 5 min.
@@ -109,4 +109,5 @@ bash update.sh                   # VPS-only deploy: git pull + rebuild app image
 ```
 
 - `.env` is gitignored — copy from `.env.example` (DB creds, JWT key, admin, SMTP).
+- Compose publishes **no app port** — :8080 is container-internal; external access is via the Cloudflare tunnel. For local work use `dotnet run` instead.
 - Business dates use `appsettings.json` → `TimeZoneId` (`Asia/Dhaka`) — must match `TZ` env in compose; uploads live under `wwwroot/app_data/` (persisted volume in compose).
