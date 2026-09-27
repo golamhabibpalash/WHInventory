@@ -1,0 +1,80 @@
+@page
+@{
+    ViewData["Title"] = "Customer Due List";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/order-list.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/purchase-order-list.css" asp-append-version="true" />
+}
+
+<div id="app" v-cloak>
+    <div class="page-head">
+        <div>
+            <h1 class="page-head-title">Customer Dues</h1>
+            <p class="page-head-sub">Outstanding customer balances from confirmed sales orders, less payments received.</p>
+        </div>
+    </div>
+
+    <div class="stat-strip">
+        <div class="stat-tile">
+            <div class="stat-tile-label"><i class="fas fa-user-friends"></i>Customers</div>
+            <div class="stat-tile-value">{{ listStats.total }}</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label"><i class="fas fa-exclamation-circle"></i>With Due</div>
+            <div class="stat-tile-value">{{ listStats.withDue }}</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label"><i class="fas fa-file-invoice-dollar"></i>Total Billed</div>
+            <div class="stat-tile-value">{{ handler.formatAmount(listStats.billed) }}</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-label"><i class="fas fa-hand-holding-usd"></i>Total Due</div>
+            <div class="stat-tile-value">{{ handler.formatAmount(listStats.due) }}</div>
+        </div>
+    </div>
+
+    <div class="list-card grid-container po-grid-wrap">
+        <!-- Filter panel — toggled by the Filter button in the grid toolbar. Live filtering:
+             each control change re-filters the list instantly (no Apply button needed). -->
+        <div ref="filterPanelRef" class="po-filter-panel" v-show="state.filterOpen" role="region" aria-label="Customer due filters">
+            <div class="po-filter-panel__header">
+                <span class="po-filter-panel__title">
+                    <i class="fas fa-filter"></i>Filters
+                    <span class="po-filter-panel__count" v-if="activeFilterCount">{{ activeFilterCount }}</span>
+                </span>
+                <div class="po-filter-panel__header-actions">
+                    <button type="button" class="btn btn-sm btn-link po-filter-clear" v-on:click="handler.clearFilters" v-bind:disabled="!activeFilterCount">
+                        <i class="fas fa-times-circle"></i><span>Clear all</span>
+                    </button>
+                    <button type="button" class="btn-close po-filter-close" aria-label="Close filters" v-on:click="handler.toggleFilter"></button>
+                </div>
+            </div>
+            <div class="po-filter-panel__body">
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Customer</label>
+                    <div ref="filterCustomerRef"></div>
+                </div>
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Status</label>
+                    <div ref="filterStatusRef"></div>
+                </div>
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Last Order From</label>
+                    <div ref="filterFromDateRef"></div>
+                </div>
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Last Order To</label>
+                    <div ref="filterToDateRef"></div>
+                </div>
+            </div>
+        </div>
+
+        <div ref="mainGridRef" id="MainGrid"></div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Dues/DueList.cshtml.js" asp-append-version="true"></script>
+}

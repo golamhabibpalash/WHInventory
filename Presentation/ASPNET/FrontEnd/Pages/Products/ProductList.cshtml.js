@@ -27,6 +27,7 @@ const App = {
             physical: false,
             isWarrantyApplicable: false,
             warrantyDays: null,
+            lowStockThreshold: null,
             barcode: '',
             showBarcodePreview: false,
             imageName: '',
@@ -37,6 +38,7 @@ const App = {
                 unitPrice: '',
                 minSellingPrice: '',
                 maxSellingPrice: '',
+                lowStockThreshold: '',
                 productGroupId: '',
                 unitMeasureId: '',
                 brandId: '',
@@ -76,6 +78,7 @@ const App = {
                 physical: false,
                 isWarrantyApplicable: false,
                 warrantyDays: null,
+                lowStockThreshold: null,
                 barcode: '',
                 imageName: '',
                 imagePreviewUrl: '',
@@ -97,6 +100,7 @@ const App = {
         const docUploadRef = Vue.ref(null);
         const barcodeRef = Vue.ref(null);
         const warrantyDaysRef = Vue.ref(null);
+        const lowStockThresholdRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
         const numberRef = Vue.ref(null);
         const unitPriceRef = Vue.ref(null);
@@ -120,6 +124,7 @@ const App = {
             state.errors.unitPrice = '';
             state.errors.minSellingPrice = '';
             state.errors.maxSellingPrice = '';
+            state.errors.lowStockThreshold = '';
             state.errors.productGroupId = '';
             state.errors.unitMeasureId = '';
             state.errors.brandId = '';
@@ -153,6 +158,12 @@ const App = {
                 isValid = false;
             }
 
+            const lowStockThreshold = state.lowStockThreshold;
+            if (lowStockThreshold !== null && lowStockThreshold < 0) {
+                state.errors.lowStockThreshold = 'Low stock threshold cannot be negative.';
+                isValid = false;
+            }
+
             if (!state.productGroupId) {
                 state.errors.productGroupId = 'ProductGroup is required.';
                 isValid = false;
@@ -174,6 +185,7 @@ const App = {
             { key: 'unitMeasureId', ref: unitMeasureIdRef },
             { key: 'minSellingPrice', ref: minSellingPriceRef },
             { key: 'maxSellingPrice', ref: maxSellingPriceRef },
+            { key: 'lowStockThreshold', ref: lowStockThresholdRef },
             { key: 'productGroupId', ref: productGroupIdRef },
         ];
 
@@ -208,6 +220,7 @@ const App = {
             state.physical = false;
             state.isWarrantyApplicable = false;
             state.warrantyDays = null;
+            state.lowStockThreshold = null;
             state.barcode = '';
             state.showBarcodePreview = false;
             state.imageName = '';
@@ -218,6 +231,7 @@ const App = {
                 unitPrice: '',
                 minSellingPrice: '',
                 maxSellingPrice: '',
+                lowStockThreshold: '',
                 productGroupId: '',
                 unitMeasureId: '',
                 brandId: '',
@@ -238,20 +252,20 @@ const App = {
                     throw error;
                 }
             },
-            createMainData: async (name, unitPrice, minSellingPrice, maxSellingPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
+            createMainData: async (name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Product/CreateProduct', {
-                        name, unitPrice, minSellingPrice, maxSellingPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
+                        name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, unitPrice, minSellingPrice, maxSellingPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
+            updateMainData: async (id, name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Product/UpdateProduct', {
-                        id, name, unitPrice, minSellingPrice, maxSellingPrice, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
+                        id, name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -464,6 +478,7 @@ const App = {
                 state.physical = record.physical ?? false;
                 state.isWarrantyApplicable = record.isWarrantyApplicable ?? false;
                 state.warrantyDays = record.warrantyDays ?? null;
+                state.lowStockThreshold = record.lowStockThreshold ?? null;
                 state.barcode = record.barcode ?? '';
                 state.imageName = record.imageName ?? '';
                 await Promise.all([
@@ -665,6 +680,29 @@ const App = {
             }
         };
 
+        const lowStockThresholdNumber = {
+            obj: null,
+            create: () => {
+                lowStockThresholdNumber.obj = new ej.inputs.NumericTextBox({
+                    format: 'n2',
+                    placeholder: 'Default',
+                    min: 0,
+                    step: 1,
+                    showClearButton: true,
+                    validateDecimalOnType: true,
+                    change: (e) => {
+                        state.lowStockThreshold = e.value ?? null;
+                    }
+                });
+                lowStockThresholdNumber.obj.appendTo(lowStockThresholdRef.value);
+            },
+            refresh: () => {
+                if (lowStockThresholdNumber.obj) {
+                    lowStockThresholdNumber.obj.value = state.lowStockThreshold;
+                }
+            }
+        };
+
         const watcherStops = [];
 
         watcherStops.push(Vue.watch(
@@ -686,6 +724,14 @@ const App = {
         watcherStops.push(Vue.watch(
             () => state.warrantyDays,
             () => { warrantyDaysNumber.refresh(); }
+        ));
+
+        watcherStops.push(Vue.watch(
+            () => state.lowStockThreshold,
+            () => {
+                state.errors.lowStockThreshold = '';
+                lowStockThresholdNumber.refresh();
+            }
         ));
 
         watcherStops.push(Vue.watch(
@@ -1106,6 +1152,7 @@ const App = {
                     physical: rowData.physical ?? false,
                     isWarrantyApplicable: rowData.isWarrantyApplicable ?? false,
                     warrantyDays: rowData.warrantyDays ?? null,
+                    lowStockThreshold: rowData.lowStockThreshold ?? null,
                     barcode: rowData.barcode ?? '',
                     imageName: rowData.imageName ?? '',
                     imagePreviewUrl: '',
@@ -1163,10 +1210,10 @@ const App = {
                     const brandId = state.brandId === '' ? null : state.brandId;
 
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.lowStockThreshold, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.lowStockThreshold, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -1260,6 +1307,7 @@ const App = {
                 minSellingPriceNumber.create();
                 maxSellingPriceNumber.create();
                 warrantyDaysNumber.create();
+                lowStockThresholdNumber.create();
 
                 mainModal.create();
                 viewModal.create();
@@ -1343,6 +1391,7 @@ const App = {
                         { field: 'unitPrice', headerText: 'Unit Price', width: 150, minWidth: 150, format: 'N2' },
                         { field: 'minSellingPrice', headerText: 'Min Sell Price', width: 140, minWidth: 140, format: 'N2' },
                         { field: 'maxSellingPrice', headerText: 'Max Sell Price', width: 140, minWidth: 140, format: 'N2' },
+                        { field: 'lowStockThreshold', headerText: 'Low Stock Threshold', width: 160, minWidth: 160, format: 'N2' },
                         { field: 'unitMeasureName', headerText: 'Unit Measure', width: 150, minWidth: 150 },
                         { field: 'barcode', headerText: 'Barcode', width: 150, minWidth: 150 },
                         { field: 'physical', headerText: 'Physical Product', width: 140, minWidth: 140, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
@@ -1441,6 +1490,7 @@ const App = {
                                 state.physical = selectedRecord.physical ?? false;
                                 state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
                                 state.warrantyDays = selectedRecord.warrantyDays ?? null;
+                                state.lowStockThreshold = selectedRecord.lowStockThreshold ?? null;
                                 state.barcode = selectedRecord.barcode ?? '';
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await methods.loadImagePreview(state.imageName);
@@ -1493,7 +1543,7 @@ const App = {
                     }
                     state.view = {
                         id: '', number: '', name: '', description: '',
-                        unitPrice: 0, minSellingPrice: null, maxSellingPrice: null,
+                        unitPrice: 0, minSellingPrice: null, maxSellingPrice: null, lowStockThreshold: null,
                         unitMeasureName: '', productGroupName: '', brandName: '',
                         physical: false, isWarrantyApplicable: false, warrantyDays: null,
                         barcode: '', imageName: '', imagePreviewUrl: '',
@@ -1522,6 +1572,7 @@ const App = {
             docUploadRef,
             barcodeRef,
             warrantyDaysRef,
+            lowStockThresholdRef,
             nameRef,
             numberRef,
             unitPriceRef,

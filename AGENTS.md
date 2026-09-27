@@ -10,7 +10,9 @@ dotnet run --project Presentation/ASPNET/ASPNET.csproj --environment Development
 ```
 
 - Targets **.NET 9** (`net9.0`). `Directory.Build.props` sets `TreatWarningsAsErrors` for `IDE*` + `EnforceCodeStyleInBuild` — code-style violations fail the build, not just warn.
+- There are **two** `.sln` files — build the root `WHInventory.sln`; `Presentation/ASPNET/ASPNET.sln` contains only the ASPNET project.
 - No test projects, no CI workflows, no lint/typecheck beyond the build — `dotnet build WHInventory.sln` is the full verification. No EF migrations — schema is `EnsureCreated()` at startup (`Infrastructure/.../EFCore/DI.cs`). To reset: drop the DB and restart.
+- Dev run expects a local PostgreSQL. The dev DB is the compose `db` service: `docker compose up -d db` → `appsettings.json` → `ConnectionStrings:DefaultConnection` already points at `localhost:5434` (matches compose's `5434:5432`). App binds `http://+:8080` (`appsettings.json` → `Kestrel`); 8080 is also the container port.
 
 ## Architecture
 
@@ -25,6 +27,7 @@ Presentation/ASPNET   → controllers (REST API) + Razor Pages (Vue 3 + Syncfusi
 - **Controllers** inherit `BaseApiController` → inject `ISender`, call `_sender.Send(request, ct)`, wrap in `ApiSuccessResult<T>`
 - **MediatR pipeline** (in order): `LoggingBehaviour` → `ValidationBehaviour` (FluentValidation auto-run; throws `ValidationException`, caught by `GlobalApiExceptionHandlerMiddleware`)
 - **Autowired audit**: `AuditFieldActionFilter` overwrites `CreatedById`/`UpdatedById`/`DeletedById` (string props) on action arguments from the JWT `NameIdentifier` before handlers run — do not set these by hand
+- **Live notifications**: SignalR hub at `/hubs/notifications` (per-user groups), driven by the `NotificationManager` feature
 
 ## CQRS Pattern (one file = four classes)
 
@@ -65,7 +68,7 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 ## Seeding
 
 - System seed runs unconditionally at startup: default admin, roles, default tenant, company, system warehouses
-- Demo seed runs only when `"IsDemoVersion": true` in `appsettings.json` (true in dev, false in `appsettings.Production.json`)
+- Demo seed runs only when `IsDemoVersion: true` (true in dev `appsettings.json`, false in `appsettings.Production.json`)
 - Tenant creation is also a seeding concern (`TenantSeeder` + `TenantProvisioningService`)
 
 ## Security
@@ -108,6 +111,6 @@ docker compose up -d db app      # skip tunnel
 bash update.sh                   # VPS-only deploy: git pull + rebuild app image + health-check on :8080
 ```
 
-- `.env` is gitignored — copy from `.env.example` (DB creds, JWT key, admin, SMTP).
+- `.env` is gitignored — copy from `.env.example`. Compose only consumes `DB_NAME`/`DB_USER`/`DB_PASSWORD`/`CLOUDFLARE_TUNNEL_TOKEN` — the `JWT_*`/`ADMIN_*`/`SMTP_*` entries are not wired to the container (it runs on `appsettings.json` defaults unless overridden separately).
 - Compose publishes **no app port** — :8080 is container-internal; external access is via the Cloudflare tunnel. For local work use `dotnet run` instead.
 - Business dates use `appsettings.json` → `TimeZoneId` (`Asia/Dhaka`) — must match `TZ` env in compose; uploads live under `wwwroot/app_data/` (persisted volume in compose).

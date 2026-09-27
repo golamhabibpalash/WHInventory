@@ -365,6 +365,20 @@
 
 .pos-fields .pos-span-all { grid-column: 1 / -1; }
 
+/* Note (wider) + Previous Due (narrower) share the full-width row. */
+.pos-note-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+.pos-note-row .pos-note-col { flex: 2 1 0; min-width: 0; }
+.pos-note-row .pos-due-col { flex: 1 1 0; min-width: 0; }
+.pos-previous-due { font-weight: 600; background-color: #f8f9fa; }
+
+@media (max-width: 575.98px) {
+    .pos-note-row { flex-direction: column; gap: .5rem; }
+}
+
 .pos-field-label {
     display: block;
     margin-bottom: .375rem;

@@ -118,18 +118,23 @@ const App = {
                 if (state.salesOrderListLookupData && Array.isArray(state.salesOrderListLookupData)) {
                     salesOrderListLookup.obj = new ej.dropdowns.DropDownList({
                         dataSource: state.salesOrderListLookupData,
-                        fields: { value: 'id', text: 'number' },
+                        fields: { value: 'id', text: 'displayName' },
                         placeholder: 'Select Sales Order',
-                        filterBarPlaceholder: 'Search',
+                        filterBarPlaceholder: 'Search by order no. or phone',
                         sortOrder: 'Ascending',
                         allowFiltering: true,
                         filtering: (e) => {
                             e.preventDefaultAction = true;
-                            let query = new ej.data.Query();
-                            if (e.text !== '') {
-                                query = query.where('number', 'startsWith', e.text, true);
+                            const term = (e.text || '').toLowerCase();
+                            if (!term) {
+                                e.updateData(state.salesOrderListLookupData);
+                                return;
                             }
-                            e.updateData(state.salesOrderListLookupData, query);
+                            const filtered = state.salesOrderListLookupData.filter(so =>
+                                (so.number || '').toLowerCase().includes(term) ||
+                                (so.customerPhoneNumber || '').toLowerCase().includes(term)
+                            );
+                            e.updateData(filtered);
                         },
                         change: (e) => {
                             state.salesOrderId = e.value;
@@ -308,7 +313,13 @@ const App = {
             },
             populateSalesOrderListLookupData: async () => {
                 const response = await services.getSalesOrderListLookupData();
-                state.salesOrderListLookupData = response?.data?.content?.data;
+                const data = response?.data?.content?.data ?? [];
+                // Show "Order Number - Customer Phone" so an order is easy to find by phone number.
+                // Raw number/customerPhoneNumber stay on each item so the search matches both.
+                state.salesOrderListLookupData = data.map(so => ({
+                    ...so,
+                    displayName: so.customerPhoneNumber ? `${so.number} - ${so.customerPhoneNumber}` : so.number
+                }));
             },
             populateDeliveryOrderStatusListLookupData: async () => {
                 const response = await services.getDeliveryOrderStatusListLookupData();

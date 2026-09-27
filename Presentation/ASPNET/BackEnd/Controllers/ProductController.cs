@@ -140,8 +140,9 @@ public class ProductController : BaseApiController
         sheet.Cell(1, 6).Value = "Barcode";
         sheet.Cell(1, 7).Value = "Description";
         sheet.Cell(1, 8).Value = "IsWarrantyApplicable";
+        sheet.Cell(1, 9).Value = "LowStockThreshold";
 
-        var headerRange = sheet.Range("A1:H1");
+        var headerRange = sheet.Range("A1:I1");
         headerRange.Style.Font.Bold = true;
         headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
         sheet.Columns().AdjustToContents();

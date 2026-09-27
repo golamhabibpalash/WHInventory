@@ -87,6 +87,7 @@ public class GetLowStockProductListHandler : IRequestHandler<GetLowStockProductL
                 x.Id,
                 x.Number,
                 x.Name,
+                x.LowStockThreshold,
                 GroupName = x.ProductGroup!.Name,
                 BrandName = x.Brand!.Name,
                 UnitName = x.UnitMeasure!.Name
@@ -103,9 +104,9 @@ public class GetLowStockProductListHandler : IRequestHandler<GetLowStockProductL
                 BrandName = p.BrandName,
                 UnitMeasureName = p.UnitName,
                 StockOnHand = stockLookup.GetValueOrDefault(p.Id, 0.0),
-                LowStockThreshold = LowStockThreshold
+                LowStockThreshold = p.LowStockThreshold ?? LowStockThreshold
             })
-            .Where(x => x.StockOnHand <= LowStockThreshold)
+            .Where(x => x.StockOnHand <= x.LowStockThreshold)
             .OrderBy(x => x.StockOnHand)
             .ThenBy(x => x.ProductName)
             .ToList();

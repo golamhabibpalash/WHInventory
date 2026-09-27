@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="~/css/order-list.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/pos-order-modal.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/order-view-modal.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/purchase-order-list.css" asp-append-version="true" />
 }
 
 <div id="app" v-cloak>
@@ -14,11 +15,6 @@
         <div>
             <h1 class="page-head-title">Sales Orders</h1>
             <p class="page-head-sub">Create orders, track their status and collect customer payments.</p>
-        </div>
-        <div class="page-head-actions">
-            <button type="button" class="btn btn-primary" v-on:click="handler.openAddModal">
-                <i class="fas fa-plus"></i>New Sales Order
-            </button>
         </div>
     </div>
 
@@ -41,7 +37,46 @@
         </div>
     </div>
 
-    <div class="list-card grid-container">
+    <div class="list-card grid-container po-grid-wrap">
+        <!-- Filter panel — toggled by the Filter button in the grid toolbar. Live filtering:
+             each control change re-filters the list instantly (no Apply button needed). -->
+        <div ref="filterPanelRef" class="po-filter-panel" v-show="state.filterOpen" role="region" aria-label="Sales order filters">
+            <div class="po-filter-panel__header">
+                <span class="po-filter-panel__title">
+                    <i class="fas fa-filter"></i>Filters
+                    <span class="po-filter-panel__count" v-if="activeFilterCount">{{ activeFilterCount }}</span>
+                </span>
+                <div class="po-filter-panel__header-actions">
+                    <button type="button" class="btn btn-sm btn-link po-filter-clear" v-on:click="handler.clearFilters" v-bind:disabled="!activeFilterCount">
+                        <i class="fas fa-times-circle"></i><span>Clear all</span>
+                    </button>
+                    <button type="button" class="btn-close po-filter-close" aria-label="Close filters" v-on:click="handler.toggleFilter"></button>
+                </div>
+            </div>
+            <div class="po-filter-panel__body">
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Status</label>
+                    <div ref="filterStatusRef"></div>
+                </div>
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Customer</label>
+                    <div ref="filterCustomerRef"></div>
+                </div>
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Tax</label>
+                    <div ref="filterTaxRef"></div>
+                </div>
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Created From</label>
+                    <div ref="filterFromDateRef"></div>
+                </div>
+                <div class="po-filter-field">
+                    <label class="po-filter-label">Created To</label>
+                    <div ref="filterToDateRef"></div>
+                </div>
+            </div>
+        </div>
+
         <div ref="mainGridRef" id="MainGrid"></div>
     </div>
 
@@ -120,9 +155,17 @@
                                     </div>
                                     <div class="pos-field-error" v-if="state.errors.taxId">{{ state.errors.taxId }}</div>
                                 </div>
-                                <div class="pos-span-all">
-                                    <label for="Description" class="pos-field-label">Note</label>
-                                    <textarea id="Description" class="form-control" rows="1" v-model="state.description" placeholder="Optional note for this order"></textarea>
+                                <div class="pos-span-all pos-note-row">
+                                    <div class="pos-note-col">
+                                        <label for="Description" class="pos-field-label">Note</label>
+                                        <textarea id="Description" class="form-control" rows="1" v-model="state.description" placeholder="Optional note for this order"></textarea>
+                                    </div>
+                                    <div class="pos-due-col">
+                                        <label for="PreviousDue" class="pos-field-label">Previous Due</label>
+                                        <input id="PreviousDue" type="text" class="form-control text-end pos-previous-due" readonly
+                                               v-bind:value="handler.formatAmount(state.previousDue)"
+                                               title="Outstanding balance from this customer's earlier confirmed orders">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -149,6 +192,13 @@
                                             <input type="number" step="0.01" min="0"
                                                    class="form-control text-end"
                                                    v-model.number="state.productPick.unitPrice">
+                                        </div>
+                                        <div>
+                                            <label class="pos-field-label">Commission</label>
+                                            <input type="number" step="0.01" min="0"
+                                                   class="form-control text-end"
+                                                   title="Commission taken off each unit's price"
+                                                   v-model.number="state.productPick.commission">
                                         </div>
                                         <div>
                                             <label class="pos-field-label">Quantity</label>
@@ -184,6 +234,15 @@
                                               v-bind:class="{ 'is-danger': posPriceOutOfBand }">
                                             <i class="fas fa-tag"></i>Price range {{ handler.formatAmount(state.productHint.minPrice || 0) }} &ndash; {{ state.productHint.maxPrice !== null ? handler.formatAmount(state.productHint.maxPrice) : 'no max' }}
                                         </span>
+                                        <span class="pos-hint" v-if="state.priceSuggestion.loading">
+                                            <i class="fas fa-spinner fa-spin"></i>Fetching best price...
+                                        </span>
+                                        <span class="pos-hint" v-else-if="state.priceSuggestion.sourceName">
+                                            <i class="fas fa-tags"></i>Suggested: {{ state.priceSuggestion.sourceName }}<span v-if="state.priceSuggestion.profit !== null">, profit {{ handler.formatAmount(state.priceSuggestion.profit) }} ({{ state.priceSuggestion.profitPercent }}%)</span>
+                                        </span>
+                                        <button type="button" class="pos-link-btn" v-on:click="handler.refreshSuggestedPrice" v-bind:disabled="!state.productPick.productId || state.priceSuggestion.loading" title="Re-fetch the policy/promotion price">
+                                            <i class="fas fa-sync-alt me-1"></i>Best price
+                                        </button>
                                     </div>
 
                                     <div class="pos-divider-label">or scan</div>
@@ -224,14 +283,15 @@
                                                 <tr>
                                                     <th>Product</th>
                                                     <th class="text-center" style="width:136px;">Qty</th>
-                                                    <th class="text-end" style="width:128px;">Unit Price</th>
+                                                    <th class="text-end" style="width:120px;">Unit Price</th>
+                                                    <th class="text-end" style="width:110px;">Rate</th>
                                                     <th class="text-end" style="width:120px;">Total</th>
                                                     <th style="width:48px;"><span class="sr-only">Remove</span></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr v-if="!state.secondaryData.length">
-                                                    <td colspan="5">
+                                                    <td colspan="6">
                                                         <div class="pos-empty">
                                                             <i class="fas fa-shopping-basket"></i>
                                                             <strong>Your cart is empty</strong>
@@ -264,7 +324,14 @@
                                                                v-bind:value="line.unitPrice"
                                                                v-on:change="handler.commitLinePrice(line, $event.target.value)">
                                                     </td>
-                                                    <td class="text-end fw-semibold">{{ handler.formatAmount((line.unitPrice || 0) * (line.quantity || 0)) }}</td>
+                                                    <td class="text-end">
+                                                        <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end pos-line-price"
+                                                               aria-label="Commission"
+                                                               title="Commission per unit"
+                                                               v-bind:value="line.commissionRate"
+                                                               v-on:change="handler.commitLineCommission(line, $event.target.value)">
+                                                    </td>
+                                                    <td class="text-end fw-semibold">{{ handler.formatAmount(((line.unitPrice || 0) - (line.commissionRate || 0)) * (line.quantity || 0)) }}</td>
                                                     <td class="text-center">
                                                         <button type="button" class="pos-remove-btn" v-on:click="handler.removeLine(line)" title="Remove item" aria-label="Remove item">
                                                             <i class="fas fa-times"></i>
@@ -289,6 +356,10 @@
                                         <div class="pos-summary-row">
                                             <span class="text-muted">Subtotal</span>
                                             <span id="SubTotalAmount">{{ state.subTotalAmount }}</span>
+                                        </div>
+                                        <div class="pos-summary-row">
+                                            <span class="text-muted">Discount (commission)</span>
+                                            <span id="DiscountAmount">&minus;{{ state.discountAmount }}</span>
                                         </div>
                                         <div class="pos-summary-row">
                                             <span class="text-muted">Tax</span>
@@ -470,7 +541,11 @@
                     <div class="ov-totals">
                         <div class="ov-fact">
                             <span class="ov-fact-label">Sub Total</span>
-                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.beforeTaxAmount) }}</span>
+                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.subTotalAmount) }}</span>
+                        </div>
+                        <div class="ov-fact" v-if="state.view.discountAmount > 0">
+                            <span class="ov-fact-label">Discount (commission)</span>
+                            <span class="ov-fact-value">&minus;{{ handler.formatAmount(state.view.discountAmount) }}</span>
                         </div>
                         <div class="ov-fact">
                             <span class="ov-fact-label">Tax Amount</span>

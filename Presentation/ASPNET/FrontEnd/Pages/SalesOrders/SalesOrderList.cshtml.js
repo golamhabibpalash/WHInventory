@@ -2,6 +2,14 @@ const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
+            filterOpen: false,
+            filter: {
+                statusId: null,
+                customerId: null,
+                taxId: null,
+                fromDate: null,
+                toDate: null,
+            },
             deleteMode: false,
             customerListLookupData: [],
             taxListLookupData: [],
@@ -15,6 +23,7 @@ const App = {
             number: '',
             orderDate: new Date(),
             description: '',
+            previousDue: 0,
             customerId: null,
             taxId: null,
             orderStatus: null,
@@ -30,6 +39,7 @@ const App = {
             productPick: {
                 productId: null,
                 unitPrice: 0,
+                commission: 0,
                 quantity: 1
             },
             productHint: {
@@ -39,6 +49,14 @@ const App = {
                 minPrice: null,
                 maxPrice: null
             },
+            priceSuggestion: {
+                loading: false,
+                sourceName: '',
+                costPrice: null,
+                profit: null,
+                profitPercent: null
+            },
+            priceResolveSeq: 0,
             paymentMethodListLookupData: [],
             paymentList: [],
             paymentSummary: null,
@@ -52,6 +70,7 @@ const App = {
                 referenceNumber: ''
             },
             subTotalAmount: '0.00',
+            discountAmount: '0.00',
             taxAmount: '0.00',
             totalAmount: '0.00',
             amountInWords: '',
@@ -88,12 +107,18 @@ const App = {
             view: {
                 id: '', number: '', orderDate: '', orderStatusName: '', statusClass: '',
                 description: '', customerName: '', taxName: '',
-                beforeTaxAmount: 0, taxAmount: 0, afterTaxAmount: 0,
+                subTotalAmount: 0, discountAmount: 0, beforeTaxAmount: 0, taxAmount: 0, afterTaxAmount: 0,
                 items: []
             }
         });
 
         const mainGridRef = Vue.ref(null);
+        const filterPanelRef = Vue.ref(null);
+        const filterStatusRef = Vue.ref(null);
+        const filterCustomerRef = Vue.ref(null);
+        const filterTaxRef = Vue.ref(null);
+        const filterFromDateRef = Vue.ref(null);
+        const filterToDateRef = Vue.ref(null);
         const paymentDateRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const orderDateRef = Vue.ref(null);
@@ -110,8 +135,169 @@ const App = {
         const barcodeScanRef = Vue.ref(null);
         const viewModalRef = Vue.ref(null);
 
-        // Running line total for the "Select Product" form.
-        const posLineTotal = Vue.computed(() => (state.productPick.unitPrice || 0) * (state.productPick.quantity || 0));
+        // Running net line total for the "Select Product" form (unit price less commission).
+        const posLineTotal = Vue.computed(() =>
+            Math.max(0, (state.productPick.unitPrice || 0) - (state.productPick.commission || 0)) * (state.productPick.quantity || 0));
+
+        // ── List filtering (client-side over the already-fetched list; no API change) ──────────
+        const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+        const endOfDay = (d) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; };
+
+        const getFilteredData = () => {
+            let data = state.mainData || [];
+            const f = state.filter;
+            if (f.statusId !== null && f.statusId !== undefined && f.statusId !== '') {
+                data = data.filter(x => Number(x.orderStatus) === Number(f.statusId));
+            }
+            if (f.customerId) data = data.filter(x => x.customerId === f.customerId);
+            if (f.taxId) data = data.filter(x => x.taxId === f.taxId);
+            if (f.fromDate) {
+                const from = startOfDay(f.fromDate);
+                data = data.filter(x => x.createdAtUtc instanceof Date && x.createdAtUtc >= from);
+            }
+            if (f.toDate) {
+                const to = endOfDay(f.toDate);
+                data = data.filter(x => x.createdAtUtc instanceof Date && x.createdAtUtc <= to);
+            }
+            return data;
+        };
+
+        const activeFilterCount = Vue.computed(() => {
+            const f = state.filter;
+            let count = 0;
+            if (f.statusId !== null && f.statusId !== undefined && f.statusId !== '') count++;
+            if (f.customerId) count++;
+            if (f.taxId) count++;
+            if (f.fromDate) count++;
+            if (f.toDate) count++;
+            return count;
+        });
+
+        // Re-run the filter and push the result into the grid (keeps the grid's own paging/sorting).
+        const applyFilter = () => {
+            if (mainGrid.obj) mainGrid.obj.setProperties({ dataSource: getFilteredData() });
+        };
+
+        // Drop the panel directly beneath the grid toolbar, spanning the grid width.
+        const positionFilterPanel = () => {
+            const wrap = mainGridRef.value?.closest('.po-grid-wrap');
+            const toolbar = mainGridRef.value?.querySelector('.e-toolbar');
+            if (!wrap || !toolbar || !filterPanelRef.value) return;
+            const top = toolbar.getBoundingClientRect().bottom - wrap.getBoundingClientRect().top;
+            filterPanelRef.value.style.top = `${top}px`;
+        };
+
+        const onWindowResize = () => { if (state.filterOpen) positionFilterPanel(); };
+
+        const filterStatusDropdown = {
+            obj: null,
+            create: () => {
+                filterStatusDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
+                    dataSource: state.salesOrderStatusListLookupData ?? [],
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'All statuses',
+                    showClearButton: true,
+                    change: (e) => { state.filter.statusId = e.value; applyFilter(); }
+                });
+                filterStatusDropdown.obj.appendTo(filterStatusRef.value);
+            }
+        };
+
+        const filterCustomerDropdown = {
+            obj: null,
+            create: () => {
+                filterCustomerDropdown.obj = new ej.dropdowns.DropDownList({
+                    dataSource: state.customerListLookupData ?? [],
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'All customers',
+                    sortOrder: 'Ascending',
+                    allowFiltering: true,
+                    showClearButton: true,
+                    filterBarPlaceholder: 'Search customer',
+                    filtering: (e) => {
+                        e.preventDefaultAction = true;
+                        const term = (e.text || '').toLowerCase();
+                        const source = state.customerListLookupData ?? [];
+                        e.updateData(term ? source.filter(c => (c.name || '').toLowerCase().includes(term)) : source);
+                    },
+                    change: (e) => { state.filter.customerId = e.value; applyFilter(); }
+                });
+                filterCustomerDropdown.obj.appendTo(filterCustomerRef.value);
+            }
+        };
+
+        const filterTaxDropdown = {
+            obj: null,
+            create: () => {
+                filterTaxDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
+                    dataSource: state.taxListLookupData ?? [],
+                    fields: { value: 'id', text: 'name' },
+                    placeholder: 'All taxes',
+                    sortOrder: 'Ascending',
+                    showClearButton: true,
+                    change: (e) => { state.filter.taxId = e.value; applyFilter(); }
+                });
+                filterTaxDropdown.obj.appendTo(filterTaxRef.value);
+            }
+        };
+
+        const filterFromDatePicker = {
+            obj: null,
+            create: () => {
+                filterFromDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'From date',
+                    showClearButton: true,
+                    change: (e) => { state.filter.fromDate = e.value; applyFilter(); }
+                });
+                filterFromDatePicker.obj.appendTo(filterFromDateRef.value);
+            }
+        };
+
+        const filterToDatePicker = {
+            obj: null,
+            create: () => {
+                filterToDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'To date',
+                    showClearButton: true,
+                    change: (e) => { state.filter.toDate = e.value; applyFilter(); }
+                });
+                filterToDatePicker.obj.appendTo(filterToDateRef.value);
+            }
+        };
+
+        const createFilterControls = () => {
+            filterStatusDropdown.create();
+            filterCustomerDropdown.create();
+            filterTaxDropdown.create();
+            filterFromDatePicker.create();
+            filterToDatePicker.create();
+        };
+
+        const filterHandler = {
+            toggle: () => {
+                state.filterOpen = !state.filterOpen;
+                if (state.filterOpen) Vue.nextTick(positionFilterPanel);
+            },
+            clear: () => {
+                state.filter.statusId = null;
+                state.filter.customerId = null;
+                state.filter.taxId = null;
+                state.filter.fromDate = null;
+                state.filter.toDate = null;
+                filterStatusDropdown.obj?.setProperties({ value: null });
+                filterCustomerDropdown.obj?.setProperties({ value: null });
+                filterTaxDropdown.obj?.setProperties({ value: null });
+                filterFromDatePicker.obj?.setProperties({ value: null });
+                filterToDatePicker.obj?.setProperties({ value: null });
+                applyFilter();
+            }
+        };
 
         // Warns when the picked quantity is above what the warehouse can supply. The server is the
         // authority; this only nudges the cashier before they hit "Add to Cart".
@@ -160,8 +346,9 @@ const App = {
             .reduce((sum, line) => sum + (line.quantity || 0), 0);
 
         const resetProductPick = () => {
-            state.productPick = { productId: null, unitPrice: 0, quantity: 1 };
+            state.productPick = { productId: null, unitPrice: 0, commission: 0, quantity: 1 };
             state.productHint = { name: '', physical: false, stock: null, minPrice: null, maxPrice: null };
+            state.priceSuggestion = { loading: false, sourceName: '', costPrice: null, profit: null, profitPercent: null };
             if (productPickLookup.obj) {
                 productPickLookup.obj.value = null;
                 productPickLookup.obj.text = '';
@@ -242,6 +429,7 @@ const App = {
             state.number = '';
             state.orderDate = new Date();
             state.description = '';
+            state.previousDue = 0;
             state.customerId = null;
             state.taxId = null;
             state.orderStatus = null;
@@ -259,6 +447,7 @@ const App = {
             state.paymentError = '';
             resetNewPaymentState();
             state.subTotalAmount = '0.00';
+            state.discountAmount = '0.00';
             state.taxAmount = '0.00';
             state.totalAmount = '0.00';
             state.amountInWords = '';
@@ -320,6 +509,19 @@ const App = {
                     throw error;
                 }
             },
+            getCustomerDue: async (customerId, excludeSalesOrderId) => {
+                try {
+                    // AxiosManager.get ignores config.params, so the query is built into the URL.
+                    let url = `/Customer/GetCustomerDue?customerId=${encodeURIComponent(customerId)}`;
+                    if (excludeSalesOrderId) {
+                        url += `&excludeSalesOrderId=${encodeURIComponent(excludeSalesOrderId)}`;
+                    }
+                    const response = await AxiosManager.get(url, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             getTaxListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/Tax/GetTaxList', {});
@@ -344,20 +546,20 @@ const App = {
                     throw error;
                 }
             },
-            createSecondaryData: async (unitPrice, quantity, remark, productId, salesOrderId, createdById) => {
+            createSecondaryData: async (unitPrice, commissionRate, quantity, remark, productId, salesOrderId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/SalesOrderItem/CreateSalesOrderItem', {
-                        unitPrice, quantity, remark, productId, salesOrderId, createdById
+                        unitPrice, commissionRate, quantity, remark, productId, salesOrderId, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateSecondaryData: async (id, unitPrice, quantity, remark, productId, salesOrderId, updatedById) => {
+            updateSecondaryData: async (id, unitPrice, commissionRate, quantity, remark, productId, salesOrderId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/SalesOrderItem/UpdateSalesOrderItem', {
-                        id, unitPrice, quantity, remark, productId, salesOrderId, updatedById
+                        id, unitPrice, commissionRate, quantity, remark, productId, salesOrderId, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -484,6 +686,23 @@ const App = {
                     throw error;
                 }
             },
+            resolveSuggestedPrice: async (productId, customerId, quantity, saleDate) => {
+                try {
+                    // AxiosManager.get ignores config.params, so the query is built into the URL.
+                    let url = `/Price/ResolvePrice?productId=${encodeURIComponent(productId)}&quantity=${encodeURIComponent(quantity ?? 1)}`;
+                    if (customerId) {
+                        url += `&customerId=${encodeURIComponent(customerId)}`;
+                    }
+                    const apiDate = DateFormatManager.toApiDate(saleDate);
+                    if (apiDate) {
+                        url += `&saleDate=${encodeURIComponent(apiDate)}`;
+                    }
+                    const response = await AxiosManager.get(url, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             createTax: async (name, percentage, description, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Tax/CreateTax', { name, percentage, description, createdById });
@@ -497,7 +716,27 @@ const App = {
         const methods = {
             populateCustomerListLookupData: async () => {
                 const response = await services.getCustomerListLookupData();
-                state.customerListLookupData = response?.data?.content?.data;
+                const data = response?.data?.content?.data ?? [];
+                // Precompute the "Name - Mobile" label the dropdown shows (see customerListLookup).
+                // Raw name/phoneNumber are preserved on each item so the search still matches both.
+                state.customerListLookupData = data.map(c => ({
+                    ...c,
+                    displayName: c.phoneNumber ? `${c.name} - ${c.phoneNumber}` : c.name
+                }));
+            },
+            populatePreviousDue: async (customerId) => {
+                // No customer selected → nothing owed to show.
+                if (!customerId) {
+                    state.previousDue = 0;
+                    return;
+                }
+                try {
+                    // Exclude the order currently open for edit so it isn't counted as its own "previous" due.
+                    const response = await services.getCustomerDue(customerId, state.id || null);
+                    state.previousDue = response?.data?.content?.data?.previousDue ?? 0;
+                } catch (error) {
+                    state.previousDue = 0;
+                }
             },
             populateTaxListLookupData: async () => {
                 const response = await services.getTaxListLookupData();
@@ -547,6 +786,42 @@ const App = {
                     availableStock: stockByProduct[p.id] ?? 0
                 }));
             },
+            refreshSuggestedPrice: async (autoApply = true) => {
+                const productId = state.productPick.productId;
+                if (!productId) {
+                    return;
+                }
+                const seq = ++state.priceResolveSeq;
+                state.priceSuggestion.loading = true;
+                try {
+                    const response = await services.resolveSuggestedPrice(
+                        productId,
+                        state.customerId,
+                        state.productPick.quantity || 1,
+                        state.orderDate);
+                    if (seq !== state.priceResolveSeq) {
+                        return;
+                    }
+                    const content = response?.data?.content ?? {};
+                    state.priceSuggestion = {
+                        loading: false,
+                        sourceName: content.priceSourceName ?? '',
+                        costPrice: content.costPrice ?? null,
+                        profit: content.profit ?? null,
+                        profitPercent: content.profitPercent ?? null
+                    };
+                    // Auto-apply the resolved policy/promotion/QB price; the cashier
+                    // can still override it manually afterwards (Min/Max band still enforced).
+                    if (autoApply && content.calculatedPrice !== null && content.calculatedPrice !== undefined && Number(content.calculatedPrice) > 0) {
+                        state.productPick.unitPrice = Number(content.calculatedPrice);
+                    }
+                } catch (error) {
+                    if (seq !== state.priceResolveSeq) {
+                        return;
+                    }
+                    state.priceSuggestion = { loading: false, sourceName: '', costPrice: null, profit: null, profitPercent: null };
+                }
+            },
             populateCustomerGroupListLookupData: async () => {
                 const response = await services.getCustomerGroupListLookupData();
                 state.customerGroupListLookupData = response?.data?.content?.data;
@@ -558,7 +833,8 @@ const App = {
             refreshPaymentSummary: async (id) => {
                 const record = state.mainData.find(item => item.id === id);
                 if (record) {
-                    state.subTotalAmount = NumberFormatManager.formatToLocale(record.beforeTaxAmount ?? 0);
+                    state.subTotalAmount = NumberFormatManager.formatToLocale(record.subTotalAmount ?? 0);
+                    state.discountAmount = NumberFormatManager.formatToLocale(record.discountAmount ?? 0);
                     state.taxAmount = NumberFormatManager.formatToLocale(record.taxAmount ?? 0);
                     state.totalAmount = NumberFormatManager.formatToLocale(record.afterTaxAmount ?? 0);
                     state.amountInWords = AmountInWordsManager.convert(record.afterTaxAmount ?? 0);
@@ -698,9 +974,9 @@ const App = {
                 if (state.customerListLookupData && Array.isArray(state.customerListLookupData)) {
                     customerListLookup.obj = new ej.dropdowns.DropDownList({
                         dataSource: state.customerListLookupData,
-                        fields: { value: 'id', text: 'name' },
+                        fields: { value: 'id', text: 'displayName' },
                         placeholder: 'Select a Customer',
-                        filterBarPlaceholder: 'Search',
+                        filterBarPlaceholder: 'Search by name or mobile',
                         sortOrder: 'Ascending',
                         allowFiltering: true,
                         filtering: (e) => {
@@ -716,8 +992,12 @@ const App = {
                             );
                             e.updateData(filtered);
                         },
-                        change: (e) => {
+                        change: async (e) => {
                             state.customerId = e.value;
+                            // Re-price the picked product for the new customer (group policy may differ).
+                            if (state.productPick.productId) {
+                                await methods.refreshSuggestedPrice();
+                            }
                         }
                     });
                     customerListLookup.obj.appendTo(customerIdRef.value);
@@ -736,6 +1016,8 @@ const App = {
             create: () => {
                 if (state.taxListLookupData && Array.isArray(state.taxListLookupData)) {
                     taxListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.taxListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Tax',
@@ -761,6 +1043,8 @@ const App = {
             create: () => {
                 if (state.salesOrderStatusListLookupData && Array.isArray(state.salesOrderStatusListLookupData)) {
                     salesOrderStatusListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.salesOrderStatusListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select an Order Status',
@@ -787,6 +1071,7 @@ const App = {
                     placeholder: 'Select a Customer Group',
                     popupHeight: '200px',
                     allowFiltering: true,
+                    filterType: 'Contains',
                     change: (e) => { state.customerQuickGroupId = e.value; }
                 });
                 customerQuickGroupListLookup.obj.appendTo(customerQuickGroupIdRef.value);
@@ -810,6 +1095,7 @@ const App = {
                     placeholder: 'Select a Customer Category',
                     popupHeight: '200px',
                     allowFiltering: true,
+                    filterType: 'Contains',
                     change: (e) => { state.customerQuickCategoryId = e.value; }
                 });
                 customerQuickCategoryListLookup.obj.appendTo(customerQuickCategoryIdRef.value);
@@ -890,6 +1176,24 @@ const App = {
 
         const watcherStops = [];
 
+        let qtyResolveTimer = null;
+
+        watcherStops.push(Vue.watch(
+            () => state.productPick.quantity,
+            () => {
+                // Quantity breaks depend on qty — debounce so typing 10/100 doesn't spam the API.
+                if (!state.productPick.productId) {
+                    return;
+                }
+                if (qtyResolveTimer) {
+                    clearTimeout(qtyResolveTimer);
+                }
+                qtyResolveTimer = setTimeout(() => {
+                    methods.refreshSuggestedPrice();
+                }, 500);
+            }
+        ));
+
         watcherStops.push(Vue.watch(
             () => state.orderDate,
             (newVal, oldVal) => {
@@ -903,6 +1207,8 @@ const App = {
             (newVal, oldVal) => {
                 customerListLookup.refresh();
                 state.errors.customerId = '';
+                // Show the customer's outstanding receivable (0 when none / when cleared).
+                methods.populatePreviousDue(newVal);
             }
         ));
 
@@ -940,7 +1246,7 @@ const App = {
                     filterSettings: { type: 'CheckBox' },
                     searchSettings: { keyDelay: 150, searchAsType: true },
                     sortSettings: { columns: [{ field: 'createdAtUtc', direction: 'Descending' }] },
-                    pageSettings: { currentPage: 1, pageSize: 50, pageSizes: ["10", "20", "50", "100", "200", "All"] },
+                    pageSettings: { currentPage: 1, pageSize: 20, pageSizes: ["10", "20", "50", "100", "200", "All"] },
                     selectionSettings: { persistSelection: true, type: 'Single' },
                     showColumnMenu: true,
                     gridLines: 'Horizontal',
@@ -959,8 +1265,11 @@ const App = {
                         { field: 'createdByName', headerText: 'Created By', width: 150, minWidth: 150 }
                     ],
                     toolbar: [
-                        'ExcelExport', 'Search',
+                        'ExcelExport',
+                        { text: 'Filter', tooltipText: 'Show / hide filters', prefixIcon: 'e-filter', id: 'FilterCustom' },
+                        'Search',
                         { type: 'Separator' },
+                        { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
                         { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
                         { type: 'Separator' },
@@ -1015,6 +1324,17 @@ const App = {
                         if (args.item.id === 'MainGrid_excelexport') {
                             const date = new Date().toISOString().slice(0, 10);
                             mainGrid.obj.excelExport({ fileName: `SalesOrders_${date}.xlsx` });
+                        }
+
+                        if (args.item.id === 'FilterCustom') {
+                            filterHandler.toggle();
+                        }
+
+                        if (args.item.id === 'AddCustom') {
+                            state.deleteMode = false;
+                            state.mainTitle = 'New Sales Order';
+                            resetFormState();
+                            mainModal.obj.show();
                         }
 
                         if (args.item.id === 'EditCustom') {
@@ -1075,7 +1395,8 @@ const App = {
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
             },
             refresh: () => {
-                mainGrid.obj.setProperties({ dataSource: state.mainData });
+                // Preserve any active filter selection when the underlying list is reloaded.
+                mainGrid.obj.setProperties({ dataSource: getFilteredData() });
             }
         };
 
@@ -1101,14 +1422,16 @@ const App = {
                         }
                         e.updateData(state.productListLookupData, query);
                     },
-                    change: (e) => {
+                    change: async (e) => {
                         const product = state.productListLookupData.find(item => item.id === e.value);
                         if (!product) {
                             state.productHint = { name: '', physical: false, stock: null, minPrice: null, maxPrice: null };
+                            state.priceSuggestion = { loading: false, sourceName: '', costPrice: null, profit: null, profitPercent: null };
                             return;
                         }
                         state.productPick.productId = product.id;
                         state.productPick.unitPrice = product.minSellingPrice ?? product.unitPrice ?? 0;
+                        state.productPick.commission = 0;
                         state.productPick.quantity = 1;
                         state.productHint = {
                             name: product.name,
@@ -1117,6 +1440,8 @@ const App = {
                             minPrice: product.minSellingPrice ?? null,
                             maxPrice: product.maxSellingPrice ?? null
                         };
+                        // Override the fallback with the resolved policy/promotion/QB price.
+                        await methods.refreshSuggestedPrice();
                     }
                 });
                 productPickLookup.obj.appendTo(productPickRef.value);
@@ -1171,9 +1496,10 @@ const App = {
         const persistLine = async (line, changes) => {
             try {
                 const unitPrice = changes.unitPrice ?? line.unitPrice;
+                const commissionRate = changes.commissionRate ?? line.commissionRate ?? 0;
                 const quantity = changes.quantity ?? line.quantity;
                 await services.updateSecondaryData(
-                    line.id, unitPrice, quantity, line.remark, line.productId, state.id, StorageManager.getUserId());
+                    line.id, unitPrice, commissionRate, quantity, line.remark, line.productId, state.id, StorageManager.getUserId());
                 await refreshAfterCartChange();
             } catch (error) {
                 Swal.fire({ icon: 'error', title: 'Update Failed', text: error.response?.data?.message ?? 'An error occurred.' });
@@ -1191,6 +1517,7 @@ const App = {
 
                 const quantity = Number(state.productPick.quantity);
                 const unitPrice = Number(state.productPick.unitPrice);
+                const commissionRate = Number(state.productPick.commission) || 0;
 
                 if (!quantity || quantity <= 0) {
                     Swal.fire({ icon: 'warning', title: 'Enter a quantity greater than zero' });
@@ -1198,6 +1525,10 @@ const App = {
                 }
                 if (isNaN(unitPrice) || unitPrice < 0) {
                     Swal.fire({ icon: 'warning', title: 'Enter a valid unit price' });
+                    return;
+                }
+                if (commissionRate < 0 || commissionRate > unitPrice) {
+                    Swal.fire({ icon: 'warning', title: 'Commission must be between 0 and the unit price' });
                     return;
                 }
 
@@ -1222,7 +1553,7 @@ const App = {
 
                     if (!(await ensureHeaderSaved())) return;
 
-                    await services.createSecondaryData(unitPrice, quantity, null, product.id, state.id, StorageManager.getUserId());
+                    await services.createSecondaryData(unitPrice, commissionRate, quantity, null, product.id, state.id, StorageManager.getUserId());
                     await refreshAfterCartChange();
 
                     resetProductPick();
@@ -1271,6 +1602,20 @@ const App = {
                     return;
                 }
                 await persistLine(line, { unitPrice });
+            },
+            commitLineCommission: async (line, value) => {
+                const commissionRate = Number(value);
+                if (isNaN(commissionRate) || commissionRate < 0) {
+                    Swal.fire({ icon: 'warning', title: 'Enter a valid commission' });
+                    await methods.populateSecondaryData(state.id);
+                    return;
+                }
+                if (commissionRate > (line.unitPrice ?? 0)) {
+                    Swal.fire({ icon: 'warning', title: 'Commission cannot exceed the unit price' });
+                    await methods.populateSecondaryData(state.id);
+                    return;
+                }
+                await persistLine(line, { commissionRate });
             },
             removeLine: async (line) => {
                 const confirmed = await Swal.fire({
@@ -1355,6 +1700,15 @@ const App = {
                 await methods.populateMainData();
                 await mainGrid.create(state.mainData);
 
+                // Reflect the active-filter count on the toolbar Filter button (primary tint + badge).
+                watcherStops.push(Vue.watch(activeFilterCount, (count) => {
+                    const el = document.getElementById('FilterCustom');
+                    if (!el) return;
+                    el.classList.toggle('po-filter-active', count > 0);
+                    el.setAttribute('data-filter-count', count);
+                }));
+                window.addEventListener('resize', onWindowResize);
+
                 mainModal.create();
                 viewModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
@@ -1379,6 +1733,7 @@ const App = {
                     customerGroupQuickModal.create();
                     customerCategoryQuickModal.create();
                     taxQuickModal.create();
+                    createFilterControls();
                 });
             } catch (e) {
             } finally {
@@ -1387,7 +1742,11 @@ const App = {
         });
 
         Vue.onUnmounted(() => {
+            if (qtyResolveTimer) {
+                clearTimeout(qtyResolveTimer);
+            }
             watcherStops.forEach(stop => stop());
+            window.removeEventListener('resize', onWindowResize);
             mainModalRef.value?.removeEventListener('hidden.bs.modal', methods.onMainModalHidden);
             mainModalRef.value?.removeEventListener('shown.bs.modal', onMainModalShown);
             mainGrid.obj?.destroy();
@@ -1396,6 +1755,11 @@ const App = {
             taxListLookup.obj?.destroy();
             salesOrderStatusListLookup.obj?.destroy();
             productPickLookup.obj?.destroy();
+            filterStatusDropdown.obj?.destroy();
+            filterCustomerDropdown.obj?.destroy();
+            filterTaxDropdown.obj?.destroy();
+            filterFromDatePicker.obj?.destroy();
+            filterToDatePicker.obj?.destroy();
             if (paymentDateRef.value) {
                 const dpInst = paymentDateRef.value?.ej2_instances?.[0];
                 dpInst?.destroy();
@@ -1404,6 +1768,13 @@ const App = {
 
         return {
             mainGridRef,
+            filterPanelRef,
+            filterStatusRef,
+            filterCustomerRef,
+            filterTaxRef,
+            filterFromDateRef,
+            filterToDateRef,
+            activeFilterCount,
             paymentDateRef,
             mainModalRef,
             orderDateRef,
@@ -1427,6 +1798,8 @@ const App = {
             listStats,
             handler: {
                 handleSubmit: methods.handleFormSubmit,
+                toggleFilter: filterHandler.toggle,
+                clearFilters: filterHandler.clear,
                 openAddModal: () => {
                     state.deleteMode = false;
                     state.mainTitle = 'New Sales Order';
@@ -1468,11 +1841,15 @@ const App = {
                     const next = Math.max(0, (Number(state.productPick.quantity) || 0) + delta);
                     state.productPick.quantity = Number(next.toFixed(4));
                 },
+                refreshSuggestedPrice: async () => {
+                    await methods.refreshSuggestedPrice();
+                },
                 clearProductPick: resetProductPick,
                 addLineToCart: cart.addLine,
                 stepLineQty: cart.stepLineQty,
                 commitLineQty: cart.commitLineQty,
                 commitLinePrice: cart.commitLinePrice,
+                commitLineCommission: cart.commitLineCommission,
                 removeLine: cart.removeLine,
                 clearCart: cart.clearAll,
                 formatPaymentDate: (value) => {
@@ -1777,9 +2154,23 @@ const App = {
                         }
 
                         const matchedProduct = state.productListLookupData.find(p => p.id === product.id);
-                        const unitPrice = matchedProduct?.minSellingPrice ?? product.minSellingPrice
+                        let unitPrice = matchedProduct?.minSellingPrice ?? product.minSellingPrice
                             ?? matchedProduct?.unitPrice ?? product.unitPrice ?? 0;
                         const quantity = 1;
+                        // Prefer the resolved policy/promotion/QB price for this customer + qty.
+                        try {
+                            const priceResponse = await services.resolveSuggestedPrice(
+                                product.id,
+                                state.customerId,
+                                quantity,
+                                state.orderDate);
+                            const resolved = priceResponse?.data?.content?.calculatedPrice;
+                            if (resolved !== null && resolved !== undefined && Number(resolved) > 0) {
+                                unitPrice = Number(resolved);
+                            }
+                        } catch (resolveError) {
+                            // Keep the product fallback; pricing is advisory, never blocking.
+                        }
 
                         if (product.physical) {
                             const available = matchedProduct?.availableStock ?? 0;
@@ -1831,6 +2222,8 @@ const App = {
                             description: data.description ?? '',
                             customerName: data.customer?.name ?? '',
                             taxName: data.tax?.name ?? '',
+                            subTotalAmount: data.subTotalAmount ?? 0,
+                            discountAmount: data.discountAmount ?? 0,
                             beforeTaxAmount: data.beforeTaxAmount ?? 0,
                             taxAmount: data.taxAmount ?? 0,
                             afterTaxAmount: data.afterTaxAmount ?? 0,
@@ -1838,6 +2231,7 @@ const App = {
                                 id: item.id ?? '',
                                 productName: item.product?.name ?? '',
                                 unitPrice: item.unitPrice ?? 0,
+                                commissionRate: item.commissionRate ?? 0,
                                 quantity: item.quantity ?? 0,
                                 total: item.total ?? 0
                             }))

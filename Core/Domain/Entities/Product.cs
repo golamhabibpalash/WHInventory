@@ -29,4 +29,10 @@ public class Product : BaseEntity
     public string? Barcode { get; set; }
     public bool? IsWarrantyApplicable { get; set; } = false;
     public int? WarrantyDays { get; set; }
+
+    /// <summary>
+    /// Per-product on-hand quantity at or below which this product counts as low stock.
+    /// Null falls back to <c>Constants.InventoryConsts.LowStockThreshold</c>.
+    /// </summary>
+    public double? LowStockThreshold { get; set; }
 }

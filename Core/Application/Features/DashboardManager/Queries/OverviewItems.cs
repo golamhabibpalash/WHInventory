@@ -20,6 +20,20 @@ public class OverviewKpiItem
     public double TodayDueAmount { get; init; }
 
     /// <summary>
+    /// Outstanding customer receivable across all confirmed sales orders, summed per customer
+    /// with each customer's share clamped at zero. Company-wide only (Sales Orders carry no
+    /// WarehouseId), and identical to the total of the due list page.
+    /// </summary>
+    public double TotalDueAmount { get; init; }
+
+    /// <summary>
+    /// Monetary value of stock currently on hand: confirmed on-hand quantity per physical product
+    /// (negative balances clamped to zero) multiplied by its <see cref="Domain.Entities.Product.UnitPrice"/>,
+    /// summed across the catalogue. Warehouse-scoped, matching <see cref="TotalInventory"/>.
+    /// </summary>
+    public double TotalStockValue { get; init; }
+
+    /// <summary>
     /// Units still owed to customers: ordered on a confirmed Sales Order but not yet covered by a
     /// Delivery Order, per product line. A partially delivered order only contributes its remainder,
     /// not its full original quantity. Company-wide only (Sales Orders carry no WarehouseId).

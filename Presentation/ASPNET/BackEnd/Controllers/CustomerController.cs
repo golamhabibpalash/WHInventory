@@ -93,6 +93,43 @@ public class CustomerController : BaseApiController
         });
     }
 
+    [Authorize]
+    [HttpGet("GetCustomerDue")]
+    public async Task<ActionResult<ApiSuccessResult<GetCustomerDueResult>>> GetCustomerDueAsync(
+        CancellationToken cancellationToken,
+        [FromQuery] string? customerId = null,
+        [FromQuery] string? excludeSalesOrderId = null
+        )
+    {
+        var request = new GetCustomerDueRequest { CustomerId = customerId, ExcludeSalesOrderId = excludeSalesOrderId };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetCustomerDueResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetCustomerDueAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
+    [HttpGet("GetCustomerDueList")]
+    public async Task<ActionResult<ApiSuccessResult<GetCustomerDueListResult>>> GetCustomerDueListAsync(
+        CancellationToken cancellationToken,
+        [FromQuery] bool isDeleted = false
+        )
+    {
+        var request = new GetCustomerDueListRequest { IsDeleted = isDeleted };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetCustomerDueListResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetCustomerDueListAsync)}",
+            Content = response
+        });
+    }
+
 
 }
 

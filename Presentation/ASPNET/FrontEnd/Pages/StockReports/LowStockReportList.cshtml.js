@@ -2,7 +2,6 @@ const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
-            thresholdLabel: '',
             scopeLabel: 'All warehouses'
         });
 
@@ -47,7 +46,6 @@ const App = {
                 const response = await services.getMainData();
                 const rows = response?.data?.content?.data ?? [];
                 state.mainData = rows;
-                state.thresholdLabel = methods.formatQty(rows[0]?.lowStockThreshold ?? 0);
             },
             formatQty: (value) => {
                 const number = Number(value) || 0;
