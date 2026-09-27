@@ -57,6 +57,7 @@
                     ...item,
                     unitPriceFormatted: NumberFormatManager.formatToLocale(item.unitPrice ?? 0),
                     commissionFormatted: NumberFormatManager.formatToLocale(item.commissionRate ?? 0),
+                    lineDiscountFormatted: NumberFormatManager.formatToLocale((item.unitPrice ?? 0) * (item.quantity ?? 0) * (item.commissionRate ?? 0) / 100),
                     quantityFormatted: NumberFormatManager.formatToLocale(item.quantity ?? 0),
                     totalFormatted: NumberFormatManager.formatToLocale(item.total ?? 0),
                 }));

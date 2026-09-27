@@ -76,7 +76,8 @@
                                 <th>Product Number</th>
                                 <th>Product Name</th>
                                 <th>Unit Price</th>
-                                <th>Rate</th>
+                                <th>Comm %</th>
+                                <th>Discount</th>
                                 <th>Quantity</th>
                                 <th>Total</th>
                             </tr>
@@ -86,7 +87,8 @@
                                 <td>{{ item?.product?.number }}</td>
                                 <td>{{ item?.product?.name }}</td>
                                 <td>{{ item?.unitPriceFormatted }}</td>
-                                <td>{{ item?.commissionFormatted }}</td>
+                                <td>{{ item?.commissionFormatted }}%</td>
+                                <td>{{ item?.lineDiscountFormatted }}</td>
                                 <td>{{ item?.quantityFormatted }}</td>
                                 <td>{{ item?.totalFormatted }}</td>
                             </tr>

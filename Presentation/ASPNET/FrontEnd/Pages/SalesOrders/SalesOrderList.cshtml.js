@@ -135,9 +135,9 @@ const App = {
         const barcodeScanRef = Vue.ref(null);
         const viewModalRef = Vue.ref(null);
 
-        // Running net line total for the "Select Product" form (unit price less commission).
+        // Running net line total for the "Select Product" form (unit price less commission %).
         const posLineTotal = Vue.computed(() =>
-            Math.max(0, (state.productPick.unitPrice || 0) - (state.productPick.commission || 0)) * (state.productPick.quantity || 0));
+            (state.productPick.unitPrice || 0) * (1 - Math.min(100, Math.max(0, state.productPick.commission || 0)) / 100) * (state.productPick.quantity || 0));
 
         // ── List filtering (client-side over the already-fetched list; no API change) ──────────
         const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -1527,8 +1527,8 @@ const App = {
                     Swal.fire({ icon: 'warning', title: 'Enter a valid unit price' });
                     return;
                 }
-                if (commissionRate < 0 || commissionRate > unitPrice) {
-                    Swal.fire({ icon: 'warning', title: 'Commission must be between 0 and the unit price' });
+                if (commissionRate < 0 || commissionRate > 100) {
+                    Swal.fire({ icon: 'warning', title: 'Commission % must be between 0 and 100' });
                     return;
                 }
 
@@ -1605,13 +1605,8 @@ const App = {
             },
             commitLineCommission: async (line, value) => {
                 const commissionRate = Number(value);
-                if (isNaN(commissionRate) || commissionRate < 0) {
-                    Swal.fire({ icon: 'warning', title: 'Enter a valid commission' });
-                    await methods.populateSecondaryData(state.id);
-                    return;
-                }
-                if (commissionRate > (line.unitPrice ?? 0)) {
-                    Swal.fire({ icon: 'warning', title: 'Commission cannot exceed the unit price' });
+                if (isNaN(commissionRate) || commissionRate < 0 || commissionRate > 100) {
+                    Swal.fire({ icon: 'warning', title: 'Commission % must be between 0 and 100' });
                     await methods.populateSecondaryData(state.id);
                     return;
                 }
