@@ -3,33 +3,50 @@
     ViewData["Title"] = "User Activity Log";
 }
 
+@section styles {
+    <link rel="stylesheet" href="~/css/purchase-order-list.css" asp-append-version="true" />
+}
+
 <div id="app" v-cloak>
+    <div class="po-page-header">
+        <h1 class="po-page-title">User Activity Log</h1>
+        <p class="po-page-subtitle">Track user page views and actions across the application</p>
+    </div>
+
     <div class="row">
         <div class="col-12">
-            <div class="card mb-3">
-                <div class="card-header d-flex align-items-center gap-3 flex-wrap">
-                    <span class="fw-semibold"><i class="fas fa-user-clock me-2 text-info"></i>Filters</span>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="mb-0 text-nowrap">Activity Type</label>
-                        <input v-model="state.filterActivityType" type="text" class="form-control form-control-sm" style="width:160px;" placeholder="e.g. PageView" />
+            <div class="grid-container po-grid-wrap">
+                <!-- Filter panel — toggled by the Filter button in the grid toolbar. Live filtering:
+                     each control change re-filters the list instantly (no Apply button needed). -->
+                <div ref="filterPanelRef" class="po-filter-panel" v-show="state.filterOpen" role="region" aria-label="User activity log filters">
+                    <div class="po-filter-panel__header">
+                        <span class="po-filter-panel__title">
+                            <i class="fas fa-filter"></i>Filters
+                            <span class="po-filter-panel__count" v-if="activeFilterCount">{{ activeFilterCount }}</span>
+                        </span>
+                        <div class="po-filter-panel__header-actions">
+                            <button type="button" class="btn btn-sm btn-link po-filter-clear" v-on:click="handler.clearFilters" v-bind:disabled="!activeFilterCount">
+                                <i class="fas fa-times-circle"></i><span>Clear all</span>
+                            </button>
+                            <button type="button" class="btn-close po-filter-close" aria-label="Close filters" v-on:click="handler.toggleFilter"></button>
+                        </div>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="mb-0 text-nowrap">From</label>
-                        <input ref="filterFromDateRef" style="width:145px;" />
+                    <div class="po-filter-panel__body">
+                        <div class="po-filter-field">
+                            <label class="po-filter-label">Activity Type</label>
+                            <div ref="filterActivityTypeRef"></div>
+                        </div>
+                        <div class="po-filter-field">
+                            <label class="po-filter-label">From</label>
+                            <div ref="filterFromDateRef"></div>
+                        </div>
+                        <div class="po-filter-field">
+                            <label class="po-filter-label">To</label>
+                            <div ref="filterToDateRef"></div>
+                        </div>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="mb-0 text-nowrap">To</label>
-                        <input ref="filterToDateRef" style="width:145px;" />
-                    </div>
-                    <button type="button" class="btn btn-sm btn-primary" v-on:click="handler.applyFilter">
-                        <i class="fas fa-search me-2"></i>Search
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" v-on:click="handler.clearFilter">
-                        <i class="fas fa-times me-2"></i>Clear
-                    </button>
                 </div>
-            </div>
-            <div class="grid-container">
+
                 <div ref="mainGridRef" id="MainGrid"></div>
             </div>
         </div>
@@ -37,5 +54,5 @@
 </div>
 
 @section scripts {
-    <script src="~/FrontEnd/Pages/UserActivityLogs/UserActivityLogList.cshtml.js"></script>
+    <script src="~/FrontEnd/Pages/UserActivityLogs/UserActivityLogList.cshtml.js" asp-append-version="true"></script>
 }
