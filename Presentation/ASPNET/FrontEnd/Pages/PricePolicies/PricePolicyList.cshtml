@@ -16,58 +16,51 @@
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" v-text="state.mainTitle"></h5>
+                    <h5 class="modal-title">
+                        <i class="fas me-2" v-bind:class="state.deleteMode ? 'fa-trash text-danger' : 'fa-tags text-primary'"></i>
+                        <span v-text="state.mainTitle"></span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" v-model="state.id" id="Id" name="Id" />
                     <form id="MainForm">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5><i class="fas fa-tags me-2 text-primary"></i>Policy Info</h5>
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-tags me-2 text-primary"></i>Policy Info</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label for="Name" class="form-label">Name <span class="text-danger">*</span></label>
+                                        <input ref="nameRef" v-model="state.name" />
+                                        <div class="text-danger small mt-1" v-text="state.errors.name"></div>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="row mb-2">
-                                            <div class="col-md-8">
-                                                <label for="Name">Name <span class="text-danger">*</span></label>
-                                                <input ref="nameRef" v-model="state.name" />
-                                                <label class="text-danger" v-text="state.errors.name"></label>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label for="Code">Code</label>
-                                                <input ref="codeRef" v-model="state.code" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2">
-                                            <div class="col-md-4">
-                                                <label for="Priority">Priority</label>
-                                                <input ref="priorityRef" v-model="state.priority" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label for="EffectiveFrom">Effective From</label>
-                                                <input ref="effectiveFromRef" v-model="state.effectiveFrom" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label for="EffectiveTo">Effective To</label>
-                                                <input ref="effectiveToRef" v-model="state.effectiveTo" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2">
-                                            <div class="col-md-3 d-flex align-items-center mt-3">
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" role="switch" id="IsActive"
-                                                           v-model="state.isActive" />
-                                                    <label class="form-check-label" for="IsActive">Active</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2">
-                                            <div class="col-12">
-                                                <label for="Description">Description</label>
-                                                <textarea class="form-control" rows="2" v-model="state.description"></textarea>
-                                            </div>
+                                    <div class="col-md-4">
+                                        <label for="Code" class="form-label">Code</label>
+                                        <input ref="codeRef" v-model="state.code" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="Priority" class="form-label">Priority</label>
+                                        <input ref="priorityRef" v-model="state.priority" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="EffectiveFrom" class="form-label">Effective From</label>
+                                        <input ref="effectiveFromRef" v-model="state.effectiveFrom" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="EffectiveTo" class="form-label">Effective To</label>
+                                        <input ref="effectiveToRef" v-model="state.effectiveTo" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="Description" class="form-label">Description</label>
+                                        <textarea id="Description" class="form-control" rows="2" v-model="state.description" placeholder="Optional description for this policy"></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="IsActive"
+                                                   v-model="state.isActive" />
+                                            <label class="form-check-label" for="IsActive">Active</label>
                                         </div>
                                     </div>
                                 </div>
