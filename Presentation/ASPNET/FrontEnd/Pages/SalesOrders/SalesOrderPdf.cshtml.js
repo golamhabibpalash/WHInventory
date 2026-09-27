@@ -27,6 +27,8 @@
             orderDate: '',
             orderCurrency: '',
             subTotal: '',
+            discount: '',
+            hasDiscount: false,
             tax: '',
             totalAmount: '',
             amountInWords: '',
@@ -54,6 +56,7 @@
                 state.items = (pdfData.salesOrderItemList || []).map(item => ({
                     ...item,
                     unitPriceFormatted: NumberFormatManager.formatToLocale(item.unitPrice ?? 0),
+                    commissionFormatted: NumberFormatManager.formatToLocale(item.commissionRate ?? 0),
                     quantityFormatted: NumberFormatManager.formatToLocale(item.quantity ?? 0),
                     totalFormatted: NumberFormatManager.formatToLocale(item.total ?? 0),
                 }));
@@ -61,7 +64,9 @@
                 state.orderNumber = pdfData.number || '';
                 state.orderDate = DateFormatManager.formatToLocale(pdfData.orderDate) || '';
                 state.orderCurrency = StorageManager.getCompany()?.currency || '';
-                state.subTotal = NumberFormatManager.formatToLocale(pdfData.beforeTaxAmount) || '';
+                state.subTotal = NumberFormatManager.formatToLocale(pdfData.subTotalAmount) || '';
+                state.discount = NumberFormatManager.formatToLocale(pdfData.discountAmount) || '';
+                state.hasDiscount = (pdfData.discountAmount ?? 0) > 0;
                 state.tax = NumberFormatManager.formatToLocale(pdfData.taxAmount) || '';
                 state.totalAmount = NumberFormatManager.formatToLocale(pdfData.afterTaxAmount) || '';
                 state.amountInWords = AmountInWordsManager.convert(pdfData.afterTaxAmount || 0);

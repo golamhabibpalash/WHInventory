@@ -76,6 +76,8 @@
                                 <th>Product Number</th>
                                 <th>Product Name</th>
                                 <th>Unit Price</th>
+                                <th>Comm %</th>
+                                <th>Discount</th>
                                 <th>Quantity</th>
                                 <th>Total</th>
                             </tr>
@@ -85,6 +87,8 @@
                                 <td>{{ item?.product?.number }}</td>
                                 <td>{{ item?.product?.name }}</td>
                                 <td>{{ item?.unitPriceFormatted }}</td>
+                                <td>{{ item?.commissionFormatted }}%</td>
+                                <td>{{ item?.lineDiscountFormatted }}</td>
                                 <td>{{ item?.quantityFormatted }}</td>
                                 <td>{{ item?.totalFormatted }}</td>
                             </tr>
@@ -98,6 +102,10 @@
                                 <tr>
                                     <td style="font-weight: bold;">Subtotal:</td>
                                     <td style="text-align: right;">{{ state.subTotal }}</td>
+                                </tr>
+                                <tr v-if="state.hasDiscount">
+                                    <td style="font-weight: bold;">Discount (commission):</td>
+                                    <td style="text-align: right;">&minus;{{ state.discount }}</td>
                                 </tr>
                                 <tr>
                                     <td style="font-weight: bold;">Tax:</td>
