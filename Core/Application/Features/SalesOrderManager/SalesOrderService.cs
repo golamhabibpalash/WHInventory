@@ -132,7 +132,7 @@ public class SalesOrderService
             .ToListAsync();
 
         salesOrder.SubTotalAmount = salesOrderItems.Sum(x => (x.UnitPrice ?? 0) * (x.Quantity ?? 0)).ToMoney();
-        salesOrder.DiscountAmount = salesOrderItems.Sum(x => (x.CommissionRate ?? 0) * (x.Quantity ?? 0)).ToMoney();
+        salesOrder.DiscountAmount = salesOrderItems.Sum(x => (x.UnitPrice ?? 0) * (x.Quantity ?? 0) * (x.CommissionRate ?? 0) / 100.0).ToMoney();
         salesOrder.BeforeTaxAmount = ((salesOrder.SubTotalAmount ?? 0) - (salesOrder.DiscountAmount ?? 0)).ToMoney();
 
         var taxPercentage = salesOrder.Tax?.Percentage ?? 0;

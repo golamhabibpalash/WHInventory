@@ -37,11 +37,8 @@ public class UpdateSalesOrderItemValidator : AbstractValidator<UpdateSalesOrderI
         RuleFor(x => x.UnitPrice).NotEmpty();
         RuleFor(x => x.Quantity).NotEmpty();
         RuleFor(x => x.CommissionRate)
-            .GreaterThanOrEqualTo(0).When(x => x.CommissionRate.HasValue)
-            .WithMessage("Commission rate cannot be negative.");
-        RuleFor(x => x.CommissionRate)
-            .LessThanOrEqualTo(x => x.UnitPrice ?? 0).When(x => x.CommissionRate.HasValue)
-            .WithMessage("Commission rate cannot exceed the unit price.");
+            .InclusiveBetween(0, 100).When(x => x.CommissionRate.HasValue)
+            .WithMessage("Commission rate must be between 0 and 100 percent.");
     }
 }
 
@@ -90,7 +87,7 @@ public class UpdateSalesOrderItemHandler : IRequestHandler<UpdateSalesOrderItemR
         entity.CommissionRate = request.CommissionRate ?? 0;
         entity.Quantity = request.Quantity;
 
-        entity.Total = (((entity.UnitPrice ?? 0) - (entity.CommissionRate ?? 0)) * (entity.Quantity ?? 0)).ToMoney();
+        entity.Total = ((entity.UnitPrice ?? 0) * (1 - (entity.CommissionRate ?? 0) / 100.0) * (entity.Quantity ?? 0)).ToMoney();
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);
