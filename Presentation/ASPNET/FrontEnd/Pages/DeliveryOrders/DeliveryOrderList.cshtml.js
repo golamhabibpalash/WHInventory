@@ -120,7 +120,7 @@ const App = {
                         dataSource: state.salesOrderListLookupData,
                         fields: { value: 'id', text: 'displayName' },
                         placeholder: 'Select Sales Order',
-                        filterBarPlaceholder: 'Search by order no. or phone',
+                        filterBarPlaceholder: 'Search by order no., phone or date',
                         sortOrder: 'Ascending',
                         allowFiltering: true,
                         filtering: (e) => {
@@ -132,7 +132,8 @@ const App = {
                             }
                             const filtered = state.salesOrderListLookupData.filter(so =>
                                 (so.number || '').toLowerCase().includes(term) ||
-                                (so.customerPhoneNumber || '').toLowerCase().includes(term)
+                                (so.customerPhoneNumber || '').toLowerCase().includes(term) ||
+                                (so.orderDateText || '').toLowerCase().includes(term)
                             );
                             e.updateData(filtered);
                         },
@@ -315,12 +316,17 @@ const App = {
             populateSalesOrderListLookupData: async () => {
                 const response = await services.getSalesOrderListLookupData();
                 const data = response?.data?.content?.data ?? [];
-                // Show "Order Number - Customer Phone" so an order is easy to find by phone number.
-                // Raw number/customerPhoneNumber stay on each item so the search matches both.
-                state.salesOrderListLookupData = data.map(so => ({
-                    ...so,
-                    displayName: so.customerPhoneNumber ? `${so.number} - ${so.customerPhoneNumber}` : so.number
-                }));
+                // Show "Order Number - Customer Phone - Sales Date" so an order is easy to find
+                // by phone number alone or by date when the phone is shared by several orders.
+                // Raw number/customerPhoneNumber/orderDateText stay on each item so the search matches all.
+                state.salesOrderListLookupData = data.map(so => {
+                    const orderDateText = so.orderDate ? DateFormatManager.formatToLocale(so.orderDate) : '';
+                    return {
+                        ...so,
+                        orderDateText,
+                        displayName: [so.number, so.customerPhoneNumber, orderDateText].filter(Boolean).join(' - ')
+                    };
+                });
             },
             populateDeliveryOrderStatusListLookupData: async () => {
                 const response = await services.getDeliveryOrderStatusListLookupData();
