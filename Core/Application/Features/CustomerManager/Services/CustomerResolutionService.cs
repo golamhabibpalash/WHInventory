@@ -2,6 +2,7 @@ using Application.Common.Repositories;
 using Application.Common.Tenancy;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.CustomerManager.Services;
@@ -111,6 +112,6 @@ public class CustomerResolutionService
             .AnyAsync(x => x.Id == customerId, cancellationToken);
 
         if (!exists)
-            throw new Exception("The selected customer was not found. Re-enter the customer's mobile number.");
+            throw new ValidationException("The selected customer was not found. Re-enter the customer's mobile number.");
     }
 }

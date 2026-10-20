@@ -109,7 +109,7 @@
                     </div>
 
                     <div class="row g-3">
-                        <!-- LEFT: customer, product entry, cart (DOM order = tab order) -->
+                        <!-- LEFT: customer, product entry, cart, order details (DOM order = tab order) -->
                         <div class="col-lg-8" v-show="!state.deleteMode">
                             <section class="card pos-section pos-customer" aria-labelledby="CustomerSectionTitle">
                                 <div class="card-body">
@@ -318,7 +318,7 @@
                                 </div>
                             </section>
 
-                            <section class="card pos-section pos-card mb-0" aria-labelledby="CartSectionTitle">
+                            <section class="card pos-section pos-card pos-cart-card mb-0" aria-labelledby="CartSectionTitle">
                                 <div class="card-header">
                                     <h6 class="pos-section-title" id="CartSectionTitle"><i class="fas fa-shopping-cart"></i>Cart <span class="pos-count">{{ state.secondaryData.length }}</span></h6>
                                     <span class="pos-flash" role="status" aria-live="polite">
@@ -399,12 +399,53 @@
                                     </div>
                                 </div>
                             </section>
+
+                            <!-- Order details (always rendered so the Syncfusion inputs keep their host nodes) -->
+                            <form id="MainForm" class="card pos-section mb-0 mt-3" v-on:submit.prevent aria-labelledby="DetailsSectionTitle">
+                                <div class="card-header">
+                                    <h6 class="pos-section-title" id="DetailsSectionTitle"><i class="fas fa-file-alt"></i>Order Details</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="pos-details pos-details--row">
+                                        <div>
+                                            <label for="OrderDate" class="pos-field-label">Order Date<span class="pos-req">*</span></label>
+                                            <input ref="orderDateRef" id="OrderDate" />
+                                            <div class="pos-field-error" v-if="state.errors.orderDate" role="alert">{{ state.errors.orderDate }}</div>
+                                        </div>
+                                        <div>
+                                            <label for="OrderStatus" class="pos-field-label">Status<span class="pos-req">*</span></label>
+                                            <div ref="orderStatusRef" id="OrderStatus"></div>
+                                            <div class="pos-field-error" v-if="state.errors.orderStatus" role="alert">{{ state.errors.orderStatus }}</div>
+                                        </div>
+                                        <div>
+                                            <label for="TaxId" class="pos-field-label">Tax<span class="pos-req">*</span></label>
+                                            <div class="pos-field-with-action">
+                                                <div ref="taxIdRef" id="TaxId"></div>
+                                                <button type="button"
+                                                        class="btn btn-outline-primary pos-icon-btn"
+                                                        tabindex="-1"
+                                                        v-on:click="handler.openTaxQuickCreate"
+                                                        v-bind:disabled="state.deleteMode"
+                                                        title="Quick-create a new tax"
+                                                        aria-label="Quick-create a new tax">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                            <div class="pos-field-error" v-if="state.errors.taxId" role="alert">{{ state.errors.taxId }}</div>
+                                        </div>
+                                        <div>
+                                            <label for="Description" class="pos-field-label">Note</label>
+                                            <textarea id="Description" class="form-control" rows="1" v-model="state.description" placeholder="Optional note for this order"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
 
-                        <!-- RIGHT: totals, payments, then order details (prefilled, so last in the tab order) -->
-                        <div v-bind:class="state.deleteMode ? 'col-12' : 'col-lg-4'">
+                        <!-- RIGHT: totals and payments -->
+                        <div class="col-lg-4" v-show="!state.deleteMode">
                             <div class="pos-side">
-                                <section class="card pos-section" v-show="!state.deleteMode" aria-labelledby="SummarySectionTitle">
+                                <section class="card pos-section" aria-labelledby="SummarySectionTitle">
                                     <div class="card-body">
                                         <h6 class="sr-only" id="SummarySectionTitle">Summary</h6>
                                         <div class="pos-total-block mt-0">
@@ -436,7 +477,7 @@
                                     </div>
                                 </section>
 
-                                <section class="card pos-section" v-show="!state.deleteMode" aria-labelledby="PaymentSectionTitle">
+                                <section class="card pos-section mb-0" aria-labelledby="PaymentSectionTitle">
                                     <div class="card-header">
                                         <h6 class="pos-section-title" id="PaymentSectionTitle"><i class="fas fa-hand-holding-usd"></i>Payments <span class="pos-count" v-if="state.paymentList.length">{{ state.paymentList.length }}</span></h6>
                                     </div>
@@ -472,7 +513,7 @@
                                                     <input ref="paymentAmountRef" id="PaymentAmount" type="number" step="0.01" min="0" class="form-control text-end"
                                                            v-model.number="state.newPayment.amount"
                                                            v-bind:placeholder="handler.formatAmount(state.paymentSummary ? state.paymentSummary.amountOutstanding : 0)"
-                                                           v-on:keydown.enter.exact.prevent="handler.submitPayment">
+                                                           v-on:keydown.enter.exact.prevent="handler.paymentAmountEnter">
                                                 </div>
                                                 <div>
                                                     <label for="PaymentMethod" class="pos-field-label">Method</label>
@@ -511,46 +552,6 @@
                                     </div>
                                 </section>
 
-                                <!-- Order details (always rendered so the Syncfusion inputs keep their host nodes) -->
-                                <form id="MainForm" class="card pos-section mb-0" v-on:submit.prevent aria-labelledby="DetailsSectionTitle">
-                                    <div class="card-header">
-                                        <h6 class="pos-section-title" id="DetailsSectionTitle"><i class="fas fa-file-alt"></i>Order Details</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="pos-details">
-                                            <div>
-                                                <label for="OrderDate" class="pos-field-label">Order Date<span class="pos-req">*</span></label>
-                                                <input ref="orderDateRef" id="OrderDate" />
-                                                <div class="pos-field-error" v-if="state.errors.orderDate" role="alert">{{ state.errors.orderDate }}</div>
-                                            </div>
-                                            <div>
-                                                <label for="OrderStatus" class="pos-field-label">Status<span class="pos-req">*</span></label>
-                                                <div ref="orderStatusRef" id="OrderStatus"></div>
-                                                <div class="pos-field-error" v-if="state.errors.orderStatus" role="alert">{{ state.errors.orderStatus }}</div>
-                                            </div>
-                                            <div class="pos-span-all">
-                                                <label for="TaxId" class="pos-field-label">Tax<span class="pos-req">*</span></label>
-                                                <div class="pos-field-with-action">
-                                                    <div ref="taxIdRef" id="TaxId"></div>
-                                                    <button type="button"
-                                                            class="btn btn-outline-primary pos-icon-btn"
-                                                            tabindex="-1"
-                                                            v-on:click="handler.openTaxQuickCreate"
-                                                            v-bind:disabled="state.deleteMode"
-                                                            title="Quick-create a new tax"
-                                                            aria-label="Quick-create a new tax">
-                                                        <i class="fas fa-plus"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="pos-field-error" v-if="state.errors.taxId" role="alert">{{ state.errors.taxId }}</div>
-                                            </div>
-                                            <div class="pos-span-all">
-                                                <label for="Description" class="pos-field-label">Note</label>
-                                                <textarea id="Description" class="form-control" rows="1" v-model="state.description" placeholder="Optional note for this order"></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
                             </div>
                         </div>
                     </div>

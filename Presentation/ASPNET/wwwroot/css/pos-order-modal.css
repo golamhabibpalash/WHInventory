@@ -776,6 +776,13 @@
 
 .pos-flash { margin-left: auto; font-size: .8125rem; font-weight: 500; color: #28a745; }
 
+/* The cart table scrolls inside .table-responsive; clip the card so it never widens the modal on phones */
+.pos-cart-card { min-width: 0; overflow: hidden; }
+
+/* Order details is the last, prefilled step: quieter and tighter than the entry cards */
+#MainForm.pos-section > .card-header { min-height: 2.5rem; padding: .5rem 1rem; }
+#MainForm.pos-section > .card-body { padding: .75rem 1rem; }
+
 /* Cart: fixed column widths (no inline styles) and its own scroll on desktop so totals stay put */
 .pos-cart .pos-col-qty { width: 128px; }
 .pos-cart .pos-col-price { width: 108px; }
@@ -797,10 +804,12 @@
 
 .pos-details .pos-span-all { grid-column: 1 / -1; }
 
-@media (max-width: 991.98px) {
-    .pos-details { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .pos-details .pos-span-all { grid-column: span 2; }
+/* Under the cart: date | status | tax | note on one row */
+@media (min-width: 768px) {
+    .pos-details--row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1.5fr); }
 }
+
+.pos-details--row textarea.form-control { height: calc(1.5em + .75rem + 2px); }
 
 @media (max-width: 575.98px) {
     .pos-customer-grid,

@@ -1735,7 +1735,9 @@ const App = {
                 try {
                     const header = await ensureHeaderSaved();
                     if (!header.ok) {
-                        if (header.message) state.pickError = header.message;
+                        // Say why nothing was added; focus already moved to the field to fix.
+                        state.pickError = header.message
+                            ?? (state.errors.customerId ? 'Enter the customer\'s mobile number first.' : 'Complete the order details (status, tax, date) first.');
                         return false;
                     }
 
@@ -1906,6 +1908,9 @@ const App = {
             else focusEl(productSearchRef);
         };
 
+        // The returned handler object, so handlers can call each other.
+        let handlerRef = null;
+
         const openAddModal = () => {
             state.deleteMode = false;
             state.mainTitle = 'New Sales Order';
@@ -2026,7 +2031,7 @@ const App = {
             state,
             methods,
             listStats,
-            handler: {
+            handler: handlerRef = {
                 handleSubmit: methods.handleFormSubmit,
                 toggleFilter: filterHandler.toggle,
                 clearFilters: filterHandler.clear,
@@ -2099,6 +2104,20 @@ const App = {
                     state.paymentError = '';
                     const outstanding = state.paymentSummary?.amountOutstanding ?? 0;
                     state.newPayment.amount = outstanding > 0 ? Number(outstanding.toFixed(2)) : null;
+                },
+                // Enter in Amount: an empty field first takes the balance due (nothing is recorded),
+                // so a stray double Enter can't post a payment; Enter again records it.
+                paymentAmountEnter: () => {
+                    if (state.newPayment.amount === null || state.newPayment.amount === '') {
+                        const outstanding = state.paymentSummary?.amountOutstanding ?? 0;
+                        if (outstanding > 0) {
+                            state.paymentError = '';
+                            state.newPayment.amount = Number(outstanding.toFixed(2));
+                            focusEl(paymentAmountRef, true);
+                            return;
+                        }
+                    }
+                    handlerRef.submitPayment();
                 },
                 submitPayment: async () => {
                     state.paymentError = '';
