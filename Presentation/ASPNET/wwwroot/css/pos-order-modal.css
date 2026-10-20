@@ -457,6 +457,8 @@
 }
 
 .pos-hint.is-danger { background: rgba(220, 53, 69, .08); color: #dc3545; }
+.pos-hint-strong { font-weight: 600; color: #28a745; background: rgba(40, 167, 69, .1); }
+.pos-hint-detail { font-weight: 400; opacity: .85; }
 
 .pos-divider-label {
     display: flex;

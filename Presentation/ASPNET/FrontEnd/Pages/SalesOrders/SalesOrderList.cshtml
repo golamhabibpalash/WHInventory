@@ -297,9 +297,27 @@
                                     <div class="pos-field-error mt-2" v-if="state.pickError" role="alert">{{ state.pickError }}</div>
 
                                     <div class="pos-hints" v-if="state.productHint.name">
-                                        <span v-if="state.productHint.physical" class="pos-hint" v-bind:class="{ 'is-danger': posStockExceeded }">
-                                            <i class="fas fa-warehouse"></i>In stock: {{ handler.formatQty(state.productHint.stock) }}
-                                        </span>
+                                        <template v-if="state.productHint.physical">
+                                            <span class="pos-hint" title="Confirmed stock across your warehouses">
+                                                <i class="fas fa-warehouse"></i>In stock: {{ handler.formatQty(state.productHint.stock) }}
+                                            </span>
+                                            <span class="pos-hint" v-if="state.productHint.availabilityLoading && state.productHint.available === null">
+                                                <i class="fas fa-spinner fa-spin"></i>Checking pending deliveries...
+                                            </span>
+                                            <span class="pos-hint" v-if="state.productHint.available !== null"
+                                                  v-bind:title="'On other open sales orders not yet delivered — Draft: ' + handler.formatQty(state.productHint.pendingDraft) + ', Confirmed: ' + handler.formatQty(state.productHint.pendingConfirmed)">
+                                                <i class="fas fa-truck"></i>Pending delivery: {{ handler.formatQty((state.productHint.pendingDraft || 0) + (state.productHint.pendingConfirmed || 0)) }}
+                                                <span class="pos-hint-detail" v-if="state.productHint.pendingDraft || state.productHint.pendingConfirmed">(Draft {{ handler.formatQty(state.productHint.pendingDraft) }} &middot; Confirmed {{ handler.formatQty(state.productHint.pendingConfirmed) }})</span>
+                                            </span>
+                                            <span class="pos-hint" v-if="posInCart > 0">
+                                                <i class="fas fa-shopping-cart"></i>In this cart: {{ handler.formatQty(posInCart) }}
+                                            </span>
+                                            <span class="pos-hint pos-hint-strong" v-if="posAvailable !== null"
+                                                  v-bind:class="{ 'is-danger': posStockExceeded || posAvailable <= 0 }"
+                                                  title="What you can still sell: in stock − pending delivery − this cart">
+                                                <i class="fas" v-bind:class="posStockExceeded || posAvailable <= 0 ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>Available: {{ handler.formatQty(Math.max(0, posAvailable)) }}
+                                            </span>
+                                        </template>
                                         <span v-else class="pos-hint"><i class="fas fa-infinity"></i>Non-stock item</span>
                                         <span class="pos-hint" v-if="state.productHint.minPrice !== null || state.productHint.maxPrice !== null"
                                               v-bind:class="{ 'is-danger': posPriceOutOfBand }">

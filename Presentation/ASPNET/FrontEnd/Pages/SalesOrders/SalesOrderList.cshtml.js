@@ -62,9 +62,14 @@ const App = {
                 priceEdited: false
             },
             productHint: {
+                productId: null,
                 name: '',
                 physical: false,
                 stock: null,
+                pendingDraft: null,
+                pendingConfirmed: null,
+                available: null,
+                availabilityLoading: false,
                 minPrice: null,
                 maxPrice: null
             },
@@ -291,12 +296,31 @@ const App = {
             }
         };
 
-        // Warns when the picked quantity is above what the warehouse can supply. The server is the
-        // authority; this only nudges the cashier before they hit "Add to Cart".
-        const posStockExceeded = Vue.computed(() =>
-            state.productHint.physical
-            && state.productHint.stock !== null
-            && (state.productPick.quantity || 0) > state.productHint.stock);
+        const emptyProductHint = {
+            productId: null, name: '', physical: false, stock: null,
+            pendingDraft: null, pendingConfirmed: null, available: null, availabilityLoading: false,
+            minPrice: null, maxPrice: null
+        };
+
+        // Quantity of the picked product already on this order's cart lines.
+        const posInCart = Vue.computed(() =>
+            state.productHint.productId ? quantityInCart(state.productHint.productId) : 0);
+
+        // What this order can still take: on hand − pending delivery on other open orders − this cart.
+        // Null until the server figures arrive (or for non-stock items).
+        const posAvailable = Vue.computed(() =>
+            state.productHint.physical && state.productHint.available !== null
+                ? state.productHint.available - posInCart.value
+                : null);
+
+        // Warns when the picked quantity is above what can be promised. The server is the
+        // authority; this only nudges the cashier before they hit "Add".
+        const posStockExceeded = Vue.computed(() => {
+            if (!state.productHint.physical) return false;
+            const qty = state.productPick.quantity || 0;
+            if (posAvailable.value !== null) return qty > posAvailable.value;
+            return state.productHint.stock !== null && qty + posInCart.value > state.productHint.stock;
+        });
 
         // Warns when the unit price falls outside the product's allowed selling band
         // (see ValidateSellingPriceAsync on the server, which enforces it on save).
@@ -341,7 +365,7 @@ const App = {
             // Invalidate any in-flight price lookup so it can't write into the next pick.
             state.priceResolveSeq++;
             state.productPick = { productId: null, unitPrice: 0, commission: 0, quantity: 1, priceEdited: false };
-            state.productHint = { name: '', physical: false, stock: null, minPrice: null, maxPrice: null };
+            state.productHint = { ...emptyProductHint };
             state.priceSuggestion = { loading: false, sourceName: '', costPrice: null, profit: null, profitPercent: null };
             state.productSearch.term = '';
             state.productSearch.open = false;
@@ -652,8 +676,22 @@ const App = {
             const savedStatus = statuses.find(x => String(x.id) === String(saved.orderStatus));
             const draft = statuses.find(x => String(x.name).toLowerCase() === 'draft');
             state.orderStatus = savedStatus ? String(savedStatus.id) : (draft ? String(draft.id) : null);
+            // Tax: last used on this device → tax of the most recent sales order → the only tax.
             const savedTax = taxes.find(x => x.id === saved.taxId);
-            state.taxId = savedTax ? savedTax.id : (taxes.length === 1 ? taxes[0].id : null);
+            const latestOrder = [...(state.mainData ?? [])].sort((a, b) => (b.createdAtUtc ?? 0) - (a.createdAtUtc ?? 0))[0];
+            const recentTax = latestOrder && taxes.find(x => x.id === latestOrder.taxId);
+            state.taxId = savedTax?.id ?? recentTax?.id ?? (taxes.length === 1 ? taxes[0].id : null);
+        };
+
+        // Names exactly which order detail is missing, for the message under the product entry.
+        const missingDetailsMessage = () => {
+            const missing = [];
+            if (state.errors.orderDate) missing.push('order date');
+            if (state.errors.orderStatus) missing.push('status');
+            if (state.errors.taxId) missing.push('tax');
+            return missing.length
+                ? `Select the ${missing.join(', ')} in Order Details (below the cart) first.`
+                : 'Complete the order details first.';
         };
 
         const paymentDatePicker = {
@@ -929,6 +967,19 @@ const App = {
             getInventoryStockList: async () => {
                 try {
                     const response = await AxiosManager.get('/InventoryTransaction/GetInventoryStockList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getProductAvailability: async (productId, excludeSalesOrderId) => {
+                try {
+                    // AxiosManager.get ignores config.params, so the query is built into the URL.
+                    let url = `/SalesOrder/GetProductAvailability?productId=${encodeURIComponent(productId)}`;
+                    if (excludeSalesOrderId) {
+                        url += `&excludeSalesOrderId=${encodeURIComponent(excludeSalesOrderId)}`;
+                    }
+                    const response = await AxiosManager.get(url, {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -1620,11 +1671,44 @@ const App = {
         // Client-side stock nudge; the server's available-to-promise check is the authority.
         const stockShortfall = (product, quantity, exceptLineId) => {
             if (!product.physical) return '';
-            const available = product.availableStock ?? 0;
             const inCart = quantityInCart(product.id, exceptLineId);
-            if (quantity + inCart <= available) return '';
-            return `Only ${formatQty(available)} of ${product.name} in stock` +
+            const hint = state.productHint;
+            // Prefer available-to-promise (stock less pending deliveries) when it is loaded for this product.
+            if (hint.productId === product.id && hint.available !== null) {
+                const available = hint.available - inCart;
+                if (quantity <= available) return '';
+                const pending = (hint.pendingDraft || 0) + (hint.pendingConfirmed || 0);
+                return `Only ${formatQty(Math.max(0, available))} of ${product.name} available ` +
+                    `(${formatQty(hint.stock)} in stock, ${formatQty(pending)} pending delivery` +
+                    (inCart ? `, ${formatQty(inCart)} already in the cart).` : ').');
+            }
+            const onHand = product.availableStock ?? 0;
+            if (quantity + inCart <= onHand) return '';
+            return `Only ${formatQty(onHand)} of ${product.name} in stock` +
                 (inCart ? ` (${formatQty(inCart)} already in the cart).` : '.');
+        };
+
+        // On hand / pending delivery / available for the picked product, from the same calculation
+        // the server uses when the line is saved. Lines of this order are excluded (they show as "in cart").
+        let availabilitySeq = 0;
+        const loadAvailability = async (productId) => {
+            const seq = ++availabilitySeq;
+            state.productHint.availabilityLoading = true;
+            try {
+                const response = await services.getProductAvailability(productId, state.id || null);
+                if (seq !== availabilitySeq || state.productHint.productId !== productId) return;
+                const data = response?.data?.content?.data;
+                if (data && data.physical) {
+                    state.productHint.stock = data.onHand ?? 0;
+                    state.productHint.pendingDraft = data.committedDraft ?? 0;
+                    state.productHint.pendingConfirmed = data.committedConfirmed ?? 0;
+                    state.productHint.available = data.availableToPromise ?? 0;
+                }
+            } catch (error) {
+                // Keep the list's stock figure; the server still checks on save.
+            } finally {
+                if (seq === availabilitySeq) state.productHint.availabilityLoading = false;
+            }
         };
 
         const productField = {
@@ -1691,12 +1775,15 @@ const App = {
                     priceEdited: false
                 };
                 state.productHint = {
+                    ...emptyProductHint,
+                    productId: product.id,
                     name: product.name,
                     physical: product.physical ?? false,
                     stock: product.physical ? (product.availableStock ?? 0) : null,
                     minPrice: product.minSellingPrice ?? null,
                     maxPrice: product.maxSellingPrice ?? null
                 };
+                if (product.physical) loadAvailability(product.id);
                 state.productSearch.term = product.name ?? '';
                 state.productSearch.open = false;
                 state.pickError = '';
@@ -1737,7 +1824,7 @@ const App = {
                     if (!header.ok) {
                         // Say why nothing was added; focus already moved to the field to fix.
                         state.pickError = header.message
-                            ?? (state.errors.customerId ? 'Enter the customer\'s mobile number first.' : 'Complete the order details (status, tax, date) first.');
+                            ?? (state.errors.customerId ? 'Enter the customer\'s mobile number first.' : missingDetailsMessage());
                         return false;
                     }
 
@@ -1966,6 +2053,15 @@ const App = {
                     methods.populateProductListLookupData(),
                     methods.populatePaymentMethodListLookupData(),
                 ]).then(() => {
+                    // A new order opened before the lookups arrived still gets its defaults.
+                    if (!state.id && !state.deleteMode) {
+                        if (!state.orderStatus || !state.taxId) {
+                            const keepStatus = state.orderStatus, keepTax = state.taxId;
+                            applyOrderDefaults();
+                            state.orderStatus = keepStatus || state.orderStatus;
+                            state.taxId = keepTax || state.taxId;
+                        }
+                    }
                     taxListLookup.create();
                     salesOrderStatusListLookup.create();
                     taxQuickModal.create();
@@ -2026,6 +2122,8 @@ const App = {
             posLineTotal,
             posStockExceeded,
             posPriceOutOfBand,
+            posInCart,
+            posAvailable,
             taxQuickModalRef,
             viewModalRef,
             state,
