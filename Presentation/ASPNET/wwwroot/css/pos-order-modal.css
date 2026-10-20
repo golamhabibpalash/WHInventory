@@ -635,3 +635,176 @@
     .pos-footer-actions { width: 100%; }
     .pos-footer-actions .btn { flex: 1; }
 }
+
+/* ───────────────────────── Keyboard-first sales entry (opt-in, Sales Order) ─────────────────────────
+ * Customer-by-mobile combobox, single product search (name / SKU / barcode), compact order details.
+ * Same tokens as above; Purchase Order does not use these classes.
+ */
+
+/* Visible focus for the custom buttons (form controls already carry the primary ring) */
+.pos-modal .pos-link-btn:focus-visible,
+.pos-modal .pos-remove-btn:focus-visible,
+.pos-modal .btn:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 .2rem rgba(27, 132, 255, .35);
+}
+
+.pos-modal .pos-body .form-control.is-invalid { border-color: #dc3545; }
+.pos-modal .pos-body .form-control:disabled { background: #f8f9fa; }
+
+/* Customer row: mobile | who it is | optional name */
+.pos-customer > .card-body { padding: .75rem 1rem; }
+
+.pos-customer-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: .75rem 1rem;
+    align-items: end;
+}
+
+.pos-customer-grid > :nth-child(3) { grid-column: 1 / -1; }
+
+@media (min-width: 1200px) {
+    .pos-customer-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); }
+    .pos-customer-grid > :nth-child(3) { grid-column: auto; }
+}
+
+.pos-customer-status { min-height: calc(1.5em + .75rem + 2px); display: flex; align-items: center; }
+.pos-customer-status .pos-note { margin: 0; }
+
+.pos-customer-card {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    width: 100%;
+    min-height: calc(1.5em + .75rem + 2px);
+    padding: .25rem .5rem;
+    border: 1px solid #dee2e6;
+    border-radius: .25rem;
+    background: #f8f9fa;
+}
+
+.pos-customer-card.is-new { border-style: dashed; border-color: var(--primary); background: rgba(27, 132, 255, .04); }
+
+.pos-customer-avatar {
+    flex: 0 0 2rem;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(27, 132, 255, .1);
+    color: var(--primary);
+    font-size: .875rem;
+}
+
+.pos-customer-card.is-existing .pos-customer-avatar { background: rgba(40, 167, 69, .1); color: #28a745; }
+
+.pos-customer-text { flex: 1 1 auto; min-width: 0; }
+.pos-customer-name { font-size: .875rem; font-weight: 600; color: #212529; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pos-customer-sub { display: flex; flex-wrap: wrap; gap: .5rem; font-size: .75rem; color: #6c757d; }
+.pos-due { font-variant-numeric: tabular-nums; }
+.pos-due.is-due { color: #dc3545; font-weight: 600; }
+
+.pos-optional { font-weight: 400; color: #6c757d; }
+
+/* Combobox: input with leading icon + suggestion list anchored below */
+.pos-combo { position: relative; }
+.pos-combo-input { position: relative; }
+
+.pos-combo-input .form-control { padding-left: 2rem; padding-right: 2rem; }
+
+.pos-combo-icon,
+.pos-combo-spinner {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: .875rem;
+    pointer-events: none;
+}
+
+.pos-combo-icon { left: .75rem; }
+.pos-combo-spinner { right: .75rem; }
+
+.pos-combo-list {
+    position: absolute;
+    z-index: 1060;
+    left: 0;
+    right: 0;
+    margin: .25rem 0 0;
+    padding: .25rem 0;
+    max-height: 18rem;
+    overflow-y: auto;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: .25rem;
+    box-shadow: 0 .5rem 1rem rgba(15, 23, 42, .12);
+}
+
+.pos-combo-option {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .5rem .75rem;
+    cursor: pointer;
+    font-size: .875rem;
+}
+
+.pos-combo-option.is-active { background: rgba(27, 132, 255, .1); }
+.pos-combo-main { font-weight: 600; color: #212529; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pos-combo-meta { flex: 0 0 auto; font-size: .75rem; color: #6c757d; font-variant-numeric: tabular-nums; }
+
+/* Product entry: calculated line total reads as a value, not an input */
+.pos-calc {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: calc(1.5em + .75rem + 2px);
+    padding: 0 .75rem;
+    border-radius: .25rem;
+    background: #f8f9fa;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos-kbd-hint { font-size: .75rem; color: #6c757d; }
+.pos-kbd-hint kbd { padding: .0625rem .3125rem; font-size: .6875rem; background: #f8f9fa; color: #495057; border: 1px solid #dee2e6; border-radius: .25rem; box-shadow: none; }
+
+.pos-flash { margin-left: auto; font-size: .8125rem; font-weight: 500; color: #28a745; }
+
+/* Cart: fixed column widths (no inline styles) and its own scroll on desktop so totals stay put */
+.pos-cart .pos-col-qty { width: 128px; }
+.pos-cart .pos-col-price { width: 108px; }
+.pos-cart .pos-col-comm { width: 92px; }
+.pos-cart .pos-col-amount { width: 104px; }
+.pos-cart .pos-col-action { width: 48px; }
+
+@media (min-width: 992px) {
+    .pos-cart-scroll { max-height: 18rem; overflow-y: auto; }
+    .pos-cart-scroll .pos-cart > thead > tr > th { position: sticky; top: 0; z-index: 1; }
+}
+
+/* Order details in the side column: two compact columns */
+.pos-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.pos-details .pos-span-all { grid-column: 1 / -1; }
+
+@media (max-width: 991.98px) {
+    .pos-details { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .pos-details .pos-span-all { grid-column: span 2; }
+}
+
+@media (max-width: 575.98px) {
+    .pos-customer-grid,
+    .pos-details { grid-template-columns: minmax(0, 1fr); }
+    .pos-details .pos-span-all { grid-column: auto; }
+    .pos-kbd-hint { display: none; }
+}

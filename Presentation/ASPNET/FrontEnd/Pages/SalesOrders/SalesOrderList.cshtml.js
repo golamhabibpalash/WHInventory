@@ -16,8 +16,6 @@ const App = {
             salesOrderStatusListLookupData: [],
             secondaryData: [],
             productListLookupData: [],
-            customerGroupListLookupData: [],
-            customerCategoryListLookupData: [],
             mainTitle: null,
             id: '',
             number: '',
@@ -25,6 +23,26 @@ const App = {
             description: '',
             previousDue: 0,
             customerId: null,
+            // Mobile-number customer field. status: idle | partial | searching | existing | new | invalid | error.
+            // 'new' means the number is valid and unknown: the server creates the customer when the order is saved.
+            customer: {
+                input: '',
+                status: 'idle',
+                id: null,
+                name: '',
+                number: '',
+                newName: '',
+                suggestions: [],
+                open: false,
+                activeIndex: -1
+            },
+            productSearch: {
+                term: '',
+                open: false,
+                activeIndex: 0
+            },
+            pickError: '',
+            cartFlash: '',
             taxId: null,
             orderStatus: null,
             errors: {
@@ -40,7 +58,8 @@ const App = {
                 productId: null,
                 unitPrice: 0,
                 commission: 0,
-                quantity: 1
+                quantity: 1,
+                priceEdited: false
             },
             productHint: {
                 name: '',
@@ -74,36 +93,11 @@ const App = {
             taxAmount: '0.00',
             totalAmount: '0.00',
             amountInWords: '',
-            customerQuickName: '',
-            customerQuickDescription: '',
-            customerQuickStreet: '',
-            customerQuickCity: '',
-            customerQuickAddrState: '',
-            customerQuickZipCode: '',
-            customerQuickCountry: '',
-            customerQuickPhoneNumber: '',
-            customerQuickEmailAddress: '',
-            customerQuickGroupId: null,
-            customerQuickCategoryId: null,
-            customerQuickIsSubmitting: false,
-            customerQuickErrors: {
-                name: '', street: '', city: '', addrState: '', zipCode: '',
-                phoneNumber: '', emailAddress: '', customerGroupId: '', customerCategoryId: ''
-            },
-            customerGroupQuickName: '',
-            customerGroupQuickDescription: '',
-            customerGroupQuickIsSubmitting: false,
-            customerGroupQuickErrors: { name: '' },
-            customerCategoryQuickName: '',
-            customerCategoryQuickDescription: '',
-            customerCategoryQuickIsSubmitting: false,
-            customerCategoryQuickErrors: { name: '' },
             taxQuickName: '',
             taxQuickPercentage: null,
             taxQuickDescription: '',
             taxQuickIsSubmitting: false,
             taxQuickErrors: { name: '', percentage: '' },
-            barcodeInput: '',
             view: {
                 id: '', number: '', orderDate: '', orderStatusName: '', statusClass: '',
                 description: '', customerName: '', taxName: '',
@@ -122,17 +116,15 @@ const App = {
         const paymentDateRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const orderDateRef = Vue.ref(null);
-        const customerIdRef = Vue.ref(null);
         const taxIdRef = Vue.ref(null);
         const orderStatusRef = Vue.ref(null);
-        const productPickRef = Vue.ref(null);
-        const customerQuickModalRef = Vue.ref(null);
-        const customerGroupQuickModalRef = Vue.ref(null);
-        const customerCategoryQuickModalRef = Vue.ref(null);
+        const customerInputRef = Vue.ref(null);
+        const productSearchRef = Vue.ref(null);
+        const pickQtyRef = Vue.ref(null);
+        const pickPriceRef = Vue.ref(null);
+        const paymentAmountRef = Vue.ref(null);
+        const saveButtonRef = Vue.ref(null);
         const taxQuickModalRef = Vue.ref(null);
-        const customerQuickGroupIdRef = Vue.ref(null);
-        const customerQuickCategoryIdRef = Vue.ref(null);
-        const barcodeScanRef = Vue.ref(null);
         const viewModalRef = Vue.ref(null);
 
         // Running net line total for the "Select Product" form (unit price less commission %).
@@ -346,13 +338,259 @@ const App = {
             .reduce((sum, line) => sum + (line.quantity || 0), 0);
 
         const resetProductPick = () => {
-            state.productPick = { productId: null, unitPrice: 0, commission: 0, quantity: 1 };
+            // Invalidate any in-flight price lookup so it can't write into the next pick.
+            state.priceResolveSeq++;
+            state.productPick = { productId: null, unitPrice: 0, commission: 0, quantity: 1, priceEdited: false };
             state.productHint = { name: '', physical: false, stock: null, minPrice: null, maxPrice: null };
             state.priceSuggestion = { loading: false, sourceName: '', costPrice: null, profit: null, profitPercent: null };
-            if (productPickLookup.obj) {
-                productPickLookup.obj.value = null;
-                productPickLookup.obj.text = '';
+            state.productSearch.term = '';
+            state.productSearch.open = false;
+            state.productSearch.activeIndex = 0;
+            state.pickError = '';
+        };
+
+        const focusEl = (elRef, select = false) => Vue.nextTick(() => {
+            const el = elRef.value;
+            if (!el) return;
+            el.focus();
+            if (select) el.select?.();
+        });
+
+        // ── Customer: mobile number field ────────────────────────────────────────────────
+        // Mirrors CustomerMobileNumber.TryNormalize on the server, which re-validates on save.
+        const MOBILE_PATTERN = /^(?:\+?88)?(01[3-9]\d{8})$/;
+        const normalizeMobile = (value) => {
+            const match = String(value ?? '').trim().replace(/[\s\-().]/g, '').match(MOBILE_PATTERN);
+            return match ? match[1] : null;
+        };
+        const localDigits = (value) => {
+            const digits = String(value ?? '').replace(/\D/g, '');
+            return digits.startsWith('880') ? digits.slice(2) : digits;
+        };
+        const hasLetters = (value) => /[a-z]/i.test(String(value ?? ''));
+
+        let customerSearchTimer = null;
+        let customerSearchSeq = 0;
+
+        const emptyCustomer = () => ({
+            input: '', status: 'idle', id: null, name: '', number: '', newName: '',
+            suggestions: [], open: false, activeIndex: -1
+        });
+
+        const resetCustomer = () => {
+            clearTimeout(customerSearchTimer);
+            customerSearchSeq++;
+            state.customer = emptyCustomer();
+            state.customerId = null;
+        };
+
+        const setExistingCustomer = (c) => {
+            clearTimeout(customerSearchTimer);
+            customerSearchSeq++;
+            state.customer = {
+                ...emptyCustomer(),
+                input: c.phoneNumber || state.customer.input,
+                status: 'existing',
+                id: c.id,
+                name: c.name ?? '',
+                number: c.number ?? ''
+            };
+            state.customerId = c.id;
+            state.errors.customerId = '';
+        };
+
+        // Status for typed text once no existing customer is selected.
+        const evaluateCustomerInput = () => {
+            const text = state.customer.input.trim();
+            if (!text) return 'idle';
+            if (normalizeMobile(text)) return 'new';
+            if (hasLetters(text)) return 'partial';
+            return localDigits(text).length >= 11 ? 'invalid' : 'partial';
+        };
+
+        const customerErrorMessage = () => {
+            const text = state.customer.input.trim();
+            if (!text) return 'Enter the customer\'s mobile number.';
+            if (hasLetters(text)) return 'Pick a customer from the list, or enter a mobile number.';
+            if (localDigits(text).length < 11) return 'Enter the full 11-digit mobile number (e.g. 01711234567).';
+            return 'Enter a valid mobile number (e.g. 01711234567 or +8801711234567).';
+        };
+
+        // Selected customer → its id; otherwise the typed number, which the server resolves to an
+        // existing customer or creates in the same save as the order.
+        const customerPayload = () => state.customer.id
+            ? { customerId: state.customer.id, customerPhoneNumber: null, customerName: null }
+            : { customerId: null, customerPhoneNumber: state.customer.input.trim(), customerName: state.customer.newName.trim() || null };
+
+        const loadCustomer = async (customerId, fallbackName) => {
+            resetCustomer();
+            if (!customerId) return;
+            let c = state.customerListLookupData.find(x => x.id === customerId);
+            if (!c) {
+                try {
+                    const response = await services.getCustomerSingle(customerId);
+                    c = response?.data?.content?.data;
+                } catch (error) {
+                    c = null;
+                }
             }
+            setExistingCustomer({ id: customerId, name: c?.name ?? fallbackName ?? '', number: c?.number ?? '', phoneNumber: c?.phoneNumber ?? '' });
+        };
+
+        const customerField = {
+            onInput: () => {
+                const c = state.customer;
+                c.id = null;
+                c.name = '';
+                c.number = '';
+                state.customerId = null;
+                state.errors.customerId = '';
+                clearTimeout(customerSearchTimer);
+
+                const text = c.input.trim();
+                const searchable = hasLetters(text) ? text.length >= 2 : localDigits(text).length >= 3;
+                if (!searchable) {
+                    customerSearchSeq++;
+                    c.suggestions = [];
+                    c.open = false;
+                    c.activeIndex = -1;
+                    c.status = evaluateCustomerInput();
+                    return;
+                }
+
+                c.status = 'searching';
+                const seq = ++customerSearchSeq;
+                customerSearchTimer = setTimeout(() => customerField.search(text, seq), 250);
+            },
+            search: async (text, seq) => {
+                const c = state.customer;
+                try {
+                    const response = await services.searchCustomer(text);
+                    if (seq !== customerSearchSeq) return;
+                    const rows = response?.data?.content?.data ?? [];
+                    // A complete number that already belongs to a customer selects it outright.
+                    const exact = rows.find(r => r.isExactMobileMatch);
+                    if (exact) {
+                        setExistingCustomer(exact);
+                        return;
+                    }
+                    c.suggestions = rows;
+                    c.activeIndex = rows.length ? 0 : -1;
+                    c.open = rows.length > 0 && document.activeElement === customerInputRef.value;
+                    c.status = evaluateCustomerInput();
+                } catch (error) {
+                    if (seq !== customerSearchSeq) return;
+                    c.suggestions = [];
+                    c.open = false;
+                    c.status = 'error';
+                }
+            },
+            select: (row) => {
+                setExistingCustomer(row);
+                focusEl(productSearchRef);
+            },
+            // Enter with no highlighted suggestion: settle any pending search, then move on to
+            // products when the customer is usable, or explain what is missing.
+            commit: async () => {
+                if (state.customer.status === 'searching') {
+                    clearTimeout(customerSearchTimer);
+                    await customerField.search(state.customer.input.trim(), ++customerSearchSeq);
+                }
+                const c = state.customer;
+                c.open = false;
+                if (c.id || normalizeMobile(c.input)) {
+                    focusEl(productSearchRef);
+                    return;
+                }
+                state.errors.customerId = customerErrorMessage();
+            },
+            onKeydown: (e) => {
+                const c = state.customer;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    if (!c.suggestions.length) return;
+                    e.preventDefault();
+                    if (!c.open) {
+                        c.open = true;
+                        c.activeIndex = Math.max(0, c.activeIndex);
+                        return;
+                    }
+                    const delta = e.key === 'ArrowDown' ? 1 : -1;
+                    c.activeIndex = (c.activeIndex + delta + c.suggestions.length) % c.suggestions.length;
+                } else if (e.key === 'Escape') {
+                    if (c.open) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        c.open = false;
+                    }
+                } else if (e.key === 'Tab') {
+                    c.open = false;
+                } else if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    if (c.open && c.suggestions[c.activeIndex]) {
+                        customerField.select(c.suggestions[c.activeIndex]);
+                    } else {
+                        customerField.commit();
+                    }
+                }
+            },
+            onFocus: () => {
+                const c = state.customer;
+                if (!c.id && c.suggestions.length) c.open = true;
+            },
+            // Suggestion clicks use mousedown.prevent, so blur here is a real focus change.
+            onBlur: () => {
+                state.customer.open = false;
+            },
+            clear: () => {
+                resetCustomer();
+                focusEl(customerInputRef);
+            }
+        };
+
+        // ── Product search (name / SKU / barcode; also the scanner target) ──────────────────
+        const productMatches = Vue.computed(() => {
+            const term = state.productSearch.term.trim().toLowerCase();
+            if (!term || state.productPick.productId) return [];
+            const scored = [];
+            for (const p of state.productListLookupData ?? []) {
+                const name = (p.name || '').toLowerCase();
+                const number = (p.number || '').toLowerCase();
+                const barcode = (p.barcode || '').toLowerCase();
+                let score = -1;
+                if (barcode === term || number === term) score = 0;
+                else if (name.startsWith(term)) score = 1;
+                else if (name.includes(term)) score = 2;
+                else if (number.includes(term) || (barcode && barcode.includes(term))) score = 3;
+                if (score >= 0) scored.push({ p, score });
+            }
+            return scored
+                .sort((a, b) => a.score - b.score || (a.p.name || '').localeCompare(b.p.name || ''))
+                .slice(0, 8)
+                .map(x => x.p);
+        });
+
+        const findExactProduct = (term) => {
+            const lower = term.trim().toLowerCase();
+            if (!lower) return null;
+            return (state.productListLookupData ?? []).find(p =>
+                (p.barcode && p.barcode.toLowerCase() === lower) || (p.number && p.number.toLowerCase() === lower)) ?? null;
+        };
+
+        let cartFlashTimer = null;
+        const flashCart = (message) => {
+            clearTimeout(cartFlashTimer);
+            state.cartFlash = message;
+            cartFlashTimer = setTimeout(() => { state.cartFlash = ''; }, 2500);
+        };
+
+        // Empty product search + Enter: the cart is done, go to payment (or Save when there is none to take).
+        const focusCheckout = () => {
+            if (!state.secondaryData.length) {
+                state.pickError = 'Search for a product to add it to the cart.';
+                return;
+            }
+            if (paymentAmountRef.value) focusEl(paymentAmountRef, true);
+            else focusEl(saveButtonRef);
         };
 
         const validateForm = function () {
@@ -367,8 +605,8 @@ const App = {
                 state.errors.orderDate = 'Order date is required.';
                 isValid = false;
             }
-            if (!state.customerId) {
-                state.errors.customerId = 'Customer is required.';
+            if (!state.customer.id && !normalizeMobile(state.customer.input)) {
+                state.errors.customerId = customerErrorMessage();
                 isValid = false;
             }
             if (!state.taxId) {
@@ -381,6 +619,41 @@ const App = {
             }
 
             return isValid;
+        };
+
+        // Put the caret on the first field validateForm flagged.
+        const focusFirstError = () => {
+            if (state.errors.customerId) focusEl(customerInputRef, true);
+            else if (state.errors.orderDate) orderDatePicker.focus();
+            else if (state.errors.orderStatus) salesOrderStatusListLookup.obj?.focusIn();
+            else if (state.errors.taxId) taxListLookup.obj?.focusIn();
+        };
+
+        // Status and tax rarely change between orders: start each new order with the last ones used.
+        const DEFAULTS_KEY = 'salesOrder.defaults';
+        const readOrderDefaults = () => {
+            try {
+                return JSON.parse(localStorage.getItem(DEFAULTS_KEY) || '{}') || {};
+            } catch (error) {
+                return {};
+            }
+        };
+        const rememberOrderDefaults = () => {
+            try {
+                localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ orderStatus: state.orderStatus, taxId: state.taxId }));
+            } catch (error) {
+                // Storage unavailable (private mode etc.) — defaults are a convenience only.
+            }
+        };
+        const applyOrderDefaults = () => {
+            const saved = readOrderDefaults();
+            const statuses = state.salesOrderStatusListLookupData ?? [];
+            const taxes = state.taxListLookupData ?? [];
+            const savedStatus = statuses.find(x => String(x.id) === String(saved.orderStatus));
+            const draft = statuses.find(x => String(x.name).toLowerCase() === 'draft');
+            state.orderStatus = savedStatus ? String(savedStatus.id) : (draft ? String(draft.id) : null);
+            const savedTax = taxes.find(x => x.id === saved.taxId);
+            state.taxId = savedTax ? savedTax.id : (taxes.length === 1 ? taxes[0].id : null);
         };
 
         const paymentDatePicker = {
@@ -414,10 +687,17 @@ const App = {
 
         Vue.watch(() => paymentDateRef.value, (element) => paymentDatePicker.mount(element));
 
+        // Pre-select the only method, or Cash, so Enter in the amount field can record the payment.
+        const defaultPaymentMethodId = () => {
+            const list = state.paymentMethodListLookupData ?? [];
+            if (list.length === 1) return list[0].id;
+            return list.find(m => String(m.name ?? '').toLowerCase().includes('cash'))?.id ?? '';
+        };
+
         const resetNewPaymentState = () => {
             state.newPayment = {
                 paymentDate: DateFormatManager.toApiDate(new Date()),
-                paymentMethodId: '',
+                paymentMethodId: defaultPaymentMethodId(),
                 amount: null,
                 referenceNumber: ''
             };
@@ -430,7 +710,7 @@ const App = {
             state.orderDate = new Date();
             state.description = '';
             state.previousDue = 0;
-            state.customerId = null;
+            resetCustomer();
             state.taxId = null;
             state.orderStatus = null;
             state.errors = {
@@ -454,6 +734,8 @@ const App = {
             resetProductPick();
         };
 
+        let pendingPrice = null;
+
         const services = {
             getMainData: async () => {
                 try {
@@ -471,20 +753,21 @@ const App = {
                     throw error;
                 }
             },
-            createMainData: async (orderDate, description, orderStatus, taxId, customerId, createdById) => {
+            // customer: { customerId, customerPhoneNumber, customerName } from customerPayload().
+            createMainData: async (orderDate, description, orderStatus, taxId, customer, createdById) => {
                 try {
                     const response = await AxiosManager.post('/SalesOrder/CreateSalesOrder', {
-                        orderDate: DateFormatManager.toApiDate(orderDate), description, orderStatus, taxId, customerId, createdById
+                        orderDate: DateFormatManager.toApiDate(orderDate), description, orderStatus, taxId, ...customer, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, orderDate, description, orderStatus, taxId, customerId, updatedById) => {
+            updateMainData: async (id, orderDate, description, orderStatus, taxId, customer, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/SalesOrder/UpdateSalesOrder', {
-                        id, orderDate: DateFormatManager.toApiDate(orderDate), description, orderStatus, taxId, customerId, updatedById
+                        id, orderDate: DateFormatManager.toApiDate(orderDate), description, orderStatus, taxId, ...customer, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -504,6 +787,23 @@ const App = {
             getCustomerListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/Customer/GetCustomerList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            searchCustomer: async (term) => {
+                try {
+                    // AxiosManager.get ignores config.params, so the query is built into the URL.
+                    const response = await AxiosManager.get(`/Customer/SearchCustomer?term=${encodeURIComponent(term)}`, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getCustomerSingle: async (id) => {
+                try {
+                    const response = await AxiosManager.get(`/Customer/GetCustomerSingle?id=${encodeURIComponent(id)}`, {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -634,53 +934,10 @@ const App = {
                     throw error;
                 }
             },
-            createCustomer: async (name, description, customerGroupId, customerCategoryId, street, city, addressState, zipCode, country, phoneNumber, emailAddress, createdById) => {
-                try {
-                    const response = await AxiosManager.post('/Customer/CreateCustomer', {
-                        name, description, customerGroupId, customerCategoryId,
-                        street, city, state: addressState, zipCode, country,
-                        phoneNumber, emailAddress, createdById
-                    });
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
-            },
-            getCustomerGroupListLookupData: async () => {
-                try {
-                    const response = await AxiosManager.get('/CustomerGroup/GetCustomerGroupList', {});
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
-            },
-            createCustomerGroup: async (name, description, createdById) => {
-                try {
-                    const response = await AxiosManager.post('/CustomerGroup/CreateCustomerGroup', { name, description, createdById });
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
-            },
-            getCustomerCategoryListLookupData: async () => {
-                try {
-                    const response = await AxiosManager.get('/CustomerCategory/GetCustomerCategoryList', {});
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
-            },
-            createCustomerCategory: async (name, description, createdById) => {
-                try {
-                    const response = await AxiosManager.post('/CustomerCategory/CreateCustomerCategory', { name, description, createdById });
-                    return response;
-                } catch (error) {
-                    throw error;
-                }
-            },
             getProductByBarcode: async (barcode) => {
                 try {
-                    const response = await AxiosManager.get('/Product/GetProductByBarcode', { params: { barcode } });
+                    // AxiosManager.get ignores config.params, so the query is built into the URL.
+                    const response = await AxiosManager.get(`/Product/GetProductByBarcode?barcode=${encodeURIComponent(barcode)}`, {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -716,13 +973,7 @@ const App = {
         const methods = {
             populateCustomerListLookupData: async () => {
                 const response = await services.getCustomerListLookupData();
-                const data = response?.data?.content?.data ?? [];
-                // Precompute the "Name - Mobile" label the dropdown shows (see customerListLookup).
-                // Raw name/phoneNumber are preserved on each item so the search still matches both.
-                state.customerListLookupData = data.map(c => ({
-                    ...c,
-                    displayName: c.phoneNumber ? `${c.name} - ${c.phoneNumber}` : c.name
-                }));
+                state.customerListLookupData = response?.data?.content?.data ?? [];
             },
             populatePreviousDue: async (customerId) => {
                 // No customer selected → nothing owed to show.
@@ -786,11 +1037,16 @@ const App = {
                     availableStock: stockByProduct[p.id] ?? 0
                 }));
             },
-            refreshSuggestedPrice: async (autoApply = true) => {
-                const productId = state.productPick.productId;
-                if (!productId) {
-                    return;
+            refreshSuggestedPrice: (autoApply = true) => {
+                if (!state.productPick.productId) {
+                    return Promise.resolve();
                 }
+                // Kept so "Add" can wait for the price that is about to be applied.
+                pendingPrice = methods.resolveSuggestedPrice(autoApply);
+                return pendingPrice;
+            },
+            resolveSuggestedPrice: async (autoApply) => {
+                const productId = state.productPick.productId;
                 const seq = ++state.priceResolveSeq;
                 state.priceSuggestion.loading = true;
                 try {
@@ -810,9 +1066,9 @@ const App = {
                         profit: content.profit ?? null,
                         profitPercent: content.profitPercent ?? null
                     };
-                    // Auto-apply the resolved policy/promotion/QB price; the cashier
-                    // can still override it manually afterwards (Min/Max band still enforced).
-                    if (autoApply && content.calculatedPrice !== null && content.calculatedPrice !== undefined && Number(content.calculatedPrice) > 0) {
+                    // Auto-apply the resolved policy/promotion/QB price unless the cashier has already
+                    // typed one (Min/Max band is still enforced on the server).
+                    if (autoApply && !state.productPick.priceEdited && content.calculatedPrice !== null && content.calculatedPrice !== undefined && Number(content.calculatedPrice) > 0) {
                         state.productPick.unitPrice = Number(content.calculatedPrice);
                     }
                 } catch (error) {
@@ -821,14 +1077,6 @@ const App = {
                     }
                     state.priceSuggestion = { loading: false, sourceName: '', costPrice: null, profit: null, profitPercent: null };
                 }
-            },
-            populateCustomerGroupListLookupData: async () => {
-                const response = await services.getCustomerGroupListLookupData();
-                state.customerGroupListLookupData = response?.data?.content?.data;
-            },
-            populateCustomerCategoryListLookupData: async () => {
-                const response = await services.getCustomerCategoryListLookupData();
-                state.customerCategoryListLookupData = response?.data?.content?.data;
             },
             refreshPaymentSummary: async (id) => {
                 const record = state.mainData.find(item => item.id === id);
@@ -868,145 +1116,79 @@ const App = {
             populatePaymentMethodListLookupData: async () => {
                 const response = await services.getPaymentMethodListLookupData();
                 state.paymentMethodListLookupData = response?.data?.content?.data ?? [];
+                if (!state.newPayment.paymentMethodId) state.newPayment.paymentMethodId = defaultPaymentMethodId();
             },
             handleFormSubmit: async () => {
+                // Rapid Enter / double-clicks: one save at a time.
+                if (state.isSubmitting) return;
                 state.isSubmitting = true;
 
-                if (!validateForm()) {
-                    state.isSubmitting = false;
-                    return;
-                }
-
-                // Captured before the response overwrites state.id, so we can tell a freshly
-                // created header (step 1 -> step 2) from an edit of an existing one.
-                const isNewOrder = state.id === '';
-
                 try {
-                    const response = isNewOrder
-                        ? await services.createMainData(state.orderDate, state.description, state.orderStatus, state.taxId, state.customerId, StorageManager.getUserId())
-                        : state.deleteMode
-                            ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.orderDate, state.description, state.orderStatus, state.taxId, state.customerId, StorageManager.getUserId());
+                    if (state.deleteMode) {
+                        const response = await services.deleteMainData(state.id, StorageManager.getUserId());
+                        if (response.data.code === 200) {
+                            await methods.populateMainData();
+                            mainGrid.refresh();
+                            notify('success', 'Sales order deleted');
+                            mainModal.obj.hide();
+                            resetFormState();
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Delete Failed', text: response.data.message ?? 'Please try again.' });
+                        }
+                        return;
+                    }
+
+                    if (!state.id) {
+                        // New order: the same path the first "Add" uses, so both share one in-flight create.
+                        const result = await ensureHeaderSaved();
+                        if (result.ok) {
+                            notify('success', `Sales order ${state.number} created`);
+                            focusEl(productSearchRef);
+                        } else if (result.message) {
+                            Swal.fire({ icon: 'error', title: 'Save Failed', text: result.message });
+                        }
+                        return;
+                    }
+
+                    if (!validateForm()) {
+                        focusFirstError();
+                        return;
+                    }
+
+                    const response = await services.updateMainData(
+                        state.id, state.orderDate, state.description, state.orderStatus, state.taxId, customerPayload(), StorageManager.getUserId());
 
                     if (response.data.code === 200) {
+                        const data = response.data.content.data;
+                        applySavedHeader(data);
                         await methods.populateMainData();
                         mainGrid.refresh();
-
-                        if (!state.deleteMode) {
-                            state.id = response?.data?.content?.data.id ?? '';
-                            state.number = response?.data?.content?.data.number ?? '';
-                            state.orderDate = response?.data?.content?.data.orderDate ? new Date(response.data.content.data.orderDate) : null;
-                            state.description = response?.data?.content?.data.description ?? '';
-                            state.customerId = response?.data?.content?.data.customerId ?? '';
-                            state.taxId = response?.data?.content?.data.taxId ?? '';
-                            taxListLookup.trackingChange = true;
-                            state.orderStatus = String(response?.data?.content?.data.orderStatus ?? '');
-
-                            state.mainTitle = `Sales Order ${state.number}`;
-
-                            if (isNewOrder) {
-                                // POS flow: stay on the same screen with the order now created,
-                                // so the cashier can go straight to adding products.
-                                await methods.populateSecondaryData(state.id);
-                                await methods.refreshPaymentSummary(state.id);
-
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Sales Order Created',
-                                    text: `${state.number} saved. Add products to build the cart.`,
-                                    timer: 1000,
-                                    showConfirmButton: false
-                                });
-                            } else {
-                                // Header edit: persist without leaving the POS screen.
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Order Details Saved',
-                                    timer: 1000,
-                                    showConfirmButton: false
-                                });
-                            }
-                        } else {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Delete Successful',
-                                text: 'Form will be closed...',
-                                timer: 1000,
-                                showConfirmButton: false
-                            });
-                            setTimeout(() => {
-                                mainModal.obj.hide();
-                                resetFormState();
-                            }, 1000);
-                        }
-
+                        await methods.refreshPaymentSummary(state.id);
+                        notify('success', 'Order saved');
                     } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                            text: response.data.message ?? 'Please check your data.',
-                            confirmButtonText: 'Try Again'
-                        });
+                        Swal.fire({ icon: 'error', title: 'Save Failed', text: response.data.message ?? 'Please check your data.' });
                     }
                 } catch (error) {
+                    // Entered data stays on screen; only the message is shown.
                     Swal.fire({
                         icon: 'error',
-                        title: 'An Error Occurred',
-                        text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
+                        title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
+                        text: error.response?.data?.message ?? 'Please try again.'
                     });
                 } finally {
                     state.isSubmitting = false;
                 }
             },
             onMainModalHidden: () => {
+                clearTimeout(customerSearchTimer);
+                customerSearchSeq++;
+                state.customer.open = false;
+                state.productSearch.open = false;
                 state.errors.orderDate = '';
                 state.errors.customerId = '';
                 state.errors.taxId = '';
                 state.errors.orderStatus = '';
                 taxListLookup.trackingChange = false;
-            }
-        };
-
-        const customerListLookup = {
-            obj: null,
-            create: () => {
-                if (state.customerListLookupData && Array.isArray(state.customerListLookupData)) {
-                    customerListLookup.obj = new ej.dropdowns.DropDownList({
-                        dataSource: state.customerListLookupData,
-                        fields: { value: 'id', text: 'displayName' },
-                        placeholder: 'Select a Customer',
-                        filterBarPlaceholder: 'Search by name or mobile',
-                        sortOrder: 'Ascending',
-                        allowFiltering: true,
-                        filtering: (e) => {
-                            e.preventDefaultAction = true;
-                            const term = (e.text || '').toLowerCase();
-                            if (!term) {
-                                e.updateData(state.customerListLookupData);
-                                return;
-                            }
-                            const filtered = state.customerListLookupData.filter(c =>
-                                (c.name || '').toLowerCase().includes(term) ||
-                                (c.phoneNumber || '').toLowerCase().includes(term)
-                            );
-                            e.updateData(filtered);
-                        },
-                        change: async (e) => {
-                            state.customerId = e.value;
-                            // Re-price the picked product for the new customer (group policy may differ).
-                            if (state.productPick.productId) {
-                                await methods.refreshSuggestedPrice();
-                            }
-                        }
-                    });
-                    customerListLookup.obj.appendTo(customerIdRef.value);
-                }
-            },
-            refresh: () => {
-                if (customerListLookup.obj) {
-                    customerListLookup.obj.value = state.customerId;
-                }
             }
         };
 
@@ -1021,6 +1203,7 @@ const App = {
                         dataSource: state.taxListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Tax',
+                        value: state.taxId,
                         change: async (e) => {
                             state.taxId = e.value;
                             if (e.isInteracted && taxListLookup.trackingChange) {
@@ -1048,6 +1231,7 @@ const App = {
                         dataSource: state.salesOrderStatusListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select an Order Status',
+                        value: state.orderStatus,
                         change: (e) => {
                             state.orderStatus = e.value;
                         }
@@ -1059,84 +1243,6 @@ const App = {
                 if (salesOrderStatusListLookup.obj) {
                     salesOrderStatusListLookup.obj.value = state.orderStatus;
                 }
-            }
-        };
-
-        const customerQuickGroupListLookup = {
-            obj: null,
-            create: () => {
-                customerQuickGroupListLookup.obj = new ej.dropdowns.DropDownList({
-                    dataSource: state.customerGroupListLookupData,
-                    fields: { value: 'id', text: 'name' },
-                    placeholder: 'Select a Customer Group',
-                    popupHeight: '200px',
-                    allowFiltering: true,
-                    filterType: 'Contains',
-                    change: (e) => { state.customerQuickGroupId = e.value; }
-                });
-                customerQuickGroupListLookup.obj.appendTo(customerQuickGroupIdRef.value);
-            },
-            refresh: () => {
-                if (customerQuickGroupListLookup.obj) {
-                    customerQuickGroupListLookup.obj.setProperties({
-                        dataSource: state.customerGroupListLookupData,
-                        value: state.customerQuickGroupId
-                    });
-                }
-            }
-        };
-
-        const customerQuickCategoryListLookup = {
-            obj: null,
-            create: () => {
-                customerQuickCategoryListLookup.obj = new ej.dropdowns.DropDownList({
-                    dataSource: state.customerCategoryListLookupData,
-                    fields: { value: 'id', text: 'name' },
-                    placeholder: 'Select a Customer Category',
-                    popupHeight: '200px',
-                    allowFiltering: true,
-                    filterType: 'Contains',
-                    change: (e) => { state.customerQuickCategoryId = e.value; }
-                });
-                customerQuickCategoryListLookup.obj.appendTo(customerQuickCategoryIdRef.value);
-            },
-            refresh: () => {
-                if (customerQuickCategoryListLookup.obj) {
-                    customerQuickCategoryListLookup.obj.setProperties({
-                        dataSource: state.customerCategoryListLookupData,
-                        value: state.customerQuickCategoryId
-                    });
-                }
-            }
-        };
-
-        const customerQuickModal = {
-            obj: null,
-            create: () => {
-                customerQuickModal.obj = new bootstrap.Modal(customerQuickModalRef.value, {
-                    backdrop: 'static',
-                    keyboard: false
-                });
-            }
-        };
-
-        const customerGroupQuickModal = {
-            obj: null,
-            create: () => {
-                customerGroupQuickModal.obj = new bootstrap.Modal(customerGroupQuickModalRef.value, {
-                    backdrop: 'static',
-                    keyboard: false
-                });
-            }
-        };
-
-        const customerCategoryQuickModal = {
-            obj: null,
-            create: () => {
-                customerCategoryQuickModal.obj = new bootstrap.Modal(customerCategoryQuickModalRef.value, {
-                    backdrop: 'static',
-                    keyboard: false
-                });
             }
         };
 
@@ -1205,10 +1311,12 @@ const App = {
         watcherStops.push(Vue.watch(
             () => state.customerId,
             (newVal, oldVal) => {
-                customerListLookup.refresh();
-                state.errors.customerId = '';
                 // Show the customer's outstanding receivable (0 when none / when cleared).
                 methods.populatePreviousDue(newVal);
+                // Re-price the picked product for the new customer (group policy may differ).
+                if (state.productPick.productId) {
+                    methods.refreshSuggestedPrice();
+                }
             }
         ));
 
@@ -1331,10 +1439,7 @@ const App = {
                         }
 
                         if (args.item.id === 'AddCustom') {
-                            state.deleteMode = false;
-                            state.mainTitle = 'New Sales Order';
-                            resetFormState();
-                            mainModal.obj.show();
+                            openAddModal();
                         }
 
                         if (args.item.id === 'EditCustom') {
@@ -1349,12 +1454,14 @@ const App = {
                                 state.number = selectedRecord.number ?? '';
                                 state.orderDate = selectedRecord.orderDate ? new Date(selectedRecord.orderDate) : null;
                                 state.description = selectedRecord.description ?? '';
-                                state.customerId = selectedRecord.customerId ?? '';
                                 state.taxId = selectedRecord.taxId ?? '';
                                 taxListLookup.trackingChange = true;
                                 state.orderStatus = String(selectedRecord.orderStatus ?? '');
 
-                                await methods.populateSecondaryData(selectedRecord.id);
+                                await Promise.all([
+                                    loadCustomer(selectedRecord.customerId, selectedRecord.customerName),
+                                    methods.populateSecondaryData(selectedRecord.id)
+                                ]);
 
                                 mainModal.obj.show();
                             }
@@ -1372,11 +1479,13 @@ const App = {
                                 state.number = selectedRecord.number ?? '';
                                 state.orderDate = selectedRecord.orderDate ? new Date(selectedRecord.orderDate) : null;
                                 state.description = selectedRecord.description ?? '';
-                                state.customerId = selectedRecord.customerId ?? '';
                                 state.taxId = selectedRecord.taxId ?? '';
                                 state.orderStatus = String(selectedRecord.orderStatus ?? '');
 
-                                await methods.populateSecondaryData(selectedRecord.id);
+                                await Promise.all([
+                                    loadCustomer(selectedRecord.customerId, selectedRecord.customerName),
+                                    methods.populateSecondaryData(selectedRecord.id)
+                                ]);
 
                                 mainModal.obj.show();
                             }
@@ -1400,89 +1509,90 @@ const App = {
             }
         };
 
-        // "Select Product" search box in the POS panel. Mirrors customerListLookup: a Syncfusion
-        // DropDownList over the same product+stock dataset the cart validation uses.
-        const productPickLookup = {
-            obj: null,
-            create: () => {
-                if (!Array.isArray(state.productListLookupData)) return;
+        // Non-blocking confirmation: a toast never takes focus away from the field being typed in.
+        const notify = (icon, title) => Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon,
+            title,
+            timer: 1800,
+            showConfirmButton: false,
+            returnFocus: false
+        });
 
-                productPickLookup.obj = new ej.dropdowns.DropDownList({
-                    dataSource: state.productListLookupData,
-                    fields: { value: 'id', text: 'name' },
-                    placeholder: 'Search a product to add',
-                    filterBarPlaceholder: 'Search',
-                    sortOrder: 'Ascending',
-                    allowFiltering: true,
-                    filtering: (e) => {
-                        e.preventDefaultAction = true;
-                        let query = new ej.data.Query();
-                        if (e.text !== '') {
-                            query = query.where('name', 'contains', e.text, true);
-                        }
-                        e.updateData(state.productListLookupData, query);
-                    },
-                    change: async (e) => {
-                        const product = state.productListLookupData.find(item => item.id === e.value);
-                        if (!product) {
-                            state.productHint = { name: '', physical: false, stock: null, minPrice: null, maxPrice: null };
-                            state.priceSuggestion = { loading: false, sourceName: '', costPrice: null, profit: null, profitPercent: null };
-                            return;
-                        }
-                        state.productPick.productId = product.id;
-                        state.productPick.unitPrice = product.minSellingPrice ?? product.unitPrice ?? 0;
-                        state.productPick.commission = 0;
-                        state.productPick.quantity = 1;
-                        state.productHint = {
-                            name: product.name,
-                            physical: product.physical ?? false,
-                            stock: product.physical ? (product.availableStock ?? 0) : null,
-                            minPrice: product.minSellingPrice ?? null,
-                            maxPrice: product.maxSellingPrice ?? null
-                        };
-                        // Override the fallback with the resolved policy/promotion/QB price.
-                        await methods.refreshSuggestedPrice();
-                    }
-                });
-                productPickLookup.obj.appendTo(productPickRef.value);
+        const refreshCustomerLookups = async () => {
+            try {
+                await methods.populateCustomerListLookupData();
+                filterCustomerDropdown.obj?.setProperties({ dataSource: state.customerListLookupData });
+            } catch (error) {
+                // The filter list is secondary; it refreshes on the next page load.
             }
         };
 
-        // The POS screen adds line items against a saved header. If the cashier starts by picking
-        // a product before saving, create the header on the fly from the order bar fields.
-        const ensureHeaderSaved = async () => {
-            if (state.id) return true;
+        // Copy a saved header back into the form. A customer that was typed as a new number now
+        // exists on the server, so the field switches to "existing".
+        const applySavedHeader = (data) => {
+            const typedNewCustomer = !state.customer.id;
+            state.id = data.id ?? '';
+            state.number = data.number ?? '';
+            state.orderDate = data.orderDate ? new Date(data.orderDate) : null;
+            state.description = data.description ?? '';
+            state.taxId = data.taxId ?? '';
+            taxListLookup.trackingChange = true;
+            state.orderStatus = String(data.orderStatus ?? '');
+            state.mainTitle = `Sales Order ${state.number}`;
+
+            if (typedNewCustomer && data.customerId) {
+                const mobile = normalizeMobile(state.customer.input);
+                setExistingCustomer({
+                    id: data.customerId,
+                    name: data.customer?.name ?? (state.customer.newName.trim() || mobile),
+                    number: data.customer?.number ?? '',
+                    phoneNumber: data.customer?.phoneNumber ?? mobile
+                });
+                refreshCustomerLookups();
+            }
+        };
+
+        // Line items are saved against a header, so the first add (or Save) creates it from the
+        // order fields. Concurrent callers share one request, so a double Enter can't create two orders.
+        let headerSave = null;
+        const ensureHeaderSaved = () => {
+            if (state.id) return Promise.resolve({ ok: true });
+            if (headerSave) return headerSave;
 
             if (!validateForm()) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Complete the order details',
-                    text: 'Customer, tax, status and order date are required before adding products.'
-                });
-                return false;
+                focusFirstError();
+                return Promise.resolve({ ok: false });
             }
 
-            try {
-                const response = await services.createMainData(
-                    state.orderDate, state.description, state.orderStatus, state.taxId, state.customerId, StorageManager.getUserId());
+            headerSave = (async () => {
+                try {
+                    const response = await services.createMainData(
+                        state.orderDate, state.description, state.orderStatus, state.taxId, customerPayload(), StorageManager.getUserId());
 
-                if (response.data.code === 200) {
-                    const data = response.data.content.data;
-                    state.id = data.id ?? '';
-                    state.number = data.number ?? '';
-                    state.mainTitle = `Sales Order ${state.number}`;
-                    taxListLookup.trackingChange = true;
-                    await methods.populateMainData();
-                    mainGrid.refresh();
-                    return true;
+                    if (response.data.code === 200) {
+                        applySavedHeader(response.data.content.data);
+                        rememberOrderDefaults();
+                        await methods.populateMainData();
+                        mainGrid.refresh();
+                        await methods.refreshPaymentLedger(state.id);
+                        return { ok: true };
+                    }
+                    return { ok: false, message: response.data.message ?? 'Could not create the sales order.' };
+                } catch (error) {
+                    const message = error.response?.data?.message ?? 'Could not create the sales order. Please try again.';
+                    // A rejected mobile number belongs next to the customer field.
+                    if (/mobile|customer/i.test(message)) {
+                        state.errors.customerId = message;
+                        focusEl(customerInputRef, true);
+                    }
+                    return { ok: false, message };
+                } finally {
+                    headerSave = null;
                 }
-
-                Swal.fire({ icon: 'error', title: 'Save Failed', text: response.data.message ?? 'Could not create the sales order.' });
-                return false;
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.' });
-                return false;
-            }
+            })();
+            return headerSave;
         };
 
         // Refresh everything that depends on the line items after a cart change.
@@ -1507,63 +1617,195 @@ const App = {
             }
         };
 
+        // Client-side stock nudge; the server's available-to-promise check is the authority.
+        const stockShortfall = (product, quantity, exceptLineId) => {
+            if (!product.physical) return '';
+            const available = product.availableStock ?? 0;
+            const inCart = quantityInCart(product.id, exceptLineId);
+            if (quantity + inCart <= available) return '';
+            return `Only ${formatQty(available)} of ${product.name} in stock` +
+                (inCart ? ` (${formatQty(inCart)} already in the cart).` : '.');
+        };
+
+        const productField = {
+            onInput: () => {
+                // Typing again after a pick starts a new search.
+                if (state.productPick.productId) {
+                    const term = state.productSearch.term;
+                    resetProductPick();
+                    state.productSearch.term = term;
+                }
+                state.pickError = '';
+                state.productSearch.activeIndex = 0;
+                state.productSearch.open = state.productSearch.term.trim().length > 0;
+            },
+            onKeydown: async (e) => {
+                const ps = state.productSearch;
+                const list = productMatches.value;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    if (!list.length) return;
+                    e.preventDefault();
+                    if (!ps.open) {
+                        ps.open = true;
+                        return;
+                    }
+                    const delta = e.key === 'ArrowDown' ? 1 : -1;
+                    ps.activeIndex = (ps.activeIndex + delta + list.length) % list.length;
+                } else if (e.key === 'Escape') {
+                    if (ps.open || ps.term || state.productPick.productId) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (ps.open) ps.open = false;
+                        else resetProductPick();
+                    }
+                } else if (e.key === 'Tab') {
+                    ps.open = false;
+                } else if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    if (state.isAddingLine) return;
+                    const term = ps.term.trim();
+                    if (!term) {
+                        focusCheckout();
+                    } else if (state.productPick.productId) {
+                        focusEl(pickQtyRef, true);
+                    } else if (findExactProduct(term)) {
+                        // Scanner / exact SKU: add one straight to the cart.
+                        await cart.quickAdd(findExactProduct(term));
+                    } else if (list.length) {
+                        productField.pick(list[Math.min(ps.activeIndex, list.length - 1)]);
+                    } else {
+                        await productField.lookupBarcode(term);
+                    }
+                }
+            },
+            onBlur: () => {
+                state.productSearch.open = false;
+            },
+            pick: (product) => {
+                state.priceResolveSeq++;
+                state.productPick = {
+                    productId: product.id,
+                    unitPrice: product.minSellingPrice ?? product.unitPrice ?? 0,
+                    commission: 0,
+                    quantity: 1,
+                    priceEdited: false
+                };
+                state.productHint = {
+                    name: product.name,
+                    physical: product.physical ?? false,
+                    stock: product.physical ? (product.availableStock ?? 0) : null,
+                    minPrice: product.minSellingPrice ?? null,
+                    maxPrice: product.maxSellingPrice ?? null
+                };
+                state.productSearch.term = product.name ?? '';
+                state.productSearch.open = false;
+                state.pickError = '';
+                focusEl(pickQtyRef, true);
+                // Override the fallback with the resolved policy/promotion/QB price.
+                methods.refreshSuggestedPrice();
+            },
+            // Not in the loaded list by name/SKU/barcode: ask the server (barcode lookup).
+            lookupBarcode: async (term) => {
+                try {
+                    const response = await services.getProductByBarcode(term);
+                    const found = response?.data?.content?.data;
+                    const product = found && state.productListLookupData.find(p => p.id === found.id);
+                    if (product) {
+                        await cart.quickAdd(product);
+                        return;
+                    }
+                } catch (error) {
+                    // Falls through to the "no match" message.
+                }
+                state.pickError = `No product matches "${term}".`;
+            }
+        };
+
         const cart = {
+            // Validated line → (header if needed) → server. Returns true when the line was saved.
+            createLine: async (product, unitPrice, commissionRate, quantity, focusOnError) => {
+                const shortfall = stockShortfall(product, quantity);
+                if (shortfall) {
+                    state.pickError = shortfall;
+                    focusEl(focusOnError, true);
+                    return false;
+                }
+
+                state.isAddingLine = true;
+                try {
+                    const header = await ensureHeaderSaved();
+                    if (!header.ok) {
+                        if (header.message) state.pickError = header.message;
+                        return false;
+                    }
+
+                    await services.createSecondaryData(unitPrice, commissionRate, quantity, null, product.id, state.id, StorageManager.getUserId());
+                    await refreshAfterCartChange();
+
+                    resetProductPick();
+                    flashCart(`Added ${product.name}`);
+                    focusEl(productSearchRef);
+                    return true;
+                } catch (error) {
+                    // Keep the pick so the cashier can adjust and retry.
+                    state.pickError = error.response?.data?.message ?? 'Could not add the item. Please try again.';
+                    focusEl(focusOnError, true);
+                    return false;
+                } finally {
+                    state.isAddingLine = false;
+                }
+            },
             addLine: async () => {
+                if (state.isAddingLine) return;
+                state.pickError = '';
+
                 const product = state.productListLookupData.find(p => p.id === state.productPick.productId);
                 if (!product) {
-                    Swal.fire({ icon: 'warning', title: 'Select a product first' });
+                    state.pickError = 'Search for a product and pick it first.';
+                    focusEl(productSearchRef);
                     return;
                 }
+
+                // Let a price lookup that is still running land first, so the line gets that price.
+                if (pendingPrice) await pendingPrice;
 
                 const quantity = Number(state.productPick.quantity);
                 const unitPrice = Number(state.productPick.unitPrice);
                 const commissionRate = Number(state.productPick.commission) || 0;
 
                 if (!quantity || quantity <= 0) {
-                    Swal.fire({ icon: 'warning', title: 'Enter a quantity greater than zero' });
+                    state.pickError = 'Enter a quantity greater than zero.';
+                    focusEl(pickQtyRef, true);
                     return;
                 }
                 if (isNaN(unitPrice) || unitPrice < 0) {
-                    Swal.fire({ icon: 'warning', title: 'Enter a valid unit price' });
+                    state.pickError = 'Enter a valid unit price.';
+                    focusEl(pickPriceRef, true);
                     return;
                 }
                 if (commissionRate < 0 || commissionRate > 100) {
-                    Swal.fire({ icon: 'warning', title: 'Commission % must be between 0 and 100' });
+                    state.pickError = 'Commission % must be between 0 and 100.';
                     return;
                 }
 
-                if (product.physical) {
-                    const available = product.availableStock ?? 0;
-                    const alreadyInCart = quantityInCart(product.id);
-                    if (quantity + alreadyInCart > available) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Insufficient Stock',
-                            html: `<b>${product.name}</b><br>` +
-                                  `Available: <b>${formatQty(available)}</b><br>` +
-                                  `Already in cart: <b>${formatQty(alreadyInCart)}</b><br>` +
-                                  `Requested: <b>${formatQty(quantity)}</b>`
-                        });
-                        return;
-                    }
-                }
-
+                await cart.createLine(product, unitPrice, commissionRate, quantity, pickQtyRef);
+            },
+            // Scan / exact-SKU path: one unit at the resolved price, no further input needed.
+            quickAdd: async (product) => {
+                if (state.isAddingLine) return;
+                state.pickError = '';
+                let unitPrice = product.minSellingPrice ?? product.unitPrice ?? 0;
                 try {
-                    state.isAddingLine = true;
-
-                    if (!(await ensureHeaderSaved())) return;
-
-                    await services.createSecondaryData(unitPrice, commissionRate, quantity, null, product.id, state.id, StorageManager.getUserId());
-                    await refreshAfterCartChange();
-
-                    resetProductPick();
-                    Swal.fire({ icon: 'success', title: `Added: ${product.name}`, timer: 1000, showConfirmButton: false });
-                    if (productPickLookup.obj) productPickLookup.obj.focusIn();
-                } catch (error) {
-                    Swal.fire({ icon: 'error', title: 'Could not add item', text: error.response?.data?.message ?? 'An error occurred.' });
-                } finally {
-                    state.isAddingLine = false;
+                    const priceResponse = await services.resolveSuggestedPrice(product.id, state.customerId, 1, state.orderDate);
+                    const resolved = priceResponse?.data?.content?.calculatedPrice;
+                    if (resolved !== null && resolved !== undefined && Number(resolved) > 0) {
+                        unitPrice = Number(resolved);
+                    }
+                } catch (resolveError) {
+                    // Keep the product fallback; pricing is advisory, never blocking.
                 }
+                const added = await cart.createLine(product, unitPrice, 0, 1, productSearchRef);
+                if (!added) state.productSearch.term = '';
             },
             stepLineQty: (line, delta) => {
                 const next = Math.max(0, (Number(line.quantity) || 0) + delta);
@@ -1578,18 +1820,11 @@ const App = {
                 }
 
                 const product = state.productListLookupData.find(p => p.id === line.productId);
-                if (product && product.physical) {
-                    const available = product.availableStock ?? 0;
-                    const otherInCart = quantityInCart(line.productId, line.id);
-                    if (quantity + otherInCart > available) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Insufficient Stock',
-                            html: `<b>${product.name}</b><br>Available: <b>${formatQty(available)}</b>`
-                        });
-                        await methods.populateSecondaryData(state.id);
-                        return;
-                    }
+                const shortfall = product ? stockShortfall(product, quantity, line.id) : '';
+                if (shortfall) {
+                    Swal.fire({ icon: 'error', title: 'Insufficient Stock', text: shortfall });
+                    await methods.populateSecondaryData(state.id);
+                    return;
                 }
 
                 await persistLine(line, { quantity });
@@ -1612,20 +1847,13 @@ const App = {
                 }
                 await persistLine(line, { commissionRate });
             },
+            // Routine and easy to redo, so no confirmation; Clear all still asks.
             removeLine: async (line) => {
-                const confirmed = await Swal.fire({
-                    icon: 'warning',
-                    title: 'Remove this item?',
-                    text: line.productName,
-                    showCancelButton: true,
-                    confirmButtonText: 'Remove',
-                    confirmButtonColor: '#dc3545'
-                });
-                if (!confirmed.isConfirmed) return;
-
                 try {
                     await services.deleteSecondaryData(line.id, StorageManager.getUserId());
                     await refreshAfterCartChange();
+                    flashCart(`Removed ${line.productName ?? 'item'}`);
+                    focusEl(productSearchRef);
                 } catch (error) {
                     Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.response?.data?.message ?? 'An error occurred.' });
                 }
@@ -1654,7 +1882,8 @@ const App = {
                         Swal.fire({ icon: 'error', title: 'Error', text: `${failed.length} item(s) could not be removed.` });
                     } else {
                         await refreshAfterCartChange();
-                        Swal.fire({ icon: 'success', title: 'Cart Cleared', timer: 1200, showConfirmButton: false });
+                        notify('success', 'Cart cleared');
+                        focusEl(productSearchRef);
                     }
                 } catch (error) {
                     Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message ?? 'Some items could not be removed.' });
@@ -1663,10 +1892,26 @@ const App = {
             }
         };
 
-        const onMainModalShown = () => {
-            if (!state.deleteMode) {
-                orderDatePicker.focus();
+        // Ctrl/Cmd+Enter anywhere in the order modal saves; plain Enter is handled per field.
+        const onModalKeydown = (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                methods.handleFormSubmit();
             }
+        };
+
+        const onMainModalShown = () => {
+            if (state.deleteMode) return;
+            if (!state.customer.id && !state.customer.input) focusEl(customerInputRef);
+            else focusEl(productSearchRef);
+        };
+
+        const openAddModal = () => {
+            state.deleteMode = false;
+            state.mainTitle = 'New Sales Order';
+            resetFormState();
+            applyOrderDefaults();
+            mainModal.obj.show();
         };
 
         const mainModal = {
@@ -1715,18 +1960,9 @@ const App = {
                     methods.populateSalesOrderStatusListLookupData(),
                     methods.populateProductListLookupData(),
                     methods.populatePaymentMethodListLookupData(),
-                    methods.populateCustomerGroupListLookupData(),
-                    methods.populateCustomerCategoryListLookupData(),
                 ]).then(() => {
-                    customerListLookup.create();
                     taxListLookup.create();
                     salesOrderStatusListLookup.create();
-                    productPickLookup.create();
-                    customerQuickGroupListLookup.create();
-                    customerQuickCategoryListLookup.create();
-                    customerQuickModal.create();
-                    customerGroupQuickModal.create();
-                    customerCategoryQuickModal.create();
                     taxQuickModal.create();
                     createFilterControls();
                 });
@@ -1740,16 +1976,16 @@ const App = {
             if (qtyResolveTimer) {
                 clearTimeout(qtyResolveTimer);
             }
+            clearTimeout(customerSearchTimer);
+            clearTimeout(cartFlashTimer);
             watcherStops.forEach(stop => stop());
             window.removeEventListener('resize', onWindowResize);
             mainModalRef.value?.removeEventListener('hidden.bs.modal', methods.onMainModalHidden);
             mainModalRef.value?.removeEventListener('shown.bs.modal', onMainModalShown);
             mainGrid.obj?.destroy();
             orderDatePicker.obj?.destroy();
-            customerListLookup.obj?.destroy();
             taxListLookup.obj?.destroy();
             salesOrderStatusListLookup.obj?.destroy();
-            productPickLookup.obj?.destroy();
             filterStatusDropdown.obj?.destroy();
             filterCustomerDropdown.obj?.destroy();
             filterTaxDropdown.obj?.destroy();
@@ -1773,20 +2009,19 @@ const App = {
             paymentDateRef,
             mainModalRef,
             orderDateRef,
-            customerIdRef,
             taxIdRef,
             orderStatusRef,
-            productPickRef,
+            customerInputRef,
+            productSearchRef,
+            pickQtyRef,
+            pickPriceRef,
+            paymentAmountRef,
+            saveButtonRef,
+            productMatches,
             posLineTotal,
             posStockExceeded,
             posPriceOutOfBand,
-            customerQuickModalRef,
-            customerGroupQuickModalRef,
-            customerCategoryQuickModalRef,
             taxQuickModalRef,
-            customerQuickGroupIdRef,
-            customerQuickCategoryIdRef,
-            barcodeScanRef,
             viewModalRef,
             state,
             methods,
@@ -1795,12 +2030,19 @@ const App = {
                 handleSubmit: methods.handleFormSubmit,
                 toggleFilter: filterHandler.toggle,
                 clearFilters: filterHandler.clear,
-                openAddModal: () => {
-                    state.deleteMode = false;
-                    state.mainTitle = 'New Sales Order';
-                    resetFormState();
-                    mainModal.obj.show();
-                },
+                openAddModal: openAddModal,
+                onModalKeydown: onModalKeydown,
+                customerInput: customerField.onInput,
+                customerKeydown: customerField.onKeydown,
+                customerFocus: customerField.onFocus,
+                customerBlur: customerField.onBlur,
+                selectCustomer: customerField.select,
+                clearCustomer: customerField.clear,
+                productInput: productField.onInput,
+                productKeydown: productField.onKeydown,
+                productBlur: productField.onBlur,
+                pickProduct: productField.pick,
+                markPriceEdited: () => { state.productPick.priceEdited = true; },
                 formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
                 formatQty: formatQty,
                 formatDate: (value) => {
@@ -1823,12 +2065,13 @@ const App = {
                             state.number = record.number ?? '';
                             state.orderDate = record.orderDate ? new Date(record.orderDate) : null;
                             state.description = record.description ?? '';
-                            state.customerId = record.customerId ?? '';
                             state.taxId = record.taxId ?? '';
                             taxListLookup.trackingChange = true;
                             state.orderStatus = String(record.orderStatus ?? '');
-                            methods.populateSecondaryData(record.id);
-                            mainModal.obj.show();
+                            Promise.all([
+                                loadCustomer(record.customerId, record.customerName),
+                                methods.populateSecondaryData(record.id)
+                            ]).then(() => mainModal.obj.show());
                         }
                     }
                 },
@@ -1868,10 +2111,12 @@ const App = {
                     }
                     if (!state.newPayment.paymentMethodId) {
                         state.paymentError = 'Select a payment method.';
+                        document.getElementById('PaymentMethod')?.focus();
                         return;
                     }
                     if (!amount || amount <= 0) {
                         state.paymentError = 'Enter an amount greater than zero.';
+                        focusEl(paymentAmountRef, true);
                         return;
                     }
 
@@ -1881,6 +2126,7 @@ const App = {
                         return;
                     }
 
+                    if (state.isPaymentSubmitting) return;
                     try {
                         state.isPaymentSubmitting = true;
 
@@ -1897,14 +2143,10 @@ const App = {
                         if (response.data.code === 200) {
                             resetNewPaymentState();
                             await methods.refreshPaymentLedger(state.id);
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Payment Recorded',
-                                text: `Balance due: ${NumberFormatManager.formatToLocale(state.paymentSummary?.amountOutstanding ?? 0)}`,
-                                timer: 1600,
-                                showConfirmButton: false
-                            });
+                            notify('success', `Payment recorded. Balance due: ${NumberFormatManager.formatToLocale(state.paymentSummary?.amountOutstanding ?? 0)}`);
+                            // Settled → Save is next; otherwise stay on the amount for a split payment.
+                            if (state.isFullySettled) focusEl(saveButtonRef);
+                            else focusEl(paymentAmountRef, true);
                         }
                     } catch (error) {
                         state.paymentError = error.response?.data?.message ?? 'Failed to record the payment.';
@@ -1936,151 +2178,6 @@ const App = {
                         });
                     } finally {
                         state.isPaymentSubmitting = false;
-                    }
-                },
-                openCustomerQuickCreate: () => {
-                    state.customerQuickName = '';
-                    state.customerQuickDescription = '';
-                    state.customerQuickStreet = '';
-                    state.customerQuickCity = '';
-                    state.customerQuickAddrState = '';
-                    state.customerQuickZipCode = '';
-                    state.customerQuickCountry = '';
-                    state.customerQuickPhoneNumber = '';
-                    state.customerQuickEmailAddress = '';
-                    state.customerQuickGroupId = null;
-                    state.customerQuickCategoryId = null;
-                    state.customerQuickErrors = {
-                        name: '', street: '', city: '', addrState: '', zipCode: '',
-                        phoneNumber: '', emailAddress: '', customerGroupId: '', customerCategoryId: ''
-                    };
-                    customerQuickGroupListLookup.refresh();
-                    customerQuickCategoryListLookup.refresh();
-                    customerQuickModal.obj.show();
-                },
-                closeCustomerQuickCreate: () => {
-                    customerQuickModal.obj.hide();
-                },
-                submitCustomerQuickCreate: async () => {
-                    state.customerQuickErrors = {
-                        name: '', phoneNumber: '', emailAddress: ''
-                    };
-                    let isValid = true;
-                    if (!state.customerQuickName?.trim()) { state.customerQuickErrors.name = 'Name is required.'; isValid = false; }
-                    if (!state.customerQuickPhoneNumber?.trim()) { state.customerQuickErrors.phoneNumber = 'Phone number is required.'; isValid = false; }
-                    else if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(state.customerQuickPhoneNumber.trim().replace(/[\s\-]/g, ''))) { state.customerQuickErrors.phoneNumber = 'Enter a valid Bangladeshi number (e.g. 01711234567 or +8801711234567).'; isValid = false; }
-                    if (state.customerQuickEmailAddress?.trim() && !/\S+@\S+\.\S+/.test(state.customerQuickEmailAddress.trim())) { state.customerQuickErrors.emailAddress = 'Please enter a valid email address.'; isValid = false; }
-                    if (!isValid) return;
-                    try {
-                        state.customerQuickIsSubmitting = true;
-                        const response = await services.createCustomer(
-                            state.customerQuickName.trim(),
-                            state.customerQuickDescription,
-                            state.customerQuickGroupId,
-                            state.customerQuickCategoryId,
-                            state.customerQuickStreet.trim(),
-                            state.customerQuickCity.trim(),
-                            state.customerQuickAddrState.trim(),
-                            state.customerQuickZipCode.trim(),
-                            state.customerQuickCountry,
-                            state.customerQuickPhoneNumber.trim(),
-                            state.customerQuickEmailAddress.trim(),
-                            StorageManager.getUserId()
-                        );
-                        if (response.data.code === 200) {
-                            const newCustomer = response.data.content.data;
-                            await methods.populateCustomerListLookupData();
-                            customerListLookup.obj.setProperties({ dataSource: state.customerListLookupData, value: newCustomer.id });
-                            state.customerId = newCustomer.id;
-                            customerQuickModal.obj.hide();
-                            Swal.fire({ icon: 'success', title: 'Customer Created', timer: 1500, showConfirmButton: false });
-                        } else {
-                            Swal.fire({ icon: 'error', title: 'Failed', text: response.data.message ?? 'Failed to create customer.' });
-                        }
-                    } catch (error) {
-                        Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message ?? 'An error occurred.' });
-                    } finally {
-                        state.customerQuickIsSubmitting = false;
-                    }
-                },
-                openCustomerGroupQuickCreate: () => {
-                    state.customerGroupQuickName = '';
-                    state.customerGroupQuickDescription = '';
-                    state.customerGroupQuickErrors = { name: '' };
-                    customerQuickModal.obj.hide();
-                    setTimeout(() => customerGroupQuickModal.obj.show(), 300);
-                },
-                closeCustomerGroupQuickCreate: () => {
-                    customerGroupQuickModal.obj.hide();
-                    setTimeout(() => customerQuickModal.obj.show(), 300);
-                },
-                submitCustomerGroupQuickCreate: async () => {
-                    state.customerGroupQuickErrors = { name: '' };
-                    if (!state.customerGroupQuickName?.trim()) {
-                        state.customerGroupQuickErrors.name = 'Name is required.';
-                        return;
-                    }
-                    try {
-                        state.customerGroupQuickIsSubmitting = true;
-                        const response = await services.createCustomerGroup(
-                            state.customerGroupQuickName.trim(),
-                            state.customerGroupQuickDescription,
-                            StorageManager.getUserId()
-                        );
-                        if (response.data.code === 200) {
-                            const newGroup = response.data.content.data;
-                            await methods.populateCustomerGroupListLookupData();
-                            customerQuickGroupListLookup.obj.setProperties({ dataSource: state.customerGroupListLookupData, value: newGroup.id });
-                            state.customerQuickGroupId = newGroup.id;
-                            customerGroupQuickModal.obj.hide();
-                            setTimeout(() => customerQuickModal.obj.show(), 300);
-                        } else {
-                            state.customerGroupQuickErrors.name = response.data.message ?? 'Failed to create customer group.';
-                        }
-                    } catch (error) {
-                        state.customerGroupQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
-                    } finally {
-                        state.customerGroupQuickIsSubmitting = false;
-                    }
-                },
-                openCustomerCategoryQuickCreate: () => {
-                    state.customerCategoryQuickName = '';
-                    state.customerCategoryQuickDescription = '';
-                    state.customerCategoryQuickErrors = { name: '' };
-                    customerQuickModal.obj.hide();
-                    setTimeout(() => customerCategoryQuickModal.obj.show(), 300);
-                },
-                closeCustomerCategoryQuickCreate: () => {
-                    customerCategoryQuickModal.obj.hide();
-                    setTimeout(() => customerQuickModal.obj.show(), 300);
-                },
-                submitCustomerCategoryQuickCreate: async () => {
-                    state.customerCategoryQuickErrors = { name: '' };
-                    if (!state.customerCategoryQuickName?.trim()) {
-                        state.customerCategoryQuickErrors.name = 'Name is required.';
-                        return;
-                    }
-                    try {
-                        state.customerCategoryQuickIsSubmitting = true;
-                        const response = await services.createCustomerCategory(
-                            state.customerCategoryQuickName.trim(),
-                            state.customerCategoryQuickDescription,
-                            StorageManager.getUserId()
-                        );
-                        if (response.data.code === 200) {
-                            const newCategory = response.data.content.data;
-                            await methods.populateCustomerCategoryListLookupData();
-                            customerQuickCategoryListLookup.obj.setProperties({ dataSource: state.customerCategoryListLookupData, value: newCategory.id });
-                            state.customerQuickCategoryId = newCategory.id;
-                            customerCategoryQuickModal.obj.hide();
-                            setTimeout(() => customerQuickModal.obj.show(), 300);
-                        } else {
-                            state.customerCategoryQuickErrors.name = response.data.message ?? 'Failed to create customer category.';
-                        }
-                    } catch (error) {
-                        state.customerCategoryQuickErrors.name = error.response?.data?.message ?? 'An error occurred.';
-                    } finally {
-                        state.customerCategoryQuickIsSubmitting = false;
                     }
                 },
                 openTaxQuickCreate: () => {
@@ -2132,74 +2229,6 @@ const App = {
                         Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.', confirmButtonText: 'OK' });
                     } finally {
                         state.taxQuickIsSubmitting = false;
-                    }
-                },
-                handleBarcodeInput: async () => {
-                    const barcode = (state.barcodeInput ?? '').trim();
-                    if (!barcode) return;
-
-                    try {
-                        const response = await services.getProductByBarcode(barcode);
-                        const product = response?.data?.content?.data;
-
-                        if (!product) {
-                            Swal.fire({ icon: 'error', title: 'Product Not Found', text: `No product found for barcode: ${barcode}` });
-                            state.barcodeInput = '';
-                            return;
-                        }
-
-                        const matchedProduct = state.productListLookupData.find(p => p.id === product.id);
-                        let unitPrice = matchedProduct?.minSellingPrice ?? product.minSellingPrice
-                            ?? matchedProduct?.unitPrice ?? product.unitPrice ?? 0;
-                        const quantity = 1;
-                        // Prefer the resolved policy/promotion/QB price for this customer + qty.
-                        try {
-                            const priceResponse = await services.resolveSuggestedPrice(
-                                product.id,
-                                state.customerId,
-                                quantity,
-                                state.orderDate);
-                            const resolved = priceResponse?.data?.content?.calculatedPrice;
-                            if (resolved !== null && resolved !== undefined && Number(resolved) > 0) {
-                                unitPrice = Number(resolved);
-                            }
-                        } catch (resolveError) {
-                            // Keep the product fallback; pricing is advisory, never blocking.
-                        }
-
-                        if (product.physical) {
-                            const available = matchedProduct?.availableStock ?? 0;
-                            const alreadyInCart = quantityInCart(product.id);
-                            if (quantity + alreadyInCart > available) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Insufficient Stock',
-                                    html: `<b>${product.name}</b><br>` +
-                                          `Available: <b>${formatQty(available)}</b><br>` +
-                                          `Already in cart: <b>${formatQty(alreadyInCart)}</b>`
-                                });
-                                state.barcodeInput = '';
-                                return;
-                            }
-                        }
-
-                        if (!(await ensureHeaderSaved())) {
-                            state.barcodeInput = '';
-                            return;
-                        }
-
-                        await services.createSecondaryData(unitPrice, quantity, null, product.id, state.id, StorageManager.getUserId());
-                        await methods.populateSecondaryData(state.id);
-                        await methods.populateMainData();
-                        mainGrid.refresh();
-                        await methods.refreshPaymentSummary(state.id);
-
-                        Swal.fire({ icon: 'success', title: `Added: ${product.name}`, timer: 1200, showConfirmButton: false });
-                    } catch (error) {
-                        Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message ?? 'Failed to add product by barcode.' });
-                    } finally {
-                        state.barcodeInput = '';
-                        if (barcodeScanRef.value) barcodeScanRef.value.focus();
                     }
                 },
                 openViewModal: async (id) => {

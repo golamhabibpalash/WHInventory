@@ -94,6 +94,24 @@ public class CustomerController : BaseApiController
     }
 
     [Authorize]
+    [HttpGet("SearchCustomer")]
+    public async Task<ActionResult<ApiSuccessResult<SearchCustomerResult>>> SearchCustomerAsync(
+        CancellationToken cancellationToken,
+        [FromQuery] string? term = null
+        )
+    {
+        var request = new SearchCustomerRequest { Term = term };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<SearchCustomerResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(SearchCustomerAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
     [HttpGet("GetCustomerDue")]
     public async Task<ActionResult<ApiSuccessResult<GetCustomerDueResult>>> GetCustomerDueAsync(
         CancellationToken cancellationToken,

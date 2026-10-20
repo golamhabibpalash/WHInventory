@@ -82,7 +82,7 @@
 
     <div class="modal fade pos-modal" ref="mainModalRef" id="MainModal" aria-hidden="true" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
+            <div class="modal-content" v-on:keydown="handler.onModalKeydown">
                 <div class="modal-header pos-header">
                     <div class="pos-header-title">
                         <span class="pos-header-icon" v-bind:class="{ 'is-danger': state.deleteMode }">
@@ -92,138 +92,209 @@
                             <h5 class="modal-title">{{ state.mainTitle }}</h5>
                             <div class="pos-header-meta">
                                 <span v-if="state.number">{{ state.number }}</span>
-                                <span v-else>Number is assigned when the order is first saved</span>
+                                <span v-else>Number is assigned when the first item is added</span>
                                 <span class="pos-dot" v-if="state.secondaryData.length"></span>
                                 <span v-if="state.secondaryData.length">{{ state.secondaryData.length }} item(s)</span>
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" tabindex="-1"></button>
                 </div>
                 <div class="modal-body pos-body">
                     <input type="hidden" v-model="state.id" id="Id" name="Id" />
 
                     <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" v-if="state.deleteMode">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <span>You are about to delete Sales Order <strong>{{ state.number }}</strong> and its {{ state.secondaryData.length }} line item(s). This cannot be undone.</span>
+                        <span>You are about to delete Sales Order <strong>{{ state.number }}</strong><span v-if="state.customer.name"> for <strong>{{ state.customer.name }}</strong></span> and its {{ state.secondaryData.length }} line item(s). This cannot be undone.</span>
                     </div>
 
-                    <!-- Order details (always rendered so the Syncfusion inputs keep their host nodes) -->
-                    <form id="MainForm" class="card pos-section" v-on:submit.prevent>
-                        <div class="card-header">
-                            <h6 class="pos-section-title"><i class="fas fa-file-alt"></i>Order Details</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="pos-fields">
-                                <div>
-                                    <label for="CustomerId" class="pos-field-label">Customer<span class="pos-req">*</span></label>
-                                    <div class="pos-field-with-action">
-                                        <div ref="customerIdRef"></div>
-                                        <button type="button"
-                                                class="btn btn-outline-primary pos-icon-btn"
-                                                v-on:click="handler.openCustomerQuickCreate"
-                                                v-bind:disabled="state.deleteMode"
-                                                title="Quick-create a new customer"
-                                                aria-label="Quick-create a new customer">
-                                            <i class="fas fa-user-plus"></i>
-                                        </button>
-                                    </div>
-                                    <div class="pos-field-error" v-if="state.errors.customerId">{{ state.errors.customerId }}</div>
-                                </div>
-                                <div>
-                                    <label for="OrderDate" class="pos-field-label">Order Date<span class="pos-req">*</span></label>
-                                    <input ref="orderDateRef" />
-                                    <div class="pos-field-error" v-if="state.errors.orderDate">{{ state.errors.orderDate }}</div>
-                                </div>
-                                <div>
-                                    <label for="OrderStatus" class="pos-field-label">Status<span class="pos-req">*</span></label>
-                                    <div ref="orderStatusRef"></div>
-                                    <div class="pos-field-error" v-if="state.errors.orderStatus">{{ state.errors.orderStatus }}</div>
-                                </div>
-                                <div>
-                                    <label for="TaxId" class="pos-field-label">Tax<span class="pos-req">*</span></label>
-                                    <div class="pos-field-with-action">
-                                        <div ref="taxIdRef"></div>
-                                        <button type="button"
-                                                class="btn btn-outline-primary pos-icon-btn"
-                                                v-on:click="handler.openTaxQuickCreate"
-                                                v-bind:disabled="state.deleteMode"
-                                                title="Quick-create a new tax"
-                                                aria-label="Quick-create a new tax">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
-                                    </div>
-                                    <div class="pos-field-error" v-if="state.errors.taxId">{{ state.errors.taxId }}</div>
-                                </div>
-                                <div class="pos-span-all pos-note-row">
-                                    <div class="pos-note-col">
-                                        <label for="Description" class="pos-field-label">Note</label>
-                                        <textarea id="Description" class="form-control" rows="1" v-model="state.description" placeholder="Optional note for this order"></textarea>
-                                    </div>
-                                    <div class="pos-due-col">
-                                        <label for="PreviousDue" class="pos-field-label">Previous Due</label>
-                                        <input id="PreviousDue" type="text" class="form-control text-end pos-previous-due" readonly
-                                               v-bind:value="handler.formatAmount(state.previousDue)"
-                                               title="Outstanding balance from this customer's earlier confirmed orders">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+                    <div class="row g-3">
+                        <!-- LEFT: customer, product entry, cart (DOM order = tab order) -->
+                        <div class="col-lg-8" v-show="!state.deleteMode">
+                            <section class="card pos-section pos-customer" aria-labelledby="CustomerSectionTitle">
+                                <div class="card-body">
+                                    <div class="pos-customer-grid">
+                                        <div class="pos-combo">
+                                            <label for="CustomerMobile" id="CustomerSectionTitle" class="pos-field-label">Customer mobile<span class="pos-req">*</span></label>
+                                            <div class="pos-combo-input">
+                                                <i class="fas fa-mobile-alt pos-combo-icon" aria-hidden="true"></i>
+                                                <input ref="customerInputRef"
+                                                       id="CustomerMobile"
+                                                       type="tel"
+                                                       inputmode="tel"
+                                                       class="form-control"
+                                                       v-bind:class="{ 'is-invalid': state.errors.customerId }"
+                                                       placeholder="01XXXXXXXXX"
+                                                       autocomplete="off"
+                                                       maxlength="20"
+                                                       role="combobox"
+                                                       aria-autocomplete="list"
+                                                       aria-controls="CustomerSuggestions"
+                                                       v-bind:aria-expanded="state.customer.open ? 'true' : 'false'"
+                                                       v-bind:aria-activedescendant="state.customer.open && state.customer.activeIndex >= 0 ? 'CustomerOption' + state.customer.activeIndex : null"
+                                                       aria-describedby="CustomerStatus"
+                                                       v-model="state.customer.input"
+                                                       v-on:input="handler.customerInput"
+                                                       v-on:keydown="handler.customerKeydown"
+                                                       v-on:focus="handler.customerFocus"
+                                                       v-on:blur="handler.customerBlur" />
+                                                <span class="pos-combo-spinner" v-if="state.customer.status === 'searching'" aria-hidden="true">
+                                                    <i class="fas fa-spinner fa-spin"></i>
+                                                </span>
+                                            </div>
+                                            <ul class="pos-combo-list" id="CustomerSuggestions" role="listbox" aria-label="Matching customers" v-show="state.customer.open">
+                                                <li v-for="(c, index) in state.customer.suggestions"
+                                                    v-bind:key="c.id"
+                                                    v-bind:id="'CustomerOption' + index"
+                                                    role="option"
+                                                    class="pos-combo-option"
+                                                    v-bind:class="{ 'is-active': index === state.customer.activeIndex }"
+                                                    v-bind:aria-selected="index === state.customer.activeIndex ? 'true' : 'false'"
+                                                    v-on:mousedown.prevent="handler.selectCustomer(c)"
+                                                    v-on:mousemove="state.customer.activeIndex = index">
+                                                    <span class="pos-combo-main">{{ c.name || '—' }}</span>
+                                                    <span class="pos-combo-meta">{{ c.phoneNumber || 'No mobile' }}<span v-if="c.number"> &middot; {{ c.number }}</span></span>
+                                                </li>
+                                            </ul>
+                                            <div class="pos-field-error" v-if="state.errors.customerId" role="alert">{{ state.errors.customerId }}</div>
+                                        </div>
 
-                    <!-- POS working area -->
-                    <div class="row g-3" v-show="!state.deleteMode">
-                        <!-- LEFT: product entry + cart -->
-                        <div class="col-lg-8">
-                            <div class="card pos-section pos-card">
+                                        <div class="pos-customer-status" id="CustomerStatus" aria-live="polite">
+                                            <div class="pos-customer-card is-existing" v-if="state.customer.status === 'existing'">
+                                                <span class="pos-customer-avatar"><i class="fas fa-user-check"></i></span>
+                                                <div class="pos-customer-text">
+                                                    <div class="pos-customer-name">{{ state.customer.name || 'Customer' }}</div>
+                                                    <div class="pos-customer-sub">
+                                                        <span v-if="state.customer.number">{{ state.customer.number }}</span>
+                                                        <span class="pos-due" v-bind:class="{ 'is-due': state.previousDue > 0 }">Previous due {{ handler.formatAmount(state.previousDue) }}</span>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="pos-link-btn" tabindex="-1" v-on:click="handler.clearCustomer" title="Change customer" aria-label="Change customer">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="pos-customer-card is-new" v-else-if="state.customer.status === 'new' || (state.customer.status === 'error' && state.customer.input && !state.errors.customerId)">
+                                                <span class="pos-customer-avatar"><i class="fas fa-user-plus"></i></span>
+                                                <div class="pos-customer-text">
+                                                    <div class="pos-customer-name">{{ state.customer.status === 'error' ? 'Could not check this number' : 'New customer' }}</div>
+                                                    <div class="pos-customer-sub">{{ state.customer.status === 'error' ? 'It will be matched or added when the order is saved.' : 'Added automatically when the order is saved.' }}</div>
+                                                </div>
+                                            </div>
+                                            <p class="pos-note" v-else-if="state.customer.status === 'searching'">Searching customers&hellip;</p>
+                                            <p class="pos-note" v-else-if="state.customer.status === 'partial' && !state.errors.customerId">
+                                                {{ state.customer.suggestions.length ? 'Use the arrow keys and Enter to pick a customer.' : 'No match yet. Keep typing the 11-digit number.' }}
+                                            </p>
+                                            <p class="pos-note" v-else-if="!state.errors.customerId">Type a mobile number to find a customer, or add a new one.</p>
+                                        </div>
+
+                                        <div v-if="state.customer.status === 'new'">
+                                            <label for="CustomerNewName" class="pos-field-label">Name <span class="pos-optional">(optional)</span></label>
+                                            <input id="CustomerNewName" type="text" class="form-control" maxlength="100" autocomplete="off"
+                                                   placeholder="Defaults to the mobile number"
+                                                   v-model="state.customer.newName">
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="card pos-section pos-card" aria-labelledby="ProductSectionTitle">
                                 <div class="card-header">
-                                    <h6 class="pos-section-title"><i class="fas fa-box-open"></i>Add Products</h6>
-                                    <button type="button" class="pos-link-btn" v-on:click="handler.clearProductPick" v-bind:disabled="!state.productHint.name">
-                                        <i class="fas fa-undo me-1"></i>Reset
-                                    </button>
+                                    <h6 class="pos-section-title" id="ProductSectionTitle"><i class="fas fa-box-open"></i>Add Products</h6>
+                                    <span class="pos-kbd-hint d-none d-md-inline">Enter to pick &middot; Enter again to add &middot; Esc to clear</span>
                                 </div>
                                 <div class="card-body pos-pick">
-                                    <label class="pos-field-label">Product</label>
-                                    <div ref="productPickRef"></div>
+                                    <div class="pos-combo">
+                                        <label for="ProductSearch" class="pos-field-label">Product</label>
+                                        <div class="pos-combo-input">
+                                            <i class="fas fa-search pos-combo-icon" aria-hidden="true"></i>
+                                            <input ref="productSearchRef"
+                                                   id="ProductSearch"
+                                                   type="text"
+                                                   class="form-control"
+                                                   placeholder="Search by name or SKU, or scan a barcode"
+                                                   autocomplete="off"
+                                                   role="combobox"
+                                                   aria-autocomplete="list"
+                                                   aria-controls="ProductSuggestions"
+                                                   v-bind:aria-expanded="state.productSearch.open && productMatches.length ? 'true' : 'false'"
+                                                   v-bind:aria-activedescendant="state.productSearch.open && productMatches.length ? 'ProductOption' + state.productSearch.activeIndex : null"
+                                                   v-model="state.productSearch.term"
+                                                   v-on:input="handler.productInput"
+                                                   v-on:keydown="handler.productKeydown"
+                                                   v-on:blur="handler.productBlur" />
+                                            <span class="pos-combo-spinner" v-if="state.isAddingLine" aria-hidden="true">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                        </div>
+                                        <ul class="pos-combo-list" id="ProductSuggestions" role="listbox" aria-label="Matching products" v-show="state.productSearch.open && productMatches.length">
+                                            <li v-for="(p, index) in productMatches"
+                                                v-bind:key="p.id"
+                                                v-bind:id="'ProductOption' + index"
+                                                role="option"
+                                                class="pos-combo-option"
+                                                v-bind:class="{ 'is-active': index === state.productSearch.activeIndex }"
+                                                v-bind:aria-selected="index === state.productSearch.activeIndex ? 'true' : 'false'"
+                                                v-on:mousedown.prevent="handler.pickProduct(p)"
+                                                v-on:mousemove="state.productSearch.activeIndex = index">
+                                                <span class="pos-combo-main">{{ p.name }}</span>
+                                                <span class="pos-combo-meta">
+                                                    {{ p.number }}
+                                                    <span v-if="p.physical" v-bind:class="{ 'text-danger': (p.availableStock || 0) <= 0 }"> &middot; Stock {{ handler.formatQty(p.availableStock) }}</span>
+                                                    <span v-else> &middot; Non-stock</span>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    </div>
 
                                     <div class="pos-entry mt-3">
                                         <div>
-                                            <label class="pos-field-label">Unit Price</label>
-                                            <input type="number" step="0.01" min="0"
+                                            <label for="PickUnitPrice" class="pos-field-label">Unit Price</label>
+                                            <input ref="pickPriceRef" id="PickUnitPrice" type="number" step="0.01" min="0"
                                                    class="form-control text-end"
-                                                   v-model.number="state.productPick.unitPrice">
+                                                   v-bind:class="{ 'is-invalid': posPriceOutOfBand }"
+                                                   v-bind:disabled="!state.productPick.productId"
+                                                   v-model.number="state.productPick.unitPrice"
+                                                   v-on:input="handler.markPriceEdited"
+                                                   v-on:keydown.enter.exact.prevent="handler.addLineToCart">
                                         </div>
                                         <div>
-                                            <label class="pos-field-label">Commission %</label>
-                                            <input type="number" step="0.01" min="0" max="100"
+                                            <label for="PickCommission" class="pos-field-label">Commission %</label>
+                                            <input id="PickCommission" type="number" step="0.01" min="0" max="100"
                                                    class="form-control text-end"
                                                    title="Commission as a percentage of unit price"
-                                                   v-model.number="state.productPick.commission">
+                                                   v-bind:disabled="!state.productPick.productId"
+                                                   v-model.number="state.productPick.commission"
+                                                   v-on:keydown.enter.exact.prevent="handler.addLineToCart">
                                         </div>
                                         <div>
-                                            <label class="pos-field-label">Quantity</label>
+                                            <label for="PickQuantity" class="pos-field-label">Quantity</label>
                                             <div class="input-group pos-qty">
                                                 <div class="input-group-prepend">
-                                                    <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepQty(-1)" aria-label="Decrease quantity"><i class="fas fa-minus"></i></button>
+                                                    <button type="button" class="btn btn-outline-secondary" tabindex="-1" v-on:click="handler.stepQty(-1)" v-bind:disabled="!state.productPick.productId" aria-label="Decrease quantity"><i class="fas fa-minus"></i></button>
                                                 </div>
-                                                <input type="number" step="any" min="0" class="form-control" v-model.number="state.productPick.quantity">
+                                                <input ref="pickQtyRef" id="PickQuantity" type="number" step="any" min="0" class="form-control"
+                                                       v-bind:class="{ 'is-invalid': posStockExceeded }"
+                                                       v-bind:disabled="!state.productPick.productId"
+                                                       v-model.number="state.productPick.quantity"
+                                                       v-on:keydown.enter.exact.prevent="handler.addLineToCart">
                                                 <div class="input-group-append">
-                                                    <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepQty(1)" aria-label="Increase quantity"><i class="fas fa-plus"></i></button>
+                                                    <button type="button" class="btn btn-outline-secondary" tabindex="-1" v-on:click="handler.stepQty(1)" v-bind:disabled="!state.productPick.productId" aria-label="Increase quantity"><i class="fas fa-plus"></i></button>
                                                 </div>
                                             </div>
                                         </div>
                                         <div>
-                                            <label class="pos-field-label">Line Total</label>
-                                            <input type="text" class="form-control text-end pos-line-total" readonly
-                                                   v-bind:value="handler.formatAmount(posLineTotal)">
+                                            <span class="pos-field-label">Line Total</span>
+                                            <div class="pos-calc" aria-live="polite">{{ handler.formatAmount(posLineTotal) }}</div>
                                         </div>
                                         <button type="button" class="btn btn-primary pos-add-btn"
                                                 v-on:click="handler.addLineToCart"
                                                 v-bind:disabled="state.isAddingLine || !state.productPick.productId">
                                             <span class="spinner-border spinner-border-sm me-2" v-if="state.isAddingLine" role="status" aria-hidden="true"></span>
-                                            <i class="fas fa-cart-plus me-2" v-else></i>Add to Cart
+                                            <i class="fas fa-cart-plus me-2" v-else></i>Add
                                         </button>
                                     </div>
+
+                                    <div class="pos-field-error mt-2" v-if="state.pickError" role="alert">{{ state.pickError }}</div>
 
                                     <div class="pos-hints" v-if="state.productHint.name">
                                         <span v-if="state.productHint.physical" class="pos-hint" v-bind:class="{ 'is-danger': posStockExceeded }">
@@ -240,54 +311,37 @@
                                         <span class="pos-hint" v-else-if="state.priceSuggestion.sourceName">
                                             <i class="fas fa-tags"></i>Suggested: {{ state.priceSuggestion.sourceName }}<span v-if="state.priceSuggestion.profit !== null">, profit {{ handler.formatAmount(state.priceSuggestion.profit) }} ({{ state.priceSuggestion.profitPercent }}%)</span>
                                         </span>
-                                        <button type="button" class="pos-link-btn" v-on:click="handler.refreshSuggestedPrice" v-bind:disabled="!state.productPick.productId || state.priceSuggestion.loading" title="Re-fetch the policy/promotion price">
+                                        <button type="button" class="pos-link-btn" tabindex="-1" v-on:click="handler.refreshSuggestedPrice" v-bind:disabled="!state.productPick.productId || state.priceSuggestion.loading" title="Re-fetch the policy/promotion price">
                                             <i class="fas fa-sync-alt me-1"></i>Best price
                                         </button>
                                     </div>
-
-                                    <div class="pos-divider-label">or scan</div>
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text"><i class="fas fa-barcode"></i></span>
-                                        </div>
-                                        <input ref="barcodeScanRef"
-                                               v-model="state.barcodeInput"
-                                               type="text"
-                                               class="form-control"
-                                               placeholder="Scan a barcode or type a SKU, then press Enter"
-                                               aria-label="Barcode or SKU"
-                                               v-on:keydown.enter.prevent="handler.handleBarcodeInput"
-                                               autocomplete="off" />
-                                        <div class="input-group-append">
-                                            <button type="button" class="btn btn-outline-secondary" v-on:click="handler.handleBarcodeInput" title="Add product by barcode">
-                                                Add
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
-                            </div>
+                            </section>
 
-                            <div class="card pos-section pos-card mb-0">
+                            <section class="card pos-section pos-card mb-0" aria-labelledby="CartSectionTitle">
                                 <div class="card-header">
-                                    <h6 class="pos-section-title"><i class="fas fa-shopping-cart"></i>Cart <span class="pos-count">{{ state.secondaryData.length }}</span></h6>
-                                    <button type="button" class="pos-link-btn is-danger"
+                                    <h6 class="pos-section-title" id="CartSectionTitle"><i class="fas fa-shopping-cart"></i>Cart <span class="pos-count">{{ state.secondaryData.length }}</span></h6>
+                                    <span class="pos-flash" role="status" aria-live="polite">
+                                        <span v-if="state.cartFlash"><i class="fas fa-check-circle me-1"></i>{{ state.cartFlash }}</span>
+                                    </span>
+                                    <button type="button" class="pos-link-btn is-danger" tabindex="-1"
                                             v-on:click="handler.clearCart"
                                             v-bind:disabled="!state.secondaryData.length">
                                         <i class="fas fa-trash-alt me-1"></i>Clear all
                                     </button>
                                 </div>
                                 <div class="card-body p-0">
-                                    <div class="table-responsive">
+                                    <div class="table-responsive pos-cart-scroll">
                                         <table class="table pos-cart">
                                             <thead>
                                                 <tr>
                                                     <th>Product</th>
-                                                    <th class="text-center" style="width:128px;">Qty</th>
-                                                    <th class="text-end" style="width:108px;">Unit Price</th>
-                                                    <th class="text-end" style="width:92px;">Comm %</th>
-                                                    <th class="text-end" style="width:100px;">Discount</th>
-                                                    <th class="text-end" style="width:110px;">Total</th>
-                                                    <th style="width:48px;"><span class="sr-only">Remove</span></th>
+                                                    <th class="text-center pos-col-qty">Qty</th>
+                                                    <th class="text-end pos-col-price">Unit Price</th>
+                                                    <th class="text-end pos-col-comm">Comm %</th>
+                                                    <th class="text-end pos-col-amount">Discount</th>
+                                                    <th class="text-end pos-col-amount">Total</th>
+                                                    <th class="pos-col-action"><span class="sr-only">Remove</span></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -308,26 +362,26 @@
                                                     <td>
                                                         <div class="input-group input-group-sm pos-qty">
                                                             <div class="input-group-prepend">
-                                                                <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepLineQty(line, -1)" aria-label="Decrease quantity"><i class="fas fa-minus"></i></button>
+                                                                <button type="button" class="btn btn-outline-secondary" tabindex="-1" v-on:click="handler.stepLineQty(line, -1)" aria-label="Decrease quantity"><i class="fas fa-minus"></i></button>
                                                             </div>
                                                             <input type="number" step="any" min="0" class="form-control"
-                                                                   aria-label="Quantity"
+                                                                   v-bind:aria-label="'Quantity of ' + line.productName"
                                                                    v-bind:value="line.quantity"
                                                                    v-on:change="handler.commitLineQty(line, $event.target.value)">
                                                             <div class="input-group-append">
-                                                                <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepLineQty(line, 1)" aria-label="Increase quantity"><i class="fas fa-plus"></i></button>
+                                                                <button type="button" class="btn btn-outline-secondary" tabindex="-1" v-on:click="handler.stepLineQty(line, 1)" aria-label="Increase quantity"><i class="fas fa-plus"></i></button>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td class="text-end">
                                                         <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end pos-line-price"
-                                                               aria-label="Unit price"
+                                                               v-bind:aria-label="'Unit price of ' + line.productName"
                                                                v-bind:value="line.unitPrice"
                                                                v-on:change="handler.commitLinePrice(line, $event.target.value)">
                                                     </td>
                                                     <td class="text-end">
                                                         <input type="number" step="0.01" min="0" max="100" class="form-control form-control-sm text-end pos-line-price"
-                                                               aria-label="Commission percent"
+                                                               v-bind:aria-label="'Commission percent of ' + line.productName"
                                                                title="Commission percent of unit price"
                                                                v-bind:value="line.commissionRate"
                                                                v-on:change="handler.commitLineCommission(line, $event.target.value)">
@@ -335,7 +389,7 @@
                                                     <td class="text-end">{{ handler.formatAmount((line.unitPrice || 0) * (line.quantity || 0) * (line.commissionRate || 0) / 100) }}</td>
                                                     <td class="text-end fw-semibold">{{ handler.formatAmount((line.unitPrice || 0) * (1 - (line.commissionRate || 0) / 100) * (line.quantity || 0)) }}</td>
                                                     <td class="text-center">
-                                                        <button type="button" class="pos-remove-btn" v-on:click="handler.removeLine(line)" title="Remove item" aria-label="Remove item">
+                                                        <button type="button" class="pos-remove-btn" v-on:click="handler.removeLine(line)" v-bind:title="'Remove ' + line.productName" v-bind:aria-label="'Remove ' + line.productName">
                                                             <i class="fas fa-times"></i>
                                                         </button>
                                                     </td>
@@ -344,17 +398,20 @@
                                         </table>
                                     </div>
                                 </div>
-                            </div>
+                            </section>
                         </div>
 
-                        <!-- RIGHT: summary + payments -->
-                        <div class="col-lg-4">
+                        <!-- RIGHT: totals, payments, then order details (prefilled, so last in the tab order) -->
+                        <div v-bind:class="state.deleteMode ? 'col-12' : 'col-lg-4'">
                             <div class="pos-side">
-                                <div class="card pos-section">
-                                    <div class="card-header">
-                                        <h6 class="pos-section-title"><i class="fas fa-receipt"></i>Summary</h6>
-                                    </div>
+                                <section class="card pos-section" v-show="!state.deleteMode" aria-labelledby="SummarySectionTitle">
                                     <div class="card-body">
+                                        <h6 class="sr-only" id="SummarySectionTitle">Summary</h6>
+                                        <div class="pos-total-block mt-0">
+                                            <div class="pos-total-label">Total</div>
+                                            <div class="pos-total-value" id="TotalAmount">{{ state.totalAmount }}</div>
+                                            <div class="pos-total-words" id="AmountInWords" v-if="state.amountInWords">{{ state.amountInWords }}</div>
+                                        </div>
                                         <div class="pos-summary-row">
                                             <span class="text-muted">Subtotal</span>
                                             <span id="SubTotalAmount">{{ state.subTotalAmount }}</span>
@@ -367,11 +424,6 @@
                                             <span class="text-muted">Tax</span>
                                             <span id="TaxAmount">{{ state.taxAmount }}</span>
                                         </div>
-                                        <div class="pos-total-block">
-                                            <div class="pos-total-label">Total</div>
-                                            <div class="pos-total-value" id="TotalAmount">{{ state.totalAmount }}</div>
-                                            <div class="pos-total-words" id="AmountInWords" v-if="state.amountInWords">{{ state.amountInWords }}</div>
-                                        </div>
                                         <div class="pos-summary-row" v-if="state.paymentSummary">
                                             <span class="text-muted">Paid</span>
                                             <span id="AmountPaid">{{ handler.formatAmount(state.paymentSummary.amountPaid) }}</span>
@@ -382,15 +434,15 @@
                                             <span id="AmountOutstanding">{{ handler.formatAmount(state.paymentSummary.amountOutstanding) }}</span>
                                         </div>
                                     </div>
-                                </div>
+                                </section>
 
-                                <div class="card pos-section mb-0">
+                                <section class="card pos-section" v-show="!state.deleteMode" aria-labelledby="PaymentSectionTitle">
                                     <div class="card-header">
-                                        <h6 class="pos-section-title"><i class="fas fa-hand-holding-usd"></i>Payments <span class="pos-count" v-if="state.paymentList.length">{{ state.paymentList.length }}</span></h6>
+                                        <h6 class="pos-section-title" id="PaymentSectionTitle"><i class="fas fa-hand-holding-usd"></i>Payments <span class="pos-count" v-if="state.paymentList.length">{{ state.paymentList.length }}</span></h6>
                                     </div>
                                     <div class="card-body">
                                         <p class="pos-note" v-if="!state.id">
-                                            Add a product to create the order, then record payments here.
+                                            Payments can be recorded once the first item is added.
                                         </p>
 
                                         <ul class="pos-pay-list" v-if="state.paymentList.length">
@@ -402,6 +454,7 @@
                                                 <span class="pos-pay-amount">{{ handler.formatAmount(p.amount) }}</span>
                                                 <button type="button"
                                                         class="pos-remove-btn"
+                                                        tabindex="-1"
                                                         v-on:click="handler.deletePayment(p)"
                                                         v-bind:disabled="state.deleteMode || state.isPaymentSubmitting"
                                                         title="Remove this payment"
@@ -415,25 +468,27 @@
                                         <div v-if="!state.deleteMode && state.id && !state.isFullySettled">
                                             <div class="pos-pay-form">
                                                 <div>
-                                                    <label class="pos-field-label">Date</label>
-                                                    <input ref="paymentDateRef">
+                                                    <label for="PaymentAmount" class="pos-field-label">Amount</label>
+                                                    <input ref="paymentAmountRef" id="PaymentAmount" type="number" step="0.01" min="0" class="form-control text-end"
+                                                           v-model.number="state.newPayment.amount"
+                                                           v-bind:placeholder="handler.formatAmount(state.paymentSummary ? state.paymentSummary.amountOutstanding : 0)"
+                                                           v-on:keydown.enter.exact.prevent="handler.submitPayment">
                                                 </div>
                                                 <div>
-                                                    <label class="pos-field-label">Method</label>
-                                                    <select class="form-select" v-model="state.newPayment.paymentMethodId">
+                                                    <label for="PaymentMethod" class="pos-field-label">Method</label>
+                                                    <select id="PaymentMethod" class="form-select" v-model="state.newPayment.paymentMethodId">
                                                         <option value="">Select...</option>
                                                         <option v-for="m in state.paymentMethodListLookupData" v-bind:key="m.id" v-bind:value="m.id">{{ m.name }}</option>
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label class="pos-field-label">Amount</label>
-                                                    <input type="number" step="0.01" min="0" class="form-control text-end"
-                                                           v-model.number="state.newPayment.amount"
-                                                           v-bind:placeholder="handler.formatAmount(state.paymentSummary ? state.paymentSummary.amountOutstanding : 0)">
+                                                    <label class="pos-field-label">Date</label>
+                                                    <input ref="paymentDateRef">
                                                 </div>
                                                 <div>
-                                                    <label class="pos-field-label">Reference</label>
-                                                    <input type="text" class="form-control" v-model="state.newPayment.referenceNumber" placeholder="Optional">
+                                                    <label for="PaymentReference" class="pos-field-label">Reference</label>
+                                                    <input id="PaymentReference" type="text" class="form-control" v-model="state.newPayment.referenceNumber" placeholder="Optional"
+                                                           v-on:keydown.enter.exact.prevent="handler.submitPayment">
                                                 </div>
                                             </div>
                                             <div class="pos-pay-actions">
@@ -451,10 +506,51 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <p class="pos-note is-danger mt-2" v-if="state.paymentError">{{ state.paymentError }}</p>
+                                        <p class="pos-note is-danger mt-2" v-if="state.paymentError" role="alert">{{ state.paymentError }}</p>
                                         <p class="pos-note is-success" v-if="state.isFullySettled"><i class="fas fa-check-circle me-2"></i>This order is fully settled.</p>
                                     </div>
-                                </div>
+                                </section>
+
+                                <!-- Order details (always rendered so the Syncfusion inputs keep their host nodes) -->
+                                <form id="MainForm" class="card pos-section mb-0" v-on:submit.prevent aria-labelledby="DetailsSectionTitle">
+                                    <div class="card-header">
+                                        <h6 class="pos-section-title" id="DetailsSectionTitle"><i class="fas fa-file-alt"></i>Order Details</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="pos-details">
+                                            <div>
+                                                <label for="OrderDate" class="pos-field-label">Order Date<span class="pos-req">*</span></label>
+                                                <input ref="orderDateRef" id="OrderDate" />
+                                                <div class="pos-field-error" v-if="state.errors.orderDate" role="alert">{{ state.errors.orderDate }}</div>
+                                            </div>
+                                            <div>
+                                                <label for="OrderStatus" class="pos-field-label">Status<span class="pos-req">*</span></label>
+                                                <div ref="orderStatusRef" id="OrderStatus"></div>
+                                                <div class="pos-field-error" v-if="state.errors.orderStatus" role="alert">{{ state.errors.orderStatus }}</div>
+                                            </div>
+                                            <div class="pos-span-all">
+                                                <label for="TaxId" class="pos-field-label">Tax<span class="pos-req">*</span></label>
+                                                <div class="pos-field-with-action">
+                                                    <div ref="taxIdRef" id="TaxId"></div>
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary pos-icon-btn"
+                                                            tabindex="-1"
+                                                            v-on:click="handler.openTaxQuickCreate"
+                                                            v-bind:disabled="state.deleteMode"
+                                                            title="Quick-create a new tax"
+                                                            aria-label="Quick-create a new tax">
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="pos-field-error" v-if="state.errors.taxId" role="alert">{{ state.errors.taxId }}</div>
+                                            </div>
+                                            <div class="pos-span-all">
+                                                <label for="Description" class="pos-field-label">Note</label>
+                                                <textarea id="Description" class="form-control" rows="1" v-model="state.description" placeholder="Optional note for this order"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -462,15 +558,18 @@
                 <div class="modal-footer pos-footer">
                     <div class="pos-footer-summary" v-if="!state.deleteMode">
                         {{ state.secondaryData.length }} item(s) &middot; Total <strong>{{ state.totalAmount }}</strong>
+                        <span class="pos-kbd-hint d-none d-md-inline ms-2"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to save</span>
                     </div>
                     <div class="pos-footer-actions">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="button"
+                                ref="saveButtonRef"
                                 id="MainSaveButton"
                                 class="btn"
                                 v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
                                 v-on:click="handler.handleSubmit"
-                                v-bind:disabled="state.isSubmitting">
+                                v-bind:disabled="state.isSubmitting"
+                                v-bind:aria-busy="state.isSubmitting ? 'true' : 'false'">
                             <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
                             <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete Order' : 'Save Order' }}</span>
                             <span v-else>{{ state.deleteMode ? 'Deleting...' : 'Saving...' }}</span>
@@ -569,191 +668,6 @@
                     </button>
                     <button type="button" class="btn btn-primary" v-on:click="handler.editFromView">
                         <i class="fas fa-edit me-2"></i>Edit Order
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Customer Quick Create Modal -->
-    <div class="modal fade" ref="customerQuickModalRef" id="CustomerQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Quick Create Customer</h5>
-                    <button type="button" class="btn-close" v-on:click="handler.closeCustomerQuickCreate" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Only Name and Phone are required. The new customer will be automatically selected after creation.</p>
-                    <div class="card mb-3">
-                        <div class="card-header"><h6 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Basic Info</h6></div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-md-6">
-                                    <label>Name <span class="text-danger">*</span></label>
-                                    <input v-model="state.customerQuickName" type="text" class="form-control" placeholder="Customer name" />
-                                    <span class="text-danger small">{{ state.customerQuickErrors.name }}</span>
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Description</label>
-                                    <input v-model="state.customerQuickDescription" type="text" class="form-control" placeholder="Optional" />
-                                </div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-md-6">
-                                    <label>Customer Group</label>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div ref="customerQuickGroupIdRef" class="flex-grow-1"></div>
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-success flex-shrink-0"
-                                                v-on:click="handler.openCustomerGroupQuickCreate"
-                                                title="Quick-create a new customer group">
-                                            <i class="fas fa-plus me-2"></i>New
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Customer Category</label>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div ref="customerQuickCategoryIdRef" class="flex-grow-1"></div>
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-warning flex-shrink-0"
-                                                v-on:click="handler.openCustomerCategoryQuickCreate"
-                                                title="Quick-create a new customer category">
-                                            <i class="fas fa-plus me-2"></i>New
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-3">
-                        <div class="card-header"><h6 class="mb-0"><i class="fas fa-map-marker-alt me-2 text-primary"></i>Address</h6></div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-md-12">
-                                    <label>Street</label>
-                                    <input v-model="state.customerQuickStreet" type="text" class="form-control" placeholder="Street address (optional)" />
-                                </div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-md-4">
-                                    <label>City</label>
-                                    <input v-model="state.customerQuickCity" type="text" class="form-control" placeholder="City (optional)" />
-                                </div>
-                                <div class="col-md-4">
-                                    <label>State / Province</label>
-                                    <input v-model="state.customerQuickAddrState" type="text" class="form-control" placeholder="State / Province (optional)" />
-                                </div>
-                                <div class="col-md-4">
-                                    <label>Zip Code</label>
-                                    <input v-model="state.customerQuickZipCode" type="text" class="form-control" placeholder="Zip / Postal code (optional)" />
-                                </div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-md-12">
-                                    <label>Country</label>
-                                    <input v-model="state.customerQuickCountry" type="text" class="form-control" placeholder="Country (optional)" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header"><h6 class="mb-0"><i class="fas fa-phone me-2 text-primary"></i>Contact</h6></div>
-                        <div class="card-body">
-                            <div class="row mb-2">
-                                <div class="col-md-6">
-                                    <label>Phone Number <span class="text-danger">*</span></label>
-                                    <input v-model="state.customerQuickPhoneNumber" type="text" class="form-control" maxlength="15" placeholder="Phone number" />
-                                    <span class="text-danger small">{{ state.customerQuickErrors.phoneNumber }}</span>
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Email Address</label>
-                                    <input v-model="state.customerQuickEmailAddress" type="email" class="form-control" placeholder="Email (optional)" />
-                                    <span class="text-danger small">{{ state.customerQuickErrors.emailAddress }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerQuickCreate"><i class="fas fa-times me-2"></i>Cancel</button>
-                    <button type="button" class="btn btn-primary" v-on:click="handler.submitCustomerQuickCreate" v-bind:disabled="state.customerQuickIsSubmitting">
-                        <span class="spinner-border spinner-border-sm me-1" v-if="state.customerQuickIsSubmitting"></span>
-                        <i class="fas fa-user-plus me-2" v-else></i>
-                        {{ state.customerQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CustomerGroup Quick Create Modal -->
-    <div class="modal fade" ref="customerGroupQuickModalRef" id="CustomerGroupQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="fas fa-users me-2"></i>Quick Create Customer Group</h5>
-                    <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeCustomerGroupQuickCreate" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new group will be automatically selected after creation.</p>
-                    <div class="row mb-2">
-                        <div class="col-md-12">
-                            <label>Name <span class="text-danger">*</span></label>
-                            <input v-model="state.customerGroupQuickName" type="text" class="form-control" placeholder="Customer group name" />
-                            <span class="text-danger small">{{ state.customerGroupQuickErrors.name }}</span>
-                        </div>
-                    </div>
-                    <div class="row mb-2">
-                        <div class="col-md-12">
-                            <label>Description</label>
-                            <textarea v-model="state.customerGroupQuickDescription" class="form-control" rows="2" placeholder="Optional"></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerGroupQuickCreate"><i class="fas fa-times me-2"></i>Cancel</button>
-                    <button type="button" class="btn btn-success" v-on:click="handler.submitCustomerGroupQuickCreate" v-bind:disabled="state.customerGroupQuickIsSubmitting">
-                        <span class="spinner-border spinner-border-sm me-1" v-if="state.customerGroupQuickIsSubmitting"></span>
-                        <i class="fas fa-users me-2" v-else></i>
-                        {{ state.customerGroupQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CustomerCategory Quick Create Modal -->
-    <div class="modal fade" ref="customerCategoryQuickModalRef" id="CustomerCategoryQuickModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title"><i class="fas fa-tag me-2"></i>Quick Create Customer Category</h5>
-                    <button type="button" class="btn-close" v-on:click="handler.closeCustomerCategoryQuickCreate" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted small mb-3"><i class="fas fa-info-circle me-2"></i>Fill in the required fields. The new category will be automatically selected after creation.</p>
-                    <div class="row mb-2">
-                        <div class="col-md-12">
-                            <label>Name <span class="text-danger">*</span></label>
-                            <input v-model="state.customerCategoryQuickName" type="text" class="form-control" placeholder="Customer category name" />
-                            <span class="text-danger small">{{ state.customerCategoryQuickErrors.name }}</span>
-                        </div>
-                    </div>
-                    <div class="row mb-2">
-                        <div class="col-md-12">
-                            <label>Description</label>
-                            <textarea v-model="state.customerCategoryQuickDescription" class="form-control" rows="2" placeholder="Optional"></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCustomerCategoryQuickCreate"><i class="fas fa-times me-2"></i>Cancel</button>
-                    <button type="button" class="btn btn-warning text-dark" v-on:click="handler.submitCustomerCategoryQuickCreate" v-bind:disabled="state.customerCategoryQuickIsSubmitting">
-                        <span class="spinner-border spinner-border-sm me-1" v-if="state.customerCategoryQuickIsSubmitting"></span>
-                        <i class="fas fa-tag me-2" v-else></i>
-                        {{ state.customerCategoryQuickIsSubmitting ? 'Creating...' : 'Create & Select' }}
                     </button>
                 </div>
             </div>

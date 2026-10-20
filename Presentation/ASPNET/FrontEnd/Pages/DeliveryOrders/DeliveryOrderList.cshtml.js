@@ -118,10 +118,10 @@ const App = {
                 if (state.salesOrderListLookupData && Array.isArray(state.salesOrderListLookupData)) {
                     salesOrderListLookup.obj = new ej.dropdowns.DropDownList({
                         dataSource: state.salesOrderListLookupData,
-                        fields: { value: 'id', text: 'displayName' },
+                        fields: { value: 'id', text: 'displayName', sortBy: 'orderDate' },
                         placeholder: 'Select Sales Order',
                         filterBarPlaceholder: 'Search by order no., phone or date',
-                        sortOrder: 'Ascending',
+                        sortOrder: 'Descending',
                         allowFiltering: true,
                         filtering: (e) => {
                             e.preventDefaultAction = true;
@@ -323,6 +323,7 @@ const App = {
                     const orderDateText = so.orderDate ? DateFormatManager.formatToLocale(so.orderDate) : '';
                     return {
                         ...so,
+                        orderDate: so.orderDate ? new Date(so.orderDate) : null,
                         orderDateText,
                         displayName: [so.number, so.customerPhoneNumber, orderDateText].filter(Boolean).join(' - ')
                     };
