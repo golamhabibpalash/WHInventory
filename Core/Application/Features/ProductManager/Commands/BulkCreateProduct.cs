@@ -64,6 +64,18 @@ public class BulkCreateProductHandler : IRequestHandler<BulkCreateProductRequest
         var productGroups = await _context.ProductGroup.AsNoTracking().ToListAsync(cancellationToken);
         var brands = await _context.Brand.AsNoTracking().ToListAsync(cancellationToken);
 
+        // Product names are unique per tenant, so a clash has to be caught per row and reported
+        // rather than thrown - one bad row must not cost the user the rest of the file.
+        var existingNames = await _context.Product
+            .AsNoTracking()
+            .Where(x => x.IsDeleted == false)
+            .Select(x => x.Name)
+            .ToListAsync(cancellationToken);
+
+        var takenNames = new HashSet<string>(
+            existingNames.Where(x => !string.IsNullOrWhiteSpace(x))!,
+            StringComparer.OrdinalIgnoreCase);
+
         var errors = new List<BulkCreateProductErrorRow>();
         var successCount = 0;
         var totalRows = 0;
@@ -180,6 +192,19 @@ public class BulkCreateProductHandler : IRequestHandler<BulkCreateProductRequest
 
             var isWarranty = string.IsNullOrWhiteSpace(isWarrantyText) ? false :
                 isWarrantyText.Equals("TRUE", StringComparison.OrdinalIgnoreCase);
+
+            // Covers both a name already in the database and one repeated earlier in this file.
+            // Placed after every row-error check so a row that fails validation does not reserve the name.
+            if (!takenNames.Add(name))
+            {
+                errors.Add(new BulkCreateProductErrorRow
+                {
+                    RowNumber = rowNumber,
+                    Name = name,
+                    Message = $"A product named '{name}' already exists."
+                });
+                continue;
+            }
 
             var entity = new Product();
             entity.CreatedById = request.CreatedById;

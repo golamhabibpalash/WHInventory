@@ -1,8 +1,10 @@
+using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.ProductManager.Commands;
 
@@ -61,14 +63,17 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, Update
 {
     private readonly ICommandRepository<Product> _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IQueryContext _queryContext;
 
     public UpdateProductHandler(
         ICommandRepository<Product> repository,
-        IUnitOfWork unitOfWork
+        IUnitOfWork unitOfWork,
+        IQueryContext queryContext
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _queryContext = queryContext;
     }
 
     public async Task<UpdateProductResult> Handle(UpdateProductRequest request, CancellationToken cancellationToken)
@@ -81,9 +86,19 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, Update
             throw new Exception($"Entity not found: {request.Id}");
         }
 
+        var name = request.Name?.Trim();
+
+        var duplicate = await _queryContext.Product
+            .AnyAsync(x => x.Name != null && x.Name.ToLower() == name!.ToLower() && x.Id != request.Id && !x.IsDeleted, cancellationToken);
+
+        if (duplicate)
+        {
+            throw new ValidationException($"A product with the name '{name}' already exists.");
+        }
+
         entity.UpdatedById = request.UpdatedById;
 
-        entity.Name = request.Name;
+        entity.Name = name;
         entity.UnitPrice = request.UnitPrice.ToMoney();
         entity.MinSellingPrice = request.MinSellingPrice.ToMoney();
         entity.MaxSellingPrice = request.MaxSellingPrice.ToMoney();

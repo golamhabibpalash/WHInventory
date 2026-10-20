@@ -1,9 +1,11 @@
+using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using Application.Common.Repositories;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.ProductManager.Commands;
 
@@ -62,25 +64,38 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Create
     private readonly ICommandRepository<Product> _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly NumberSequenceService _numberSequenceService;
+    private readonly IQueryContext _queryContext;
 
     public CreateProductHandler(
         ICommandRepository<Product> repository,
         IUnitOfWork unitOfWork,
-        NumberSequenceService numberSequenceService
+        NumberSequenceService numberSequenceService,
+        IQueryContext queryContext
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _numberSequenceService = numberSequenceService;
+        _queryContext = queryContext;
     }
 
     public async Task<CreateProductResult> Handle(CreateProductRequest request, CancellationToken cancellationToken = default)
     {
+        var name = request.Name?.Trim();
+
+        var duplicate = await _queryContext.Product
+            .AnyAsync(x => x.Name != null && x.Name.ToLower() == name!.ToLower() && !x.IsDeleted, cancellationToken);
+
+        if (duplicate)
+        {
+            throw new ValidationException($"A product with the name '{name}' already exists.");
+        }
+
         var entity = new Product();
         entity.CreatedById = request.CreatedById;
 
         entity.Number = _numberSequenceService.GenerateNumber(nameof(Product), "", "ART");
-        entity.Name = request.Name;
+        entity.Name = name;
         entity.UnitPrice = request.UnitPrice.ToMoney();
         entity.MinSellingPrice = request.MinSellingPrice.ToMoney();
         entity.MaxSellingPrice = request.MaxSellingPrice.ToMoney();
