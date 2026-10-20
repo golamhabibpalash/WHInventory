@@ -22,6 +22,7 @@ public class UpdateSalesOrderItemRequest : IRequest<UpdateSalesOrderItemResult>
     public string? ProductId { get; init; }
     public string? Remark { get; init; }
     public double? UnitPrice { get; init; }
+    public double? CommissionRate { get; init; }
     public double? Quantity { get; init; }
     public string? UpdatedById { get; init; }
 }
@@ -35,6 +36,9 @@ public class UpdateSalesOrderItemValidator : AbstractValidator<UpdateSalesOrderI
         RuleFor(x => x.ProductId).NotEmpty();
         RuleFor(x => x.UnitPrice).NotEmpty();
         RuleFor(x => x.Quantity).NotEmpty();
+        RuleFor(x => x.CommissionRate)
+            .InclusiveBetween(0, 100).When(x => x.CommissionRate.HasValue)
+            .WithMessage("Commission rate must be between 0 and 100 percent.");
     }
 }
 
@@ -80,9 +84,10 @@ public class UpdateSalesOrderItemHandler : IRequestHandler<UpdateSalesOrderItemR
         entity.ProductId = request.ProductId;
         entity.Summary = request.Remark;
         entity.UnitPrice = request.UnitPrice;
+        entity.CommissionRate = request.CommissionRate ?? 0;
         entity.Quantity = request.Quantity;
 
-        entity.Total = (entity.UnitPrice * entity.Quantity).ToMoney();
+        entity.Total = ((entity.UnitPrice ?? 0) * (1 - (entity.CommissionRate ?? 0) / 100.0) * (entity.Quantity ?? 0)).ToMoney();
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

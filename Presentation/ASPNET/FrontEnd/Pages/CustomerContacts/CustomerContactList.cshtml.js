@@ -227,6 +227,8 @@
             create: () => {
                 if (state.customerListLookupData && Array.isArray(state.customerListLookupData)) {
                     customerListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.customerListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Customer',

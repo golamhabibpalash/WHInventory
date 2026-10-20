@@ -142,6 +142,8 @@ const App = {
             obj: null,
             create: () => {
                 filterStatusDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: [{ id: 'Due', name: 'Due' }, { id: 'Settled', name: 'Settled' }],
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All statuses',

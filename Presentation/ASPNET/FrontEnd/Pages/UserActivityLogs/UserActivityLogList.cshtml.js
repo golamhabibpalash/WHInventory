@@ -2,76 +2,158 @@ const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
-            filterActivityType: '',
-            filterFromDate: '',
-            filterToDate: ''
+            filterOpen: false,
+            filter: {
+                activityType: null,
+                fromDate: null,
+                toDate: null,
+            }
         });
 
         const mainGridRef = Vue.ref(null);
+        const filterPanelRef = Vue.ref(null);
+        const filterActivityTypeRef = Vue.ref(null);
         const filterFromDateRef = Vue.ref(null);
         const filterToDateRef = Vue.ref(null);
 
-        const filterDatePickers = {
-            from: null,
-            to: null,
-            create: () => {
-                // EJ2 rather than <input type="date">, whose rendering follows the browser's
-                // own locale and cannot be pinned to the dd/MM/yyyy this application uses.
-                filterDatePickers.from = new ej.calendars.DatePicker({
-                    format: 'dd/MM/yyyy',
-                    placeholder: 'From',
-                    showClearButton: true,
-                    change: (e) => { state.filterFromDate = DateFormatManager.toApiDate(e.value) ?? ''; }
-                });
-                filterDatePickers.from.appendTo(filterFromDateRef.value);
+        // ── List filtering (client-side over the already-fetched list; no API change) ──────────
+        const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+        const endOfDay = (d) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; };
 
-                filterDatePickers.to = new ej.calendars.DatePicker({
-                    format: 'dd/MM/yyyy',
-                    placeholder: 'To',
-                    showClearButton: true,
-                    change: (e) => { state.filterToDate = DateFormatManager.toApiDate(e.value) ?? ''; }
-                });
-                filterDatePickers.to.appendTo(filterToDateRef.value);
-            },
-            clear: () => {
-                if (filterDatePickers.from) filterDatePickers.from.value = null;
-                if (filterDatePickers.to) filterDatePickers.to.value = null;
+        const getFilteredData = () => {
+            let data = state.mainData || [];
+            const f = state.filter;
+            if (f.activityType) data = data.filter(x => x.activityType === f.activityType);
+            if (f.fromDate) {
+                const from = startOfDay(f.fromDate);
+                data = data.filter(x => x.createdAtUtc instanceof Date && x.createdAtUtc >= from);
             }
+            if (f.toDate) {
+                const to = endOfDay(f.toDate);
+                data = data.filter(x => x.createdAtUtc instanceof Date && x.createdAtUtc <= to);
+            }
+            return data;
         };
 
+        const activeFilterCount = Vue.computed(() => {
+            const f = state.filter;
+            let count = 0;
+            if (f.activityType) count++;
+            if (f.fromDate) count++;
+            if (f.toDate) count++;
+            return count;
+        });
+
+        // Re-run the filter and push the result into the grid (keeps the grid's own paging/sorting).
+        const applyFilter = () => {
+            if (mainGrid.obj) mainGrid.obj.setProperties({ dataSource: getFilteredData() });
+        };
+
+        // Distinct activity types found in the loaded list, for the filter dropdown.
+        const getActivityTypeOptions = () => {
+            const set = new Set();
+            (state.mainData || []).forEach(x => { if (x.activityType) set.add(x.activityType); });
+            return Array.from(set).sort();
+        };
+
+        // Drop the panel directly beneath the grid toolbar, spanning the grid width.
+        const positionFilterPanel = () => {
+            const wrap = mainGridRef.value?.closest('.po-grid-wrap');
+            const toolbar = mainGridRef.value?.querySelector('.e-toolbar');
+            if (!wrap || !toolbar || !filterPanelRef.value) return;
+            const top = toolbar.getBoundingClientRect().bottom - wrap.getBoundingClientRect().top;
+            filterPanelRef.value.style.top = `${top}px`;
+        };
+
+        const onWindowResize = () => { if (state.filterOpen) positionFilterPanel(); };
+
         const services = {
-            getMainData: async (activityType, fromDate, toDate) => {
-                let url = '/UserActivityLog/GetUserActivityLogList?';
-                if (activityType) url += `activityType=${encodeURIComponent(activityType)}&`;
-                if (fromDate) url += `fromDate=${encodeURIComponent(fromDate)}&`;
-                if (toDate) url += `toDate=${encodeURIComponent(toDate + 'T23:59:59')}&`;
-                return await AxiosManager.get(url, {});
+            getMainData: async () => {
+                return await AxiosManager.get('/UserActivityLog/GetUserActivityLogList', {});
             }
         };
 
         const methods = {
-            populateMainData: async (activityType, fromDate, toDate) => {
-                try {
-                    const response = await services.getMainData(activityType, fromDate, toDate);
-                    state.mainData = response?.data?.content?.data ?? [];
-                    mainGrid.refresh();
-                } catch (error) {
+            populateMainData: async () => {
+                const response = await services.getMainData();
+                state.mainData = (response?.data?.content?.data ?? []).map(item => ({
+                    ...item,
+                    createdAtUtc: new Date(item.createdAtUtc)
+                }));
+            }
+        };
+
+        // ── Filter-panel controls (live filtering) ────────────────────────────────────────────
+        const filterActivityTypeDropdown = {
+            obj: null,
+            create: () => {
+                filterActivityTypeDropdown.obj = new ej.dropdowns.DropDownList({
+                    dataSource: getActivityTypeOptions(),
+                    placeholder: 'All types',
+                    showClearButton: true,
+                    allowFiltering: true,
+                    filterType: 'Contains',
+                    filterBarPlaceholder: 'Search type',
+                    change: (e) => { state.filter.activityType = e.value; applyFilter(); }
+                });
+                filterActivityTypeDropdown.obj.appendTo(filterActivityTypeRef.value);
+            },
+            refreshData: () => {
+                if (filterActivityTypeDropdown.obj) {
+                    filterActivityTypeDropdown.obj.setProperties({ dataSource: getActivityTypeOptions() });
                 }
             }
         };
 
-        const handler = {
-            applyFilter: async () => {
-                await methods.populateMainData(state.filterActivityType, state.filterFromDate, state.filterToDate);
-            },
-            clearFilter: async () => {
-                state.filterActivityType = '';
-                state.filterFromDate = '';
-                state.filterToDate = '';
-                filterDatePickers.clear();
-                await methods.populateMainData();
+        const filterFromDatePicker = {
+            obj: null,
+            create: () => {
+                filterFromDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'From date',
+                    showClearButton: true,
+                    change: (e) => { state.filter.fromDate = e.value; applyFilter(); }
+                });
+                filterFromDatePicker.obj.appendTo(filterFromDateRef.value);
             }
         };
+
+        const filterToDatePicker = {
+            obj: null,
+            create: () => {
+                filterToDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'To date',
+                    showClearButton: true,
+                    change: (e) => { state.filter.toDate = e.value; applyFilter(); }
+                });
+                filterToDatePicker.obj.appendTo(filterToDateRef.value);
+            }
+        };
+
+        const createFilterControls = () => {
+            filterActivityTypeDropdown.create();
+            filterFromDatePicker.create();
+            filterToDatePicker.create();
+        };
+
+        const filterHandler = {
+            toggle: () => {
+                state.filterOpen = !state.filterOpen;
+                if (state.filterOpen) Vue.nextTick(positionFilterPanel);
+            },
+            clear: () => {
+                state.filter.activityType = null;
+                state.filter.fromDate = null;
+                state.filter.toDate = null;
+                filterActivityTypeDropdown.obj?.setProperties({ value: null });
+                filterFromDatePicker.obj?.setProperties({ value: null });
+                filterToDatePicker.obj?.setProperties({ value: null });
+                applyFilter();
+            }
+        };
+
+        const watcherStops = [];
 
         const mainGrid = {
             obj: null,
@@ -105,14 +187,21 @@ const App = {
                         { field: 'userAgent', headerText: 'User Agent', width: 200, minWidth: 150 },
                         { field: 'createdAtUtc', headerText: 'Timestamp (UTC)', width: 175, format: 'dd/MM/yyyy HH:mm:ss' }
                     ],
-                    toolbar: ['ExcelExport', 'Search'],
+                    toolbar: [
+                        'ExcelExport',
+                        { text: 'Filter', tooltipText: 'Show / hide filters', prefixIcon: 'e-filter', id: 'FilterCustom' },
+                        'Search'
+                    ],
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.autoFitColumns(['userEmail', 'activityType', 'description', 'pageUrl', 'ipAddress', 'createdAtUtc']);
                     },
                     toolbarClick: async (args) => {
                         if (args.item.id === 'MainGrid_excelexport') {
-                            mainGrid.obj.excelExport({ fileName: `UserActivityLog_${new Date().toISOString().slice(0,10)}.xlsx` });
+                            mainGrid.obj.excelExport({ fileName: `UserActivityLog_${new Date().toISOString().slice(0, 10)}.xlsx` });
+                        }
+                        if (args.item.id === 'FilterCustom') {
+                            filterHandler.toggle();
                         }
                     }
                 });
@@ -120,18 +209,55 @@ const App = {
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
             },
             refresh: () => {
-                mainGrid.obj.setProperties({ dataSource: state.mainData });
+                // Preserve any active filter selection when the underlying list is reloaded.
+                mainGrid.obj.setProperties({ dataSource: getFilteredData() });
             }
         };
 
         Vue.onMounted(async () => {
-            await SecurityManager.authorizePage(['UserActivityLogs']);
-            mainGrid.create([]);
-            await methods.populateMainData();
-            filterDatePickers.create();
+            try {
+                await SecurityManager.authorizePage(['UserActivityLogs']);
+
+                await methods.populateMainData();
+                await mainGrid.create(state.mainData);
+
+                // Reflect the active-filter count on the toolbar Filter button (primary tint + badge).
+                watcherStops.push(Vue.watch(activeFilterCount, (count) => {
+                    const el = document.getElementById('FilterCustom');
+                    if (!el) return;
+                    el.classList.toggle('po-filter-active', count > 0);
+                    el.setAttribute('data-filter-count', count);
+                }));
+
+                createFilterControls();
+
+                window.addEventListener('resize', onWindowResize);
+            } catch (e) {
+            }
         });
 
-        return { state, mainGridRef, handler, filterFromDateRef, filterToDateRef };
+        Vue.onUnmounted(() => {
+            watcherStops.forEach(stop => stop());
+            window.removeEventListener('resize', onWindowResize);
+            mainGrid.obj?.destroy();
+            filterActivityTypeDropdown.obj?.destroy();
+            filterFromDatePicker.obj?.destroy();
+            filterToDatePicker.obj?.destroy();
+        });
+
+        return {
+            state,
+            mainGridRef,
+            filterPanelRef,
+            filterActivityTypeRef,
+            filterFromDateRef,
+            filterToDateRef,
+            activeFilterCount,
+            handler: {
+                toggleFilter: filterHandler.toggle,
+                clearFilters: filterHandler.clear
+            }
+        };
     }
 };
 

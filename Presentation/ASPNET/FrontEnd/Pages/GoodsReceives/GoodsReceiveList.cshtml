@@ -3,10 +3,54 @@
     ViewData["Title"] = "Goods Receive List";
 }
 
+@section styles {
+    <link rel="stylesheet" href="~/css/purchase-order-list.css" asp-append-version="true" />
+}
+
 <div id="app" v-cloak>
+    <div class="po-page-header">
+        <h1 class="po-page-title">Goods Receives</h1>
+        <p class="po-page-subtitle">Review, filter, and manage every goods receive</p>
+    </div>
+
     <div class="row">
         <div class="col-12">
-            <div class="grid-container">
+            <div class="grid-container po-grid-wrap">
+                <!-- Filter panel — toggled by the Filter button in the grid toolbar. Live filtering:
+                     each control change re-filters the list instantly (no Apply button needed). -->
+                <div ref="filterPanelRef" class="po-filter-panel" v-show="state.filterOpen" role="region" aria-label="Goods receive filters">
+                    <div class="po-filter-panel__header">
+                        <span class="po-filter-panel__title">
+                            <i class="fas fa-filter"></i>Filters
+                            <span class="po-filter-panel__count" v-if="activeFilterCount">{{ activeFilterCount }}</span>
+                        </span>
+                        <div class="po-filter-panel__header-actions">
+                            <button type="button" class="btn btn-sm btn-link po-filter-clear" v-on:click="handler.clearFilters" v-bind:disabled="!activeFilterCount">
+                                <i class="fas fa-times-circle"></i><span>Clear all</span>
+                            </button>
+                            <button type="button" class="btn-close po-filter-close" aria-label="Close filters" v-on:click="handler.toggleFilter"></button>
+                        </div>
+                    </div>
+                    <div class="po-filter-panel__body">
+                        <div class="po-filter-field">
+                            <label class="po-filter-label">Status</label>
+                            <div ref="filterStatusRef"></div>
+                        </div>
+                        <div class="po-filter-field">
+                            <label class="po-filter-label">Receiving Status</label>
+                            <div ref="filterReceivingStatusRef"></div>
+                        </div>
+                        <div class="po-filter-field">
+                            <label class="po-filter-label">Receive From</label>
+                            <div ref="filterFromDateRef"></div>
+                        </div>
+                        <div class="po-filter-field">
+                            <label class="po-filter-label">Receive To</label>
+                            <div ref="filterToDateRef"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div ref="mainGridRef" id="MainGrid"></div>
             </div>
         </div>

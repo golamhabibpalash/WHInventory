@@ -16,96 +16,79 @@
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" v-text="state.mainTitle"></h5>
+                    <h5 class="modal-title">
+                        <i class="fas me-2" v-bind:class="state.deleteMode ? 'fa-trash text-danger' : 'fa-dollar-sign text-primary'"></i>
+                        <span v-text="state.mainTitle"></span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" v-model="state.id" id="Id" name="Id" />
                     <form id="MainForm">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="card mb-3">
-                                    <div class="card-header">
-                                        <h5><i class="fas fa-dollar-sign me-2 text-primary"></i>Price Info</h5>
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-dollar-sign me-2 text-primary"></i>Price Info</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label">Product <span class="text-danger">*</span></label>
+                                        <input ref="productIdRef" />
+                                        <div class="text-danger small mt-1" v-text="state.errors.productId"></div>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="row mb-2">
-                                            <div class="col-md-8">
-                                                <label>Product <span class="text-danger">*</span></label>
-                                                <input ref="productIdRef" />
-                                                <label class="text-danger" v-text="state.errors.productId"></label>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label>Price Policy</label>
-                                                <input ref="pricePolicyIdRef" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2">
-                                            <div class="col-md-6">
-                                                <label>Calculation Method</label>
-                                                <input ref="calculationMethodRef" />
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label>Priority</label>
-                                                <input ref="priorityRef" v-model="state.priority" />
-                                            </div>
-                                            <div class="col-md-3 d-flex align-items-center mt-3">
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" role="switch" id="IsActive"
-                                                           v-model="state.isActive" />
-                                                    <label class="form-check-label" for="IsActive">Active</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2" v-if="state.calculationMethod === 0">
-                                            <div class="col-md-6">
-                                                <label>Fixed Price</label>
-                                                <input ref="fixedPriceRef" v-model="state.fixedPrice" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2" v-if="state.calculationMethod === 1">
-                                            <div class="col-md-6">
-                                                <label>Markup %</label>
-                                                <input ref="markupPercentRef" v-model="state.markupPercent" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2" v-if="state.calculationMethod === 2">
-                                            <div class="col-md-6">
-                                                <label>Markup Amount</label>
-                                                <input ref="markupAmountRef" v-model="state.markupAmount" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2" v-if="state.calculationMethod === 3">
-                                            <div class="col-md-6">
-                                                <label>Gross Margin %</label>
-                                                <input ref="marginPercentRef" v-model="state.marginPercent" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2" v-if="state.calculationMethod === 4">
-                                            <div class="col-md-6">
-                                                <label>Formula Multiplier (× WAC)</label>
-                                                <input ref="formulaMultiplierRef" v-model="state.formulaMultiplier" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2">
-                                            <div class="col-md-4">
-                                                <label>Min. Selling Price</label>
-                                                <input ref="minimumSellingPriceRef" v-model="state.minimumSellingPrice" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label>Max. Discount %</label>
-                                                <input ref="maximumDiscountPercentRef" v-model="state.maximumDiscountPercent" />
-                                            </div>
-                                        </div>
-                                        <div class="row mb-2">
-                                            <div class="col-md-4">
-                                                <label>Effective From</label>
-                                                <input ref="effectiveFromRef" v-model="state.effectiveFrom" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label>Effective To</label>
-                                                <input ref="effectiveToRef" v-model="state.effectiveTo" />
-                                            </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Price Policy</label>
+                                        <input ref="pricePolicyIdRef" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Calculation Method</label>
+                                        <input ref="calculationMethodRef" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Priority</label>
+                                        <input ref="priorityRef" v-model="state.priority" />
+                                    </div>
+                                    <div class="col-md-6" v-if="state.calculationMethod === 0">
+                                        <label class="form-label">Fixed Price</label>
+                                        <input ref="fixedPriceRef" v-model="state.fixedPrice" />
+                                    </div>
+                                    <div class="col-md-6" v-if="state.calculationMethod === 1">
+                                        <label class="form-label">Markup %</label>
+                                        <input ref="markupPercentRef" v-model="state.markupPercent" />
+                                    </div>
+                                    <div class="col-md-6" v-if="state.calculationMethod === 2">
+                                        <label class="form-label">Markup Amount</label>
+                                        <input ref="markupAmountRef" v-model="state.markupAmount" />
+                                    </div>
+                                    <div class="col-md-6" v-if="state.calculationMethod === 3">
+                                        <label class="form-label">Gross Margin %</label>
+                                        <input ref="marginPercentRef" v-model="state.marginPercent" />
+                                    </div>
+                                    <div class="col-md-6" v-if="state.calculationMethod === 4">
+                                        <label class="form-label">Formula Multiplier (× WAC)</label>
+                                        <input ref="formulaMultiplierRef" v-model="state.formulaMultiplier" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Min. Selling Price</label>
+                                        <input ref="minimumSellingPriceRef" v-model="state.minimumSellingPrice" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Max. Discount %</label>
+                                        <input ref="maximumDiscountPercentRef" v-model="state.maximumDiscountPercent" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Effective From</label>
+                                        <input ref="effectiveFromRef" v-model="state.effectiveFrom" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Effective To</label>
+                                        <input ref="effectiveToRef" v-model="state.effectiveTo" />
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="IsActive"
+                                                   v-model="state.isActive" />
+                                            <label class="form-check-label" for="IsActive">Active</label>
                                         </div>
                                     </div>
                                 </div>

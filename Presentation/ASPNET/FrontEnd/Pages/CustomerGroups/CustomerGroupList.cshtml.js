@@ -105,6 +105,8 @@
             obj: null,
             create: () => {
                 pricePolicyIdLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: state.pricePolicyListLookupData,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'Select Price Policy (optional)',

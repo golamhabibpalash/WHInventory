@@ -45,7 +45,9 @@ public class PurchaseOrderService
             .Where(x => x.PurchaseOrderId == purchaseOrderId)
             .ToListAsync();
 
-        purchaseOrder.BeforeTaxAmount = purchaseOrderItems.Sum(x => x.Total ?? 0).ToMoney();
+        purchaseOrder.SubTotalAmount = purchaseOrderItems.Sum(x => (x.UnitPrice ?? 0) * (x.Quantity ?? 0)).ToMoney();
+        purchaseOrder.DiscountAmount = purchaseOrderItems.Sum(x => (x.UnitPrice ?? 0) * (x.Quantity ?? 0) * (x.CommissionRate ?? 0) / 100.0).ToMoney();
+        purchaseOrder.BeforeTaxAmount = ((purchaseOrder.SubTotalAmount ?? 0) - (purchaseOrder.DiscountAmount ?? 0)).ToMoney();
 
         var taxPercentage = purchaseOrder.Tax?.Percentage ?? 0;
         purchaseOrder.TaxAmount = ((purchaseOrder.BeforeTaxAmount ?? 0) * taxPercentage / 100).ToMoney();

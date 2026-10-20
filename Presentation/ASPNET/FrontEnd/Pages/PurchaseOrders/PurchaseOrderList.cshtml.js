@@ -37,6 +37,7 @@ const App = {
             productPick: {
                 productId: null,
                 unitPrice: 0,
+                commission: 0,
                 quantity: 1
             },
             productHint: {
@@ -44,6 +45,7 @@ const App = {
                 number: ''
             },
             subTotalAmount: '0.00',
+            discountAmount: '0.00',
             taxAmount: '0.00',
             totalAmount: '0.00',
             amountInWords: '',
@@ -87,7 +89,7 @@ const App = {
             view: {
                 id: '', number: '', orderDate: '', orderStatusName: '', statusClass: '',
                 description: '', referenceNumber: '', vendorName: '', taxName: '',
-                beforeTaxAmount: 0, taxAmount: 0, afterTaxAmount: 0,
+                subTotalAmount: 0, discountAmount: 0, beforeTaxAmount: 0, taxAmount: 0, afterTaxAmount: 0,
                 items: []
             }
         });
@@ -114,8 +116,9 @@ const App = {
         const taxQuickModalRef = Vue.ref(null);
         const viewModalRef = Vue.ref(null);
 
-        // Running line total for the "Select Product" form.
-        const posLineTotal = Vue.computed(() => (state.productPick.unitPrice || 0) * (state.productPick.quantity || 0));
+        // Running net line total for the "Select Product" form (unit cost less commission %).
+        const posLineTotal = Vue.computed(() =>
+            (state.productPick.unitPrice || 0) * (1 - Math.min(100, Math.max(0, state.productPick.commission || 0)) / 100) * (state.productPick.quantity || 0));
 
         const formatQty = (value) => Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
@@ -170,7 +173,7 @@ const App = {
         const onWindowResize = () => { if (state.filterOpen) positionFilterPanel(); };
 
         const resetProductPick = () => {
-            state.productPick = { productId: null, unitPrice: 0, quantity: 1 };
+            state.productPick = { productId: null, unitPrice: 0, commission: 0, quantity: 1 };
             state.productHint = { name: '', number: '' };
             if (productPickLookup.obj) {
                 productPickLookup.obj.value = null;
@@ -309,20 +312,20 @@ const App = {
                     throw error;
                 }
             },
-            createSecondaryData: async (unitPrice, quantity, remark, productId, purchaseOrderId, createdById) => {
+            createSecondaryData: async (unitPrice, commissionRate, quantity, remark, productId, purchaseOrderId, createdById) => {
                 try {
                     const response = await AxiosManager.post('/PurchaseOrderItem/CreatePurchaseOrderItem', {
-                        unitPrice, quantity, remark, productId, purchaseOrderId, createdById
+                        unitPrice, commissionRate, quantity, remark, productId, purchaseOrderId, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateSecondaryData: async (id, unitPrice, quantity, remark, productId, purchaseOrderId, updatedById) => {
+            updateSecondaryData: async (id, unitPrice, commissionRate, quantity, remark, productId, purchaseOrderId, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/PurchaseOrderItem/UpdatePurchaseOrderItem', {
-                        id, unitPrice, quantity, remark, productId, purchaseOrderId, updatedById
+                        id, unitPrice, commissionRate, quantity, remark, productId, purchaseOrderId, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -454,7 +457,8 @@ const App = {
             refreshPaymentSummary: async (id) => {
                 const record = state.mainData.find(item => item.id === id);
                 if (record) {
-                    state.subTotalAmount = NumberFormatManager.formatToLocale(record.beforeTaxAmount ?? 0);
+                    state.subTotalAmount = NumberFormatManager.formatToLocale(record.subTotalAmount ?? 0);
+                    state.discountAmount = NumberFormatManager.formatToLocale(record.discountAmount ?? 0);
                     state.taxAmount = NumberFormatManager.formatToLocale(record.taxAmount ?? 0);
                     state.totalAmount = NumberFormatManager.formatToLocale(record.afterTaxAmount ?? 0);
                     state.amountInWords = AmountInWordsManager.convert(record.afterTaxAmount ?? 0);
@@ -653,6 +657,8 @@ const App = {
             create: () => {
                 if (state.taxListLookupData && Array.isArray(state.taxListLookupData)) {
                     taxListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.taxListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Tax',
@@ -678,6 +684,8 @@ const App = {
             create: () => {
                 if (state.purchaseOrderStatusListLookupData && Array.isArray(state.purchaseOrderStatusListLookupData)) {
                     purchaseOrderStatusListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.purchaseOrderStatusListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select an Order Status',
@@ -700,6 +708,8 @@ const App = {
             obj: null,
             create: () => {
                 filterStatusDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: state.purchaseOrderStatusListLookupData ?? [],
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All statuses',
@@ -737,6 +747,8 @@ const App = {
             obj: null,
             create: () => {
                 filterTaxDropdown.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: state.taxListLookupData ?? [],
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'All taxes',
@@ -1369,6 +1381,7 @@ const App = {
                         }
                         state.productPick.productId = product.id;
                         state.productPick.unitPrice = product.unitPrice ?? 0;
+                        state.productPick.commission = 0;
                         state.productPick.quantity = 1;
                         state.productHint = { name: product.name, number: product.number ?? '' };
                     }
@@ -1425,9 +1438,10 @@ const App = {
         const persistLine = async (line, changes) => {
             try {
                 const unitPrice = changes.unitPrice ?? line.unitPrice;
+                const commissionRate = changes.commissionRate ?? line.commissionRate ?? 0;
                 const quantity = changes.quantity ?? line.quantity;
                 await services.updateSecondaryData(
-                    line.id, unitPrice, quantity, line.remark, line.productId, state.id, StorageManager.getUserId());
+                    line.id, unitPrice, commissionRate, quantity, line.remark, line.productId, state.id, StorageManager.getUserId());
                 await refreshAfterCartChange();
             } catch (error) {
                 Swal.fire({ icon: 'error', title: 'Update Failed', text: error.response?.data?.message ?? 'An error occurred.' });
@@ -1445,6 +1459,7 @@ const App = {
 
                 const quantity = Number(state.productPick.quantity);
                 const unitPrice = Number(state.productPick.unitPrice);
+                const commissionRate = Number(state.productPick.commission) || 0;
 
                 if (!quantity || quantity <= 0) {
                     Swal.fire({ icon: 'warning', title: 'Enter a quantity greater than zero' });
@@ -1454,13 +1469,17 @@ const App = {
                     Swal.fire({ icon: 'warning', title: 'Enter a valid unit cost' });
                     return;
                 }
+                if (commissionRate < 0 || commissionRate > 100) {
+                    Swal.fire({ icon: 'warning', title: 'Commission % must be between 0 and 100' });
+                    return;
+                }
 
                 try {
                     state.isAddingLine = true;
 
                     if (!(await ensureHeaderSaved())) return;
 
-                    await services.createSecondaryData(unitPrice, quantity, null, product.id, state.id, StorageManager.getUserId());
+                    await services.createSecondaryData(unitPrice, commissionRate, quantity, null, product.id, state.id, StorageManager.getUserId());
                     await refreshAfterCartChange();
 
                     resetProductPick();
@@ -1493,6 +1512,15 @@ const App = {
                     return;
                 }
                 await persistLine(line, { unitPrice });
+            },
+            commitLineCommission: async (line, value) => {
+                const commissionRate = Number(value);
+                if (isNaN(commissionRate) || commissionRate < 0 || commissionRate > 100) {
+                    Swal.fire({ icon: 'warning', title: 'Commission % must be between 0 and 100' });
+                    await methods.populateSecondaryData(state.id);
+                    return;
+                }
+                await persistLine(line, { commissionRate });
             },
             removeLine: async (line) => {
                 const confirmed = await Swal.fire({
@@ -1682,6 +1710,7 @@ const App = {
                 stepLineQty: cart.stepLineQty,
                 commitLineQty: cart.commitLineQty,
                 commitLinePrice: cart.commitLinePrice,
+                commitLineCommission: cart.commitLineCommission,
                 removeLine: cart.removeLine,
                 clearCart: cart.clearAll,
                 openVendorQuickCreate: vendorQuickHandler.open,
@@ -1723,6 +1752,8 @@ const App = {
                             referenceNumber: data.referenceNumber ?? '',
                             vendorName: data.vendor?.name ?? '',
                             taxName: data.tax?.name ?? '',
+                            subTotalAmount: data.subTotalAmount ?? 0,
+                            discountAmount: data.discountAmount ?? 0,
                             beforeTaxAmount: data.beforeTaxAmount ?? 0,
                             taxAmount: data.taxAmount ?? 0,
                             afterTaxAmount: data.afterTaxAmount ?? 0,
@@ -1730,6 +1761,7 @@ const App = {
                                 id: item.id ?? '',
                                 productName: item.product?.name ?? '',
                                 unitPrice: item.unitPrice ?? 0,
+                                commissionRate: item.commissionRate ?? 0,
                                 quantity: item.quantity ?? 0,
                                 total: item.total ?? 0
                             }))

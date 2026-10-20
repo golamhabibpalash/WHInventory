@@ -204,6 +204,8 @@
             create: () => {
                 if (state.customerGroupListLookupData && Array.isArray(state.customerGroupListLookupData)) {
                     customerGroupListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.customerGroupListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Customer Group',
@@ -227,6 +229,8 @@
             create: () => {
                 if (state.customerCategoryListLookupData && Array.isArray(state.customerCategoryListLookupData)) {
                     customerCategoryListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
                         dataSource: state.customerCategoryListLookupData,
                         fields: { value: 'id', text: 'name' },
                         placeholder: 'Select a Customer Category',

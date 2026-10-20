@@ -25,6 +25,8 @@ dotnet restore WHInventory.sln
 
 The app binds to `http://+:8080` (`appsettings.json` → `Kestrel`).
 
+There are **two** `.sln` files: build the root `WHInventory.sln`; `Presentation/ASPNET/ASPNET.sln` contains only the ASPNET project. A dev run expects a local PostgreSQL — the compose `db` service works (`docker compose up -d db`); `ConnectionStrings:DefaultConnection` already points at `localhost:5434` (matches compose's `5434:5432`).
+
 **Build strictness (`Directory.Build.props`):** `EnforceCodeStyleInBuild=true` and `TreatWarningsAsErrors` scoped to `WarningsAsErrors=IDE*`. Code-style violations (unused usings, wrong namespace style, naming, etc.) **fail `dotnet build`**, not just warn. CA analyzers run as warnings only. `GenerateDocumentationFile=true` is set solely so IDE0005 (remove unnecessary usings) fires; `CS1591` is suppressed.
 
 There are **no test projects** and **no EF migrations** — the schema is created by `EnsureCreated()` at startup. To reset the database, drop it and restart.
@@ -63,7 +65,7 @@ Two EF Core contexts derived from a shared `DataContext`:
 
 Persistence is explicit: always `await _unitOfWork.SaveAsync(cancellationToken)` after mutations.
 
-Every read query must call the `ApplyIsDeletedFilter(false)` extension on `IQueryable<T>` to exclude soft-deleted rows. (Tenant filtering, by contrast, is automatic — see below.)
+Every read query must call the `ApplyIsDeletedFilter(...)` extension on `IQueryable<T>` to exclude soft-deleted rows: list queries pass `request.IsDeleted`, single-record queries pass `false` (the default param). (Tenant filtering, by contrast, is automatic — see below.)
 
 Provider is chosen at startup from `appsettings.json` → `"DatabaseProvider"`: `"PostgreSQL"` (default) or `"SqlServer"`. `Npgsql.EnableLegacyTimestampBehavior = true` is set early in `Program.cs`.
 
@@ -107,6 +109,10 @@ Design notes: row-level `TenantId`, one-user-one-tenant, subdomain + JWT; enforc
 - Default admin seeded: `admin@root.com` / `123456` (configurable in `appsettings.json` → `AspNetIdentity:DefaultAdmin`).
 - `AllowPublicTenantSignUp` — when true, any visitor can create an organisation at `/Accounts/SignUp` (off by default in the production compose file).
 
+### Real-time Notifications
+
+SignalR hub at `/hubs/notifications` (per-user groups), driven by the `NotificationManager` feature (`SignalRNotificationBroadcaster` → `NotificationHub`). Client wrapper: `wwwroot/lib/indotalent/notification-manager.js`.
+
 ### Frontend
 
 Razor Pages live in `Presentation/ASPNET/FrontEnd/Pages/` and are served with `/FrontEnd/Pages` as root (`FrontEndConfiguration.cs`). Each page has a paired `.cshtml.js` file: **Vue 3 Composition API** + **Syncfusion EJ2** (Grid/Charts) + Bootstrap 5 modals + SweetAlert2, with API calls through `AxiosManager` (custom wrapper in `wwwroot/lib/indotalent/`). Every JS `setup()` calls `SecurityManager.authorizePage(permissions)` and `validateToken()`.
@@ -124,7 +130,9 @@ Dates are displayed as `DD/MM/YYYY` throughout.
 On every startup:
 1. `EnsureCreated()` creates the schema if missing.
 2. System seed runs unconditionally: default admin + roles, default tenant, company record, system warehouses (and per-tenant seeds run through the provisioning service).
-3. Demo seed runs only when `"IsDemoVersion": true` in `appsettings.json` — populates all entities with sample data.
+3. Demo seed runs only when `"IsDemoVersion": true` in `appsettings.json` — populates all entities with sample data. **Note:** dev `appsettings.json` ships `IsDemoVersion: true` and there is no `appsettings.Production.json`, so a Production build from this tree still seeds demo data unless `IsDemoVersion=false` is supplied via override/env.
+
+Business dates use `appsettings.json` → `TimeZoneId` (`Asia/Dhaka`), which must match the `TZ` env in compose.
 
 ### Adding a New Feature
 
@@ -149,6 +157,8 @@ On every startup:
 ```bash
 docker compose up -d          # full stack: PostgreSQL + app + Cloudflare tunnel
 docker compose up -d db app   # app + database only (skip the tunnel)
+bash update.sh                # VPS-only deploy: git pull + rebuild app image + health-check on :8080
 ```
 
-- `.env` is gitignored — copy `.env.example` and adjust (DB creds, JWT key, admin, SMTP).
+- `.env` is gitignored — copy `.env.example` and adjust. Caveat: the repo compose only consumes `DB_NAME`/`DB_USER`/`DB_PASSWORD`/`CLOUDFLARE_TUNNEL_TOKEN`; the `JWT_KEY`/`ADMIN_*`/`SMTP_*` entries in `.env.example` are **not** wired to compose or the app (the container runs on `appsettings.json` defaults unless overridden separately).
+- Uploads live under `wwwroot/app_data/` (a persisted volume in compose).

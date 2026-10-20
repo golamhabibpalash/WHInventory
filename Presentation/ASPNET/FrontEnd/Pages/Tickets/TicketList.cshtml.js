@@ -163,6 +163,8 @@ const App = {
             create: async () => {
                 const data = await methods.populateCategoryListLookupData();
                 categoryListLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: data,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'Select a category',
@@ -177,6 +179,8 @@ const App = {
             create: async () => {
                 const data = await methods.populatePriorityListLookupData();
                 priorityListLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: data,
                     fields: { value: 'id', text: 'name' },
                     placeholder: 'Default',

@@ -428,7 +428,7 @@
 /* Product entry row: price | qty | total | add */
 .pos-entry {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
     gap: .75rem;
     align-items: end;
 }

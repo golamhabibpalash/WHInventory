@@ -18,6 +18,8 @@ public class PurchaseOrderConfiguration : BaseEntityConfiguration<PurchaseOrder>
         builder.Property(x => x.ReferenceNumber).HasMaxLength(CodeConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.VendorId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
         builder.Property(x => x.TaxId).HasMaxLength(IdConsts.MaxLength).IsRequired(false);
+        builder.Property(x => x.SubTotalAmount).IsRequired(false);
+        builder.Property(x => x.DiscountAmount).IsRequired(false);
         builder.Property(x => x.BeforeTaxAmount).IsRequired(false);
         builder.Property(x => x.TaxAmount).IsRequired(false);
         builder.Property(x => x.AfterTaxAmount).IsRequired(false);

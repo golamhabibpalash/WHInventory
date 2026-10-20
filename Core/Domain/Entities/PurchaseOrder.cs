@@ -14,6 +14,14 @@ public class PurchaseOrder : BaseEntity
     public Vendor? Vendor { get; set; }
     public string? TaxId { get; set; }
     public Tax? Tax { get; set; }
+
+    /// <summary>Gross subtotal before commission discount: sum of <c>UnitPrice * Quantity</c>.</summary>
+    public double? SubTotalAmount { get; set; }
+
+    /// <summary>Total commission discount across all items: sum of <c>CommissionRate * Quantity</c>.</summary>
+    public double? DiscountAmount { get; set; }
+
+    /// <summary>Taxable amount after discount: <c>SubTotalAmount - DiscountAmount</c>.</summary>
     public double? BeforeTaxAmount { get; set; }
     public double? TaxAmount { get; set; }
     public double? AfterTaxAmount { get; set; }

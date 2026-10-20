@@ -75,6 +75,7 @@ const App = {
                     placeholder: '-- All Customers --',
                     popupHeight: '200px',
                     allowFiltering: true,
+                    filterType: 'Contains',
                     showClearButton: true,
                     change: (e) => {
                         state.customerId = e.value ?? null;

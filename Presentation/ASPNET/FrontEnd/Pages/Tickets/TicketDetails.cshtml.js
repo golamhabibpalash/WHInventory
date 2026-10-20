@@ -231,6 +231,8 @@ const App = {
             create: async () => {
                 const response = await services.getCategoryList();
                 categoryListLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: (response?.data?.content?.data ?? []).filter(x => x.isActive),
                     fields: { value: 'id', text: 'name' },
                     change: async (e) => {
@@ -256,6 +258,8 @@ const App = {
             create: async () => {
                 const response = await services.getPriorityList();
                 priorityListLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: (response?.data?.content?.data ?? []).filter(x => x.isActive),
                     fields: { value: 'id', text: 'name' },
                     change: async (e) => {
@@ -278,6 +282,8 @@ const App = {
             create: async () => {
                 const response = await services.getUserList();
                 assigneeListLookup.obj = new ej.dropdowns.DropDownList({
+                    allowFiltering: true,
+                    filterType: 'Contains',
                     dataSource: (response?.data?.content?.data ?? []),
                     fields: { value: 'id', text: 'email' },
                     placeholder: 'Unassigned',

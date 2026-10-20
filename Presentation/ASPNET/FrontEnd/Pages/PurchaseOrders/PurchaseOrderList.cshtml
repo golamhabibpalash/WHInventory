@@ -149,13 +149,20 @@
                                         <div ref="productPickRef"></div>
                                     </div>
                                     <div class="row g-3 align-items-end mb-2">
-                                        <div class="col-4">
+                                        <div class="col-6 col-md-3">
                                             <label class="form-label">Unit Cost</label>
                                             <input type="number" step="0.01" min="0"
                                                    class="form-control text-end"
                                                    v-model.number="state.productPick.unitPrice">
                                         </div>
-                                        <div class="col-4">
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label">Commission %</label>
+                                            <input type="number" step="0.01" min="0" max="100"
+                                                   class="form-control text-end"
+                                                   title="Commission as a percentage of unit cost"
+                                                   v-model.number="state.productPick.commission">
+                                        </div>
+                                        <div class="col-6 col-md-3">
                                             <label class="form-label">Qty</label>
                                             <div class="input-group pos-qty">
                                                 <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepQty(-1)" aria-label="Decrease quantity">&minus;</button>
@@ -163,9 +170,10 @@
                                                 <button type="button" class="btn btn-outline-secondary" v-on:click="handler.stepQty(1)" aria-label="Increase quantity">+</button>
                                             </div>
                                         </div>
-                                        <div class="col-4">
+                                        <div class="col-6 col-md-3">
                                             <label class="form-label">Line Total</label>
                                             <input type="text" class="form-control text-end pos-line-total" readonly
+                                                   title="Net of commission"
                                                    v-bind:value="handler.formatAmount(posLineTotal)">
                                         </div>
                                     </div>
@@ -197,15 +205,17 @@
                                             <thead>
                                                 <tr>
                                                     <th>Product</th>
-                                                    <th class="text-center" style="width:132px;">Qty</th>
-                                                    <th class="text-end" style="width:120px;">Unit Cost</th>
-                                                    <th class="text-end" style="width:110px;">Total</th>
+                                                    <th class="text-center" style="width:120px;">Qty</th>
+                                                    <th class="text-end" style="width:100px;">Unit Cost</th>
+                                                    <th class="text-end" style="width:96px;">Comm %</th>
+                                                    <th class="text-end" style="width:100px;">Discount</th>
+                                                    <th class="text-end" style="width:100px;">Total</th>
                                                     <th style="width:44px;"></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr v-if="!state.secondaryData.length">
-                                                    <td colspan="5">
+                                                    <td colspan="7">
                                                         <div class="pos-cart-empty">Cart is empty &mdash; search and add a product above</div>
                                                     </td>
                                                 </tr>
@@ -228,7 +238,14 @@
                                                                v-bind:value="line.unitPrice"
                                                                v-on:change="handler.commitLinePrice(line, $event.target.value)">
                                                     </td>
-                                                    <td class="text-end fw-semibold">{{ handler.formatAmount((line.unitPrice || 0) * (line.quantity || 0)) }}</td>
+                                                    <td class="text-end">
+                                                        <input type="number" step="0.01" min="0" max="100" class="form-control form-control-sm text-end"
+                                                               title="Commission percent of unit cost"
+                                                               v-bind:value="line.commissionRate"
+                                                               v-on:change="handler.commitLineCommission(line, $event.target.value)">
+                                                    </td>
+                                                    <td class="text-end">{{ handler.formatAmount((line.unitPrice || 0) * (line.quantity || 0) * (line.commissionRate || 0) / 100) }}</td>
+                                                    <td class="text-end fw-semibold">{{ handler.formatAmount((line.unitPrice || 0) * (1 - (line.commissionRate || 0) / 100) * (line.quantity || 0)) }}</td>
                                                     <td class="text-center">
                                                         <button type="button" class="btn btn-sm btn-link text-danger p-0" v-on:click="handler.removeLine(line)" title="Remove item">
                                                             <i class="fas fa-times"></i>
@@ -253,6 +270,10 @@
                                     <div class="pos-summary-row">
                                         <span class="text-muted">Subtotal</span>
                                         <span id="SubTotalAmount">{{ state.subTotalAmount }}</span>
+                                    </div>
+                                    <div class="pos-summary-row">
+                                        <span class="text-muted">Discount (commission)</span>
+                                        <span id="DiscountAmount">&minus;{{ state.discountAmount }}</span>
                                     </div>
                                     <div class="pos-summary-row">
                                         <span class="text-muted">Tax</span>
@@ -557,6 +578,8 @@
                                 <tr>
                                     <th>Product</th>
                                     <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Comm %</th>
+                                    <th class="text-end">Discount</th>
                                     <th class="text-end">Qty</th>
                                     <th class="text-end">Total</th>
                                 </tr>
@@ -565,6 +588,8 @@
                                 <tr v-for="item in state.view.items" v-bind:key="item.id">
                                     <td>{{ item.productName || '—' }}</td>
                                     <td class="text-end">{{ handler.formatAmount(item.unitPrice) }}</td>
+                                    <td class="text-end">{{ handler.formatQty(item.commissionRate) }}%</td>
+                                    <td class="text-end">{{ handler.formatAmount((item.unitPrice || 0) * (item.quantity || 0) * (item.commissionRate || 0) / 100) }}</td>
                                     <td class="text-end">{{ handler.formatQty(item.quantity) }}</td>
                                     <td class="text-end fw-semibold">{{ handler.formatAmount(item.total) }}</td>
                                 </tr>
@@ -576,7 +601,11 @@
                     <div class="ov-totals">
                         <div class="ov-fact">
                             <span class="ov-fact-label">Sub Total</span>
-                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.beforeTaxAmount) }}</span>
+                            <span class="ov-fact-value">{{ handler.formatAmount(state.view.subTotalAmount) }}</span>
+                        </div>
+                        <div class="ov-fact" v-if="state.view.discountAmount > 0">
+                            <span class="ov-fact-label">Discount (commission)</span>
+                            <span class="ov-fact-value">&minus;{{ handler.formatAmount(state.view.discountAmount) }}</span>
                         </div>
                         <div class="ov-fact">
                             <span class="ov-fact-label">Tax Amount</span>
