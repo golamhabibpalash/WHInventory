@@ -1,6 +1,7 @@
 using Application.Common.Extensions;
 using Domain.Entities;
 using Domain.Enums;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.InventoryTransactionManager;
@@ -23,7 +24,7 @@ public partial class InventoryTransactionService
 
         if (parent == null)
         {
-            throw new Exception($"Parent entity not found: {moduleId}");
+            throw new ValidationException($"Parent entity not found: {moduleId}");
         }
 
         var child = new InventoryTransaction();

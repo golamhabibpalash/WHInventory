@@ -6,6 +6,7 @@ using Application.Features.PurchaseOrderManager;
 using Application.Features.WarehouseManager;
 using Domain.Entities;
 using Domain.Enums;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.InventoryTransactionManager;
@@ -67,7 +68,7 @@ public partial class InventoryTransactionService
                 .Where(x => x.Id == warehouseId)
                 .Select(x => x.Name)
                 .FirstOrDefault() ?? warehouseId;
-            throw new Exception(
+            throw new ValidationException(
                 $"Insufficient stock for '{productName}' in warehouse '{warehouseName}'. " +
                 $"Available: {available}, Requested: {movement}.");
         }
@@ -145,12 +146,12 @@ public partial class InventoryTransactionService
 
         if (moduleName != nameof(StockCount) && transaction.Movement <= 0.0)
         {
-            throw new Exception("Quantity must not zero and should be positive.");
+            throw new ValidationException("Quantity must not zero and should be positive.");
         }
 
         if (moduleName == nameof(StockCount) && transaction.QtySCCount <= 0.0)
         {
-            throw new Exception("Quantity must not zero and should be positive.");
+            throw new ValidationException("Quantity must not zero and should be positive.");
         }
 
         switch (moduleName)
@@ -202,6 +203,18 @@ public partial class InventoryTransactionService
         transaction.Stock = transaction.Movement * (int)(transaction.TransType ?? 0.0);
     }
 
+    // System warehouses are seeded per tenant; a missing one must fail with a clear message
+    // rather than a NullReferenceException hidden behind the generic 500 handler.
+    private string RequireSystemWarehouseId(Warehouse? warehouse, string warehouseName)
+    {
+        if (warehouse == null || warehouse.Id == null)
+        {
+            throw new ValidationException($"System warehouse '{warehouseName}' was not found. Please contact your administrator.");
+        }
+
+        return warehouse.Id;
+    }
+
     private InventoryTransaction DeliveryOrderProcessing(InventoryTransaction transaction)
     {
         if (transaction == null)
@@ -212,7 +225,7 @@ public partial class InventoryTransactionService
         transaction.TransType = InventoryTransType.Out;
         CalculateStock(transaction);
         transaction.WarehouseFromId = transaction.WarehouseId;
-        transaction.WarehouseToId = _warehouseService.GetCustomerWarehouse()!.Id;
+        transaction.WarehouseToId = RequireSystemWarehouseId(_warehouseService.GetCustomerWarehouse(), "Customer");
 
         return transaction;
     }
@@ -226,7 +239,7 @@ public partial class InventoryTransactionService
 
         transaction.TransType = InventoryTransType.In;
         CalculateStock(transaction);
-        transaction.WarehouseFromId = _warehouseService.GetVendorWarehouse()!.Id;
+        transaction.WarehouseFromId = RequireSystemWarehouseId(_warehouseService.GetVendorWarehouse(), "Vendor");
         transaction.WarehouseToId = transaction.WarehouseId;
 
         return transaction;
@@ -241,7 +254,7 @@ public partial class InventoryTransactionService
 
         transaction.TransType = InventoryTransType.In;
         CalculateStock(transaction);
-        transaction.WarehouseFromId = _warehouseService.GetCustomerWarehouse()!.Id;
+        transaction.WarehouseFromId = RequireSystemWarehouseId(_warehouseService.GetCustomerWarehouse(), "Customer");
         transaction.WarehouseToId = transaction.WarehouseId;
 
         return transaction;
@@ -257,7 +270,7 @@ public partial class InventoryTransactionService
         transaction.TransType = InventoryTransType.Out;
         CalculateStock(transaction);
         transaction.WarehouseFromId = transaction.WarehouseId;
-        transaction.WarehouseToId = _warehouseService.GetVendorWarehouse()!.Id;
+        transaction.WarehouseToId = RequireSystemWarehouseId(_warehouseService.GetVendorWarehouse(), "Vendor");
 
         return transaction;
     }
@@ -271,7 +284,7 @@ public partial class InventoryTransactionService
 
         transaction.TransType = InventoryTransType.In;
         CalculateStock(transaction);
-        transaction.WarehouseFromId = _warehouseService.GetTransferWarehouse()!.Id;
+        transaction.WarehouseFromId = RequireSystemWarehouseId(_warehouseService.GetTransferWarehouse(), "Transfer");
         transaction.WarehouseToId = transaction.WarehouseId;
 
         return transaction;
@@ -287,7 +300,7 @@ public partial class InventoryTransactionService
         transaction.TransType = InventoryTransType.Out;
         CalculateStock(transaction);
         transaction.WarehouseFromId = transaction.WarehouseId;
-        transaction.WarehouseToId = _warehouseService.GetTransferWarehouse()!.Id;
+        transaction.WarehouseToId = RequireSystemWarehouseId(_warehouseService.GetTransferWarehouse(), "Transfer");
 
         return transaction;
     }
@@ -308,7 +321,7 @@ public partial class InventoryTransactionService
 
             transaction.TransType = InventoryTransType.In;
             CalculateStock(transaction);
-            transaction.WarehouseFromId = _warehouseService.GetStockCountWarehouse()!.Id;
+            transaction.WarehouseFromId = RequireSystemWarehouseId(_warehouseService.GetStockCountWarehouse(), "StockCount");
             transaction.WarehouseToId = transaction.WarehouseId;
 
         }
@@ -318,7 +331,7 @@ public partial class InventoryTransactionService
             transaction.TransType = InventoryTransType.Out;
             CalculateStock(transaction);
             transaction.WarehouseFromId = transaction.WarehouseId;
-            transaction.WarehouseToId = _warehouseService.GetStockCountWarehouse()!.Id;
+            transaction.WarehouseToId = RequireSystemWarehouseId(_warehouseService.GetStockCountWarehouse(), "StockCount");
 
         }
 
@@ -335,7 +348,7 @@ public partial class InventoryTransactionService
         transaction.TransType = InventoryTransType.Out;
         CalculateStock(transaction);
         transaction.WarehouseFromId = transaction.WarehouseId;
-        transaction.WarehouseToId = _warehouseService.GetAdjustmentWarehouse()!.Id;
+        transaction.WarehouseToId = RequireSystemWarehouseId(_warehouseService.GetAdjustmentWarehouse(), "Adjustment");
 
         return transaction;
     }
@@ -349,7 +362,7 @@ public partial class InventoryTransactionService
 
         transaction.TransType = InventoryTransType.In;
         CalculateStock(transaction);
-        transaction.WarehouseFromId = _warehouseService.GetAdjustmentWarehouse()!.Id;
+        transaction.WarehouseFromId = RequireSystemWarehouseId(_warehouseService.GetAdjustmentWarehouse(), "Adjustment");
         transaction.WarehouseToId = transaction.WarehouseId;
 
         return transaction;
@@ -365,7 +378,7 @@ public partial class InventoryTransactionService
         transaction.TransType = InventoryTransType.Out;
         CalculateStock(transaction);
         transaction.WarehouseFromId = transaction.WarehouseId;
-        transaction.WarehouseToId = _warehouseService.GetScrappingWarehouse()!.Id;
+        transaction.WarehouseToId = RequireSystemWarehouseId(_warehouseService.GetScrappingWarehouse(), "Scrapping");
 
         return transaction;
     }
