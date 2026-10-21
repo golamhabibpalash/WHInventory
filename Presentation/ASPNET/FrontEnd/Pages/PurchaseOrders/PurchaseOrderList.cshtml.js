@@ -1633,6 +1633,12 @@ const App = {
                         { field: 'orderDate', headerText: 'PO Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'vendorName', headerText: 'Vendor', width: 200, minWidth: 200 },
                         { field: 'orderStatusName', headerText: 'Status', width: 150, minWidth: 150 },
+                        { field: 'totalOrderedQty', headerText: 'Ordered Qty', width: 110, format: 'N2', textAlign: 'Right', type: 'number' },
+                        { field: 'totalReceivedQty', headerText: 'Received Qty', width: 120, format: 'N2', textAlign: 'Right', type: 'number' },
+                        {
+                            field: 'receiveStatus', headerText: 'Receive Status', width: 130, minWidth: 130,
+                            template: '<span class="badge" style="font-size:.75rem;font-weight:600;" v-bind:class="{"bg-success": data.receiveStatus === "Complete", "bg-warning text-dark": data.receiveStatus === "Partial", "bg-secondary": data.receiveStatus === "Not Started" || data.receiveStatus === "N/A"}">${receiveStatus}</span>'
+                        },
                         { field: 'taxName', headerText: 'Tax', width: 150, minWidth: 150 },
                         { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2', textAlign: 'Right' },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' },
