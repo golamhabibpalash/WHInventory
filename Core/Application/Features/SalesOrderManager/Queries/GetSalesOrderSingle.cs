@@ -19,6 +19,7 @@ public class GetSalesOrderSingleProfile : Profile
 public class GetSalesOrderSingleResult
 {
     public SalesOrder? Data { get; init; }
+    public string? OrderStatusName { get; init; }
 }
 
 public class GetSalesOrderSingleRequest : IRequest<GetSalesOrderSingleResult>
@@ -62,7 +63,8 @@ public class GetSalesOrderSingleHandler : IRequestHandler<GetSalesOrderSingleReq
 
         return new GetSalesOrderSingleResult
         {
-            Data = entity
+            Data = entity,
+            OrderStatusName = entity?.OrderStatus.HasValue == true ? entity.OrderStatus.Value.ToFriendlyName() : string.Empty
         };
     }
 }

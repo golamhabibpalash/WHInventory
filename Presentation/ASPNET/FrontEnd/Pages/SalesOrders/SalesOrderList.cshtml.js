@@ -785,7 +785,8 @@ const App = {
             },
             getSalesOrderSingle: async (id) => {
                 try {
-                    const response = await AxiosManager.get('/SalesOrder/GetSalesOrderSingle', { params: { id } });
+                    // AxiosManager.get ignores config.params, so the query is built into the URL.
+                    const response = await AxiosManager.get(`/SalesOrder/GetSalesOrderSingle?id=${encodeURIComponent(id)}`, {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -2355,15 +2356,18 @@ const App = {
                 openViewModal: async (id) => {
                     try {
                         const response = await services.getSalesOrderSingle(id);
-                        const data = response?.data?.content?.data;
+                        const result = response?.data?.content;
+                        const data = result?.data;
                         if (!data) return;
+
+                        const orderStatusName = result?.orderStatusName ?? '';
 
                         state.view = {
                             id: data.id ?? '',
                             number: data.number ?? '',
                             orderDate: data.orderDate ?? '',
-                            orderStatusName: data.orderStatusName ?? '',
-                            statusClass: statusPillClass(data.orderStatusName),
+                            orderStatusName: orderStatusName,
+                            statusClass: statusPillClass(orderStatusName),
                             description: data.description ?? '',
                             customerName: data.customer?.name ?? '',
                             taxName: data.tax?.name ?? '',
