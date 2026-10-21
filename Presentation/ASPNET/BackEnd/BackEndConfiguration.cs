@@ -1,13 +1,17 @@
 using Application;
+using Application.Common.Services.BusinessClockManager;
 using Application.Features.NotificationManager;
 using ASPNET.BackEnd.Common.Filters;
 using ASPNET.BackEnd.Common.Handlers;
+using ASPNET.BackEnd.Common.Helpers;
+using ASPNET.BackEnd.Common.Services;
 using ASPNET.BackEnd.Hubs;
 using Infrastructure;
 using Infrastructure.DataAccessManager.EFCore;
 using Infrastructure.SeedManager;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization.Metadata;
 
 namespace ASPNET.BackEnd;
 
@@ -41,6 +45,10 @@ public static class BackEndConfiguration
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
                 options.JsonSerializerOptions.WriteIndented = true;
+                options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
+                {
+                    Modifiers = { UtcDateTimeJsonModifier.Apply }
+                };
             });
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
@@ -82,6 +90,9 @@ public static class BackEndConfiguration
         //>>> Live notifications (SignalR + per-user groups)
         services.AddSignalR();
         services.AddScoped<INotificationBroadcaster, SignalRNotificationBroadcaster>();
+
+        //>>> Business-timezone clock (appsettings.json -> TimeZoneId)
+        services.AddSingleton<IBusinessClock, BusinessClock>();
 
         return services;
     }

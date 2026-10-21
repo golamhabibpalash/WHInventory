@@ -1,5 +1,6 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
+using Application.Common.Services.BusinessClockManager;
 using Application.Features.CustomerManager.Services;
 using Domain.Common;
 using Domain.Entities;
@@ -46,16 +47,18 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
 
     private readonly IQueryContext _context;
     private readonly CustomerDueService _dueService;
+    private readonly IBusinessClock _clock;
 
-    public GetOverviewDashboardHandler(IQueryContext context, CustomerDueService dueService)
+    public GetOverviewDashboardHandler(IQueryContext context, CustomerDueService dueService, IBusinessClock clock)
     {
         _context = context;
         _dueService = dueService;
+        _clock = clock;
     }
 
     public async Task<GetOverviewDashboardResult> Handle(GetOverviewDashboardRequest request, CancellationToken cancellationToken)
     {
-        var todayStart = DateTime.Now.Date;
+        var todayStart = _clock.Today;
         var tomorrowStart = todayStart.AddDays(1);
         var comparisonStart = todayStart.AddDays(-ComparisonDays);
         var trendStart = todayStart.AddDays(-(TrendDays - 1));

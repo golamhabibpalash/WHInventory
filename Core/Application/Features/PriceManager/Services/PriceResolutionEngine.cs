@@ -1,5 +1,6 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
+using Application.Common.Services.BusinessClockManager;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,11 +20,13 @@ public class PriceResolutionEngine
 {
     private readonly IQueryContext _context;
     private readonly WacService _wacService;
+    private readonly IBusinessClock _clock;
 
-    public PriceResolutionEngine(IQueryContext context, WacService wacService)
+    public PriceResolutionEngine(IQueryContext context, WacService wacService, IBusinessClock clock)
     {
         _context = context;
         _wacService = wacService;
+        _clock = clock;
     }
 
     public async Task<PriceResolutionResult> ResolvePriceAsync(
@@ -33,7 +36,7 @@ public class PriceResolutionEngine
         DateTime? saleDate,
         CancellationToken cancellationToken = default)
     {
-        var effectiveDate = saleDate ?? DateTime.Now.Date;
+        var effectiveDate = saleDate ?? _clock.Today;
         var costPrice = await _wacService.GetWeightedAverageCostAsync(productId, cancellationToken);
 
         // 1. Promotional Price — highest priority

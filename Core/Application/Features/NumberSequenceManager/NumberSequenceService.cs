@@ -1,4 +1,5 @@
 using Application.Common.Repositories;
+using Application.Common.Services.BusinessClockManager;
 using Domain.Entities;
 
 namespace Application.Features.NumberSequenceManager;
@@ -9,14 +10,17 @@ public class NumberSequenceService
     private readonly object lockObject = new object();
     private readonly ICommandRepository<NumberSequence> _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IBusinessClock _clock;
 
     public NumberSequenceService(
         ICommandRepository<NumberSequence> repository,
-        IUnitOfWork unitOfWork
+        IUnitOfWork unitOfWork,
+        IBusinessClock clock
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _clock = clock;
     }
 
     private NumberSequence? GetNumberSequence(string entityName, string prefix, string suffix)
@@ -69,7 +73,7 @@ public class NumberSequenceService
                 sequence = InsertNumberSequence(entityName, prefix, suffix);
             }
 
-            var formattedNumber = $"{prefix}{sequence?.LastUsedCount?.ToString().PadLeft(padding, '0')}{(useDate ? DateTime.Now.ToString("yyyyMMdd") : "")}{suffix}";
+            var formattedNumber = $"{prefix}{sequence?.LastUsedCount?.ToString().PadLeft(padding, '0')}{(useDate ? _clock.Today.ToString("yyyyMMdd") : "")}{suffix}";
             result = formattedNumber;
         }
 

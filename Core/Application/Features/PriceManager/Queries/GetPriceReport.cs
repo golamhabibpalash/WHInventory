@@ -1,5 +1,6 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
+using Application.Common.Services.BusinessClockManager;
 using Application.Features.PriceManager.Services;
 using Domain.Enums;
 using MediatR;
@@ -37,16 +38,18 @@ public class GetPriceReportHandler : IRequestHandler<GetPriceReportRequest, GetP
 {
     private readonly IQueryContext _context;
     private readonly WacService _wacService;
+    private readonly IBusinessClock _clock;
 
-    public GetPriceReportHandler(IQueryContext context, WacService wacService)
+    public GetPriceReportHandler(IQueryContext context, WacService wacService, IBusinessClock clock)
     {
         _context = context;
         _wacService = wacService;
+        _clock = clock;
     }
 
     public async Task<GetPriceReportResult> Handle(GetPriceReportRequest request, CancellationToken cancellationToken)
     {
-        var today = DateTime.Now.Date;
+        var today = _clock.Today;
 
         var products = await _context.Product
             .AsNoTracking()
