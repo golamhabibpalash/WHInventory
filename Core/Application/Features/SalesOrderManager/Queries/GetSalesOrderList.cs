@@ -117,61 +117,71 @@ public class GetSalesOrderListHandler : IRequestHandler<GetSalesOrderListRequest
         var soIds = dtos.Where(x => !string.IsNullOrEmpty(x.Id)).Select(x => x.Id!).ToList();
         if (soIds.Count > 0)
         {
-            var orderedRows = await _context.SalesOrderItem
-                .AsNoTracking()
-                .ApplyIsDeletedFilter(false)
-                .Where(x => x.SalesOrderId != null && soIds.Contains(x.SalesOrderId))
-                .GroupBy(x => x.SalesOrderId!)
-                .Select(g => new { SOId = g.Key, Total = g.Sum(x => x.Quantity ?? 0.0) })
-                .ToListAsync(cancellationToken);
-            var orderedDict = orderedRows.ToDictionary(x => x.SOId, x => x.Total);
-
-            var deliveryOrders = await _context.DeliveryOrder
-                .AsNoTracking()
-                .ApplyIsDeletedFilter(false)
-                .Where(x => x.SalesOrderId != null && soIds.Contains(x.SalesOrderId))
-                .Select(x => new { x.Id, x.SalesOrderId })
-                .ToListAsync(cancellationToken);
-            var doIds = deliveryOrders.Where(x => !string.IsNullOrEmpty(x.Id)).Select(x => x.Id!).ToList();
-
-            var deliveredByDo = new Dictionary<string, double>();
-            if (doIds.Count > 0)
+            try
             {
-                var deliveredRows = await _context.InventoryTransaction
+                // Pull the raw rows and aggregate in memory: simple Where/Select always translates,
+                // so a provider quirk in a GROUP BY can never break the whole sales order list.
+                var orderedItems = await _context.SalesOrderItem
                     .AsNoTracking()
                     .ApplyIsDeletedFilter(false)
-                    .Where(x => x.ModuleId != null && doIds.Contains(x.ModuleId)
-                             && x.ModuleName == nameof(DeliveryOrder))
-                    .GroupBy(x => x.ModuleId!)
-                    .Select(g => new { DOId = g.Key, Total = g.Sum(x => x.Movement ?? 0.0) })
+                    .Where(x => x.SalesOrderId != null && soIds.Contains(x.SalesOrderId))
+                    .Select(x => new { x.SalesOrderId, x.Quantity })
                     .ToListAsync(cancellationToken);
-                deliveredByDo = deliveredRows.ToDictionary(x => x.DOId, x => x.Total);
+                var orderedDict = orderedItems
+                    .GroupBy(x => x.SalesOrderId!)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity ?? 0.0));
+
+                var deliveryOrders = await _context.DeliveryOrder
+                    .AsNoTracking()
+                    .ApplyIsDeletedFilter(false)
+                    .Where(x => x.SalesOrderId != null && soIds.Contains(x.SalesOrderId))
+                    .Select(x => new { x.Id, x.SalesOrderId })
+                    .ToListAsync(cancellationToken);
+                var doIds = deliveryOrders.Where(x => !string.IsNullOrEmpty(x.Id)).Select(x => x.Id!).ToList();
+
+                var deliveredBySo = new Dictionary<string, double>();
+                if (doIds.Count > 0)
+                {
+                    var deliveredItems = await _context.InventoryTransaction
+                        .AsNoTracking()
+                        .ApplyIsDeletedFilter(false)
+                        .Where(x => x.ModuleId != null && doIds.Contains(x.ModuleId)
+                                 && x.ModuleName == nameof(DeliveryOrder))
+                        .Select(x => new { x.ModuleId, x.Movement })
+                        .ToListAsync(cancellationToken);
+                    var deliveredByDo = deliveredItems
+                        .GroupBy(x => x.ModuleId!)
+                        .ToDictionary(g => g.Key, g => g.Sum(x => x.Movement ?? 0.0));
+
+                    foreach (var deliveryOrder in deliveryOrders)
+                    {
+                        if (string.IsNullOrEmpty(deliveryOrder.SalesOrderId) || string.IsNullOrEmpty(deliveryOrder.Id)) continue;
+                        var delivered = deliveredByDo.TryGetValue(deliveryOrder.Id, out var dq) ? dq : 0.0;
+                        deliveredBySo[deliveryOrder.SalesOrderId] =
+                            (deliveredBySo.TryGetValue(deliveryOrder.SalesOrderId, out var acc) ? acc : 0.0) + delivered;
+                    }
+                }
+
+                foreach (var dto in dtos)
+                {
+                    if (string.IsNullOrEmpty(dto.Id)) continue;
+                    var ordered = orderedDict.TryGetValue(dto.Id, out var oq) ? oq : 0.0;
+                    var delivered = deliveredBySo.TryGetValue(dto.Id, out var dv) ? dv : 0.0;
+
+                    dto.TotalOrderedQty = ordered;
+                    dto.TotalDeliveredQty = delivered;
+                    dto.DeliveryStatus = ordered <= 0
+                        ? "N/A"
+                        : delivered >= ordered
+                            ? "Complete"
+                            : delivered > 0
+                                ? "Partial"
+                                : "Not Started";
+                }
             }
-
-            var deliveredBySo = new Dictionary<string, double>();
-            foreach (var deliveryOrder in deliveryOrders)
+            catch
             {
-                if (string.IsNullOrEmpty(deliveryOrder.SalesOrderId) || string.IsNullOrEmpty(deliveryOrder.Id)) continue;
-                var delivered = deliveredByDo.TryGetValue(deliveryOrder.Id, out var dq) ? dq : 0.0;
-                deliveredBySo[deliveryOrder.SalesOrderId] =
-                    (deliveredBySo.TryGetValue(deliveryOrder.SalesOrderId, out var acc) ? acc : 0.0) + delivered;
-            }
-
-            foreach (var dto in dtos)
-            {
-                if (string.IsNullOrEmpty(dto.Id)) continue;
-                var ordered = orderedDict.TryGetValue(dto.Id, out var oq) ? oq : 0.0;
-                var delivered = deliveredBySo.TryGetValue(dto.Id, out var dv) ? dv : 0.0;
-
-                dto.TotalOrderedQty = ordered;
-                dto.TotalDeliveredQty = delivered;
-                dto.DeliveryStatus = ordered <= 0
-                    ? "N/A"
-                    : delivered >= ordered
-                        ? "Complete"
-                        : delivered > 0
-                            ? "Partial"
-                            : "Not Started";
+                // Delivery progress is supplementary — never let it break the sales order list.
             }
         }
 
