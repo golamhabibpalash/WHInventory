@@ -7,6 +7,9 @@ const App = {
             statusListLookupData: [],
             secondaryData: [],
             productListLookupData: [],
+            // Products on the linked sales order (scopes the delivery item dropdown); each carries
+            // the ordered quantity so the movement can be capped to what was actually ordered.
+            salesOrderProductListLookupData: [],
             warehouseListLookupData: [],
             mainTitle: null,
             id: '',
@@ -72,6 +75,7 @@ const App = {
                 description: ''
             };
             state.secondaryData = [];
+            state.salesOrderProductListLookupData = [];
         };
 
         const orderDatePicker = {
@@ -157,6 +161,7 @@ const App = {
             (newVal, oldVal) => {
                 salesOrderListLookup.refresh();
                 state.errors.salesOrderId = '';
+                methods.populateSalesOrderProducts(newVal);
             }
         );
 
@@ -294,6 +299,14 @@ const App = {
                     throw error;
                 }
             },
+            getSalesOrderItems: async (salesOrderId) => {
+                try {
+                    const response = await AxiosManager.get('/SalesOrderItem/GetSalesOrderItemBySalesOrderIdList?salesOrderId=' + salesOrderId, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             getWarehouseListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/Warehouse/GetWarehouseList', {});
@@ -341,6 +354,34 @@ const App = {
                         ...product,
                         numberName: `${product.number} - ${product.name}`
                     })) || [];
+            },
+            // Scope the delivery item product dropdown to the products on the linked sales order,
+            // carrying each product's ordered quantity. The server (ValidateDeliveryOrderQuantity)
+            // remains authoritative — this only guides the user and avoids obvious bad entries.
+            populateSalesOrderProducts: async (salesOrderId) => {
+                if (!salesOrderId) {
+                    state.salesOrderProductListLookupData = [];
+                    return;
+                }
+                try {
+                    const response = await services.getSalesOrderItems(salesOrderId);
+                    const items = response?.data?.content?.data ?? [];
+                    const byProduct = {};
+                    items.forEach(item => {
+                        if (!item.productId) return;
+                        if (!byProduct[item.productId]) {
+                            byProduct[item.productId] = {
+                                id: item.productId,
+                                numberName: [item.productNumber, item.productName].filter(Boolean).join(' - '),
+                                orderedQty: 0
+                            };
+                        }
+                        byProduct[item.productId].orderedQty += (item.quantity ?? 0);
+                    });
+                    state.salesOrderProductListLookupData = Object.values(byProduct);
+                } catch (error) {
+                    state.salesOrderProductListLookupData = [];
+                }
             },
             populateWarehouseListLookupData: async () => {
                 const response = await services.getWarehouseListLookupData();
@@ -683,7 +724,8 @@ const App = {
                             width: 250,
                             validationRules: { required: true },
                             valueAccessor: (field, data, column) => {
-                                const product = state.productListLookupData.find(item => item.id === data[field]);
+                                const product = state.productListLookupData.find(item => item.id === data[field])
+                                    || state.salesOrderProductListLookupData.find(item => item.id === data[field]);
                                 return product ? `${product.numberName}` : '';
                             },
                             editType: 'dropdownedit',
@@ -702,9 +744,11 @@ const App = {
                                     productObj = new ej.dropdowns.DropDownList({
                                         allowFiltering: true,
                                         filterType: 'Contains',
-                                        dataSource: state.productListLookupData,
+                                        // Only products on the linked sales order can be delivered.
+                                        dataSource: state.salesOrderProductListLookupData,
                                         fields: { value: 'id', text: 'numberName' },
                                         value: args.rowData.productId,
+                                        noRecordsTemplate: 'Select a sales order with products first',
                                         change: function (e) {
                                             if (movementObj) {
                                                 movementObj.value = 1;
@@ -724,8 +768,15 @@ const App = {
                             validationRules: {
                                 required: true,
                                 custom: [(args) => {
-                                    return args['value'] > 0;
-                                }, 'Must be a positive number and not zero']
+                                    const value = Number(args['value']);
+                                    if (!(value > 0)) return false;
+                                    // Cap at the ordered quantity for the chosen product. The server
+                                    // enforces the exact remaining across all delivery orders.
+                                    const productId = (typeof productObj !== 'undefined' && productObj) ? productObj.value : null;
+                                    const scoped = productId ? state.salesOrderProductListLookupData.find(p => p.id === productId) : null;
+                                    if (scoped && value > scoped.orderedQty) return false;
+                                    return true;
+                                }, 'Quantity must be greater than 0 and within the ordered quantity on the sales order.']
                             },
                             type: 'number', format: 'N2', textAlign: 'Right',
                             edit: {
