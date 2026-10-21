@@ -1,4 +1,4 @@
-﻿// Disable Dropzone auto-discovery immediately at script load (before DOMContentLoaded),
+// Disable Dropzone auto-discovery immediately at script load (before DOMContentLoaded),
 // so it does not try to auto-initialize the <div class="dropzone"> without a URL.
 // The uploader is created explicitly in imageDropzone.init().
 if (window.Dropzone) {
@@ -1507,6 +1507,7 @@ const App = {
 
                 mainGrid.obj.appendTo(mainGridRef.value);
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
+                GridActionManager.enableRowDoubleClickEdit(mainGrid.obj);
             },
             refresh: () => {
                 mainGrid.obj.setProperties({ dataSource: state.mainData });

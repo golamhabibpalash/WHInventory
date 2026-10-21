@@ -1,4 +1,4 @@
-﻿const App = {
+const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
@@ -313,6 +313,7 @@
 
                 mainGrid.obj.appendTo(mainGridRef.value);
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
+                GridActionManager.enableRowDoubleClickEdit(mainGrid.obj);
             },
             refresh: () => {
                 mainGrid.obj.setProperties({ dataSource: state.mainData });

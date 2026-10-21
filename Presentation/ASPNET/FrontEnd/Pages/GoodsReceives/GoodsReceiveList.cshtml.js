@@ -841,6 +841,7 @@ const App = {
 
                 mainGrid.obj.appendTo(mainGridRef.value);
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
+                GridActionManager.enableRowDoubleClickEdit(mainGrid.obj);
             },
             refresh: () => {
                 // Preserve any active filter selection when the underlying list is reloaded.
