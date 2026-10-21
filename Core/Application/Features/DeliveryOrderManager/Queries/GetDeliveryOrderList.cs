@@ -19,6 +19,8 @@ public record GetDeliveryOrderListDto
     public string? Description { get; init; }
     public string? SalesOrderId { get; init; }
     public string? SalesOrderNumber { get; init; }
+    public string? CustomerName { get; init; }
+    public string? CustomerPhoneNumber { get; init; }
     public double TotalOrderedQty { get; set; }
     public double TotalDeliveredQty { get; set; }
     public string? DeliveryStatus { get; set; }
@@ -35,6 +37,14 @@ public class GetDeliveryOrderListProfile : Profile
             .ForMember(
                 dest => dest.SalesOrderNumber,
                 opt => opt.MapFrom(src => src.SalesOrder != null ? src.SalesOrder.Number : string.Empty)
+            )
+            .ForMember(
+                dest => dest.CustomerName,
+                opt => opt.MapFrom(src => src.SalesOrder != null && src.SalesOrder.Customer != null ? src.SalesOrder.Customer.Name : string.Empty)
+            )
+            .ForMember(
+                dest => dest.CustomerPhoneNumber,
+                opt => opt.MapFrom(src => src.SalesOrder != null && src.SalesOrder.Customer != null ? src.SalesOrder.Customer.PhoneNumber : string.Empty)
             )
             .ForMember(
                 dest => dest.StatusName,
@@ -75,6 +85,7 @@ public class GetDeliveryOrderListHandler : IRequestHandler<GetDeliveryOrderListR
             .AsNoTracking()
             .ApplyIsDeletedFilter(request.IsDeleted)
             .Include(x => x.SalesOrder)
+                .ThenInclude(x => x!.Customer)
             .AsQueryable();
 
         var entities = await query.Take(2000).ToListAsync(cancellationToken);

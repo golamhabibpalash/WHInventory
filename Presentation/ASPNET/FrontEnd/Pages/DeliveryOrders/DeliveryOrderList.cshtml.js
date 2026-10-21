@@ -563,6 +563,8 @@ const App = {
                         { field: 'number', headerText: 'Number', width: 150, minWidth: 150 },
                         { field: 'deliveryDate', headerText: 'Delivery Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'salesOrderNumber', headerText: 'Sales Order', width: 150, minWidth: 150 },
+                        { field: 'customerName', headerText: 'Customer', width: 180, minWidth: 150 },
+                        { field: 'customerPhoneNumber', headerText: 'Customer Phone', width: 150, minWidth: 130 },
                         { field: 'statusName', headerText: 'Status', width: 150, minWidth: 150 },
                         { field: 'totalOrderedQty', headerText: 'Ordered Qty', width: 110, format: 'N2', textAlign: 'Right', type: 'number' },
                         { field: 'totalDeliveredQty', headerText: 'Delivered Qty', width: 120, format: 'N2', textAlign: 'Right', type: 'number' },
