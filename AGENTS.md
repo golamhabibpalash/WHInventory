@@ -12,7 +12,8 @@ dotnet run --project Presentation/ASPNET/ASPNET.csproj --environment Development
 - Targets **.NET 9** (`net9.0`). `Directory.Build.props` sets `TreatWarningsAsErrors` for `IDE*` + `EnforceCodeStyleInBuild` — code-style violations fail the build, not just warn.
 - There are **two** `.sln` files — build the root `WHInventory.sln`; `Presentation/ASPNET/ASPNET.sln` contains only the ASPNET project.
 - No test projects, no CI workflows, no lint/typecheck beyond the build — `dotnet build WHInventory.sln` is the full verification. No EF migrations — schema is `EnsureCreated()` at startup (`Infrastructure/.../EFCore/DI.cs`). To reset: drop the DB and restart.
-- Dev run expects a local PostgreSQL. The dev DB is the compose `db` service: `docker compose up -d db` → `appsettings.json` → `ConnectionStrings:DefaultConnection` already points at `localhost:5434` (matches compose's `5434:5432`). App binds `http://+:8080` (`appsettings.json` → `Kestrel`); 8080 is also the container port.
+- **`EnsureCreated()` never alters an existing DB.** When you add/modify an entity, existing databases need a manual SQL patch: add an idempotent script under `Infrastructure/Infrastructure/DataAccessManager/EFCore/Scripts/` (see `001_AddSessionTimeoutMinutes.sql`) and/or check the `ExecuteSqlRaw` schema patches in `EFCore/DI.cs` that run around `EnsureCreated()`. Fresh databases are fine.
+- Dev run expects a local PostgreSQL. The dev DB is the compose `db` service: copy `.env.example` → `.env` (its `DB_*` values match the appsettings connection string), then `docker compose up -d db` → `appsettings.json` → `ConnectionStrings:DefaultConnection` points at `localhost:5434` (matches compose's `5434:5432`). App binds `http://+:8080` (`appsettings.json` → `Kestrel`); 8080 is also the container port.
 
 ## Architecture
 
@@ -68,14 +69,14 @@ Every entity `BaseEntity` implements `IHasTenant`. EF global query filters enfor
 ## Seeding
 
 - System seed runs unconditionally at startup: default admin, roles, default tenant, company, system warehouses
-- Demo seed runs only when `IsDemoVersion: true` (true in dev `appsettings.json`, false in `appsettings.Production.json`)
+- Demo seed runs only when `IsDemoVersion: true` — gated solely on that config key (`BackEndConfiguration.cs`), **not** on environment. There is **no** `appsettings.Production.json`; the repo ships `IsDemoVersion: true` and compose does not override it, so a container built from this tree seeds demo data unless you set `IsDemoVersion=false`
 - Tenant creation is also a seeding concern (`TenantSeeder` + `TenantProvisioningService`)
 
 ## Security
 
 - ASP.NET Identity + JWT Bearer. Default admin: `admin@root.com` / `123456` (configurable in `appsettings.json` → `AspNetIdentity:DefaultAdmin`)
 - `RequireConfirmedEmail: true` by default — admin-created users bypass this; SMTP must be configured for self-registration
-- `AllowPublicTenantSignUp` — when true, anyone can create an org at `/Accounts/SignUp` (true in dev `appsettings.json`, false in `appsettings.Production.json`)
+- `AllowPublicTenantSignUp` — when true, anyone can create an org at `/Accounts/SignUp`. Repo default is `true` in `appsettings.json`; not overridden by compose, so production deployment must override it explicitly if unwanted
 - `Npgsql.EnableLegacyTimestampBehavior = true` set in `Program.cs` line 5 (do not remove)
 
 ## Frontend

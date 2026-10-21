@@ -1387,6 +1387,44 @@ const App = {
             }
         ));
 
+        // Load a list record into the order modal for editing. Shared by the Edit toolbar
+        // button, the View modal's "Edit Order" button, and double-click / SO-number click
+        // on a Draft row.
+        const openEditForRecord = async (record) => {
+            if (!record) return;
+            state.deleteMode = false;
+            state.paymentError = '';
+            resetNewPaymentState();
+            resetProductPick();
+            state.mainTitle = 'Edit Sales Order';
+            state.id = record.id ?? '';
+            state.number = record.number ?? '';
+            state.orderDate = record.orderDate ? new Date(record.orderDate) : null;
+            state.description = record.description ?? '';
+            state.taxId = record.taxId ?? '';
+            taxListLookup.trackingChange = true;
+            state.orderStatus = String(record.orderStatus ?? '');
+
+            await Promise.all([
+                loadCustomer(record.customerId, record.customerName),
+                methods.populateSecondaryData(record.id)
+            ]);
+
+            mainModal.obj.show();
+        };
+
+        // Double-click a row / click the SO number: Draft orders are still being worked on, so
+        // they open straight into Edit; Confirmed/Cancelled/Archived open the read-only View
+        // (which carries its own "Edit Order" button).
+        const openForRecord = (record) => {
+            if (!record?.id) return;
+            if (String(record.orderStatusName ?? '').toLowerCase() === 'draft') {
+                openEditForRecord(record);
+            } else {
+                handlerRef.openViewModal(record.id);
+            }
+        };
+
         const mainGrid = {
             obj: null,
             create: async (dataSource) => {
@@ -1448,8 +1486,7 @@ const App = {
                             args.cell.style.color = 'var(--primary)';
                             args.cell.style.fontWeight = '600';
                             args.cell.onclick = () => {
-                                const rowData = args.rowData;
-                                if (rowData?.id) handler.openViewModal(rowData.id);
+                                openForRecord(args.rowData);
                             };
                         }
                     },
@@ -1466,6 +1503,9 @@ const App = {
                         });
                     },
                     excelExportComplete: () => { },
+                    recordDoubleClick: (args) => {
+                        openForRecord(args.rowData);
+                    },
                     rowSelected: () => {
                         const enable = mainGrid.obj.getSelectedRecords().length === 1;
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], enable);
@@ -1494,27 +1534,8 @@ const App = {
                         }
 
                         if (args.item.id === 'EditCustom') {
-                            state.deleteMode = false;
-                            state.paymentError = '';
-                            resetNewPaymentState();
-                            resetProductPick();
                             if (mainGrid.obj.getSelectedRecords().length) {
-                                const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = 'Edit Sales Order';
-                                state.id = selectedRecord.id ?? '';
-                                state.number = selectedRecord.number ?? '';
-                                state.orderDate = selectedRecord.orderDate ? new Date(selectedRecord.orderDate) : null;
-                                state.description = selectedRecord.description ?? '';
-                                state.taxId = selectedRecord.taxId ?? '';
-                                taxListLookup.trackingChange = true;
-                                state.orderStatus = String(selectedRecord.orderStatus ?? '');
-
-                                await Promise.all([
-                                    loadCustomer(selectedRecord.customerId, selectedRecord.customerName),
-                                    methods.populateSecondaryData(selectedRecord.id)
-                                ]);
-
-                                mainModal.obj.show();
+                                await openEditForRecord(mainGrid.obj.getSelectedRecords()[0]);
                             }
                         }
 
@@ -2158,24 +2179,7 @@ const App = {
                     viewModal.obj.hide();
                     if (id) {
                         const record = state.mainData.find(r => r.id === id);
-                        if (record) {
-                            state.deleteMode = false;
-                            state.paymentError = '';
-                            resetNewPaymentState();
-                            resetProductPick();
-                            state.mainTitle = `Sales Order ${record.number ?? ''}`;
-                            state.id = record.id ?? '';
-                            state.number = record.number ?? '';
-                            state.orderDate = record.orderDate ? new Date(record.orderDate) : null;
-                            state.description = record.description ?? '';
-                            state.taxId = record.taxId ?? '';
-                            taxListLookup.trackingChange = true;
-                            state.orderStatus = String(record.orderStatus ?? '');
-                            Promise.all([
-                                loadCustomer(record.customerId, record.customerName),
-                                methods.populateSecondaryData(record.id)
-                            ]).then(() => mainModal.obj.show());
-                        }
+                        if (record) openEditForRecord(record);
                     }
                 },
                 stepQty: (delta) => {

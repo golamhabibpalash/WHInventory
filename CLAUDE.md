@@ -31,6 +31,8 @@ There are **two** `.sln` files: build the root `WHInventory.sln`; `Presentation/
 
 There are **no test projects** and **no EF migrations** — the schema is created by `EnsureCreated()` at startup. To reset the database, drop it and restart.
 
+**`EnsureCreated()` never alters an existing database.** When you add or change an entity, existing databases need a manual, idempotent SQL patch — add a script under `Infrastructure/Infrastructure/DataAccessManager/EFCore/Scripts/` (see `001_AddSessionTimeoutMinutes.sql`) and/or the `ExecuteSqlRaw` schema patches that run around `EnsureCreated()` in `EFCore/DI.cs`. Fresh databases need no patch. `dotnet build WHInventory.sln` is the only verification step (no CI, no lint/typecheck beyond the build).
+
 ## Architecture
 
 Clean Architecture, four projects:
@@ -63,7 +65,7 @@ Two EF Core contexts derived from a shared `DataContext`:
 - `CommandContext` → `ICommandContext`, writes via `ICommandRepository<T>` (Create/Update/Delete/Get)
 - `QueryContext` → `IQueryContext`, reads via direct LINQ on `DbSet<T>` (use `.AsNoTracking()`)
 
-Persistence is explicit: always `await _unitOfWork.SaveAsync(cancellationToken)` after mutations.
+Persistence is explicit: always `await _unitOfWork.SaveAsync(cancellationToken)` after mutations. (A synchronous `Save()` also exists for non-async paths — e.g. `NumberSequenceService` uses it.)
 
 Every read query must call the `ApplyIsDeletedFilter(...)` extension on `IQueryable<T>` to exclude soft-deleted rows: list queries pass `request.IsDeleted`, single-record queries pass `false` (the default param). (Tenant filtering, by contrast, is automatic — see below.)
 
@@ -72,7 +74,7 @@ Provider is chosen at startup from `appsettings.json` → `"DatabaseProvider"`: 
 ### Multi-tenancy (automatic — do not re-implement)
 
 `BaseEntity` implements `IHasTenant` (`string? TenantId`). EF Core **global query filters** enforce tenant scoping on every read automatically:
-`IsRootScope || (CurrentTenantId != null && e.TenantId == CurrentTenantId)`. An unresolved tenant yields **zero rows** (fail-closed, no cross-tenant leakage). **Never add manual `TenantId` filters in handlers.**
+`IsRootScope || (CurrentTenantId != null && e.TenantId == CurrentTenantId)`. An unresolved tenant yields **zero rows** (fail-closed, no cross-tenant leakage). **Never add manual `TenantId` filters in handlers.** Exception: `TicketCategory` and `TicketPriority` are registered as global types (the `globalTypes` set in `DataContext.ApplyTenantFilters`) and carry **no** tenant filter — they are shared across all tenants.
 
 - **Row stamping is automatic**: `DataContext.SaveChangesAsync` calls `StampTenant()`. Do not set `TenantId` by hand.
 - **Tenant resolution** (`TenantResolutionMiddleware`, after `UseAuthentication`): (1) JWT `TenantId` claim, (2) host subdomain slug (`acme.ustock.app` → tenant `acme`). Claim and host must agree or the request is 403. The first label of an IP/apex host is never treated as a slug; slug→tenant lookups are cached ~5 min.
@@ -107,7 +109,7 @@ Design notes: row-level `TenantId`, one-user-one-tenant, subdomain + JWT; enforc
 - JWT Bearer tokens issued at login; `ExpireInMinute` and a `RefreshToken` flow are configured. The JWT also carries the `TenantId` claim.
 - `RequireConfirmedEmail: true` by default — SMTP must be configured for self-registration; admin-created users bypass it.
 - Default admin seeded: `admin@root.com` / `123456` (configurable in `appsettings.json` → `AspNetIdentity:DefaultAdmin`).
-- `AllowPublicTenantSignUp` — when true, any visitor can create an organisation at `/Accounts/SignUp` (off by default in the production compose file).
+- `AllowPublicTenantSignUp` — when true, any visitor can create an organisation at `/Accounts/SignUp`. The repo ships it as **`true`** in `appsettings.json` and compose does not override it (and there is no `appsettings.Production.json`), so a production deployment must explicitly set it `false` if public sign-up is unwanted.
 
 ### Real-time Notifications
 
@@ -161,4 +163,5 @@ bash update.sh                # VPS-only deploy: git pull + rebuild app image + 
 ```
 
 - `.env` is gitignored — copy `.env.example` and adjust. Caveat: the repo compose only consumes `DB_NAME`/`DB_USER`/`DB_PASSWORD`/`CLOUDFLARE_TUNNEL_TOKEN`; the `JWT_KEY`/`ADMIN_*`/`SMTP_*` entries in `.env.example` are **not** wired to compose or the app (the container runs on `appsettings.json` defaults unless overridden separately).
+- Compose publishes **no app port** — `:8080` is container-internal and only the `db` service exposes `5434:5432`; external access is via the Cloudflare tunnel. For local browser access use `dotnet run` instead.
 - Uploads live under `wwwroot/app_data/` (a persisted volume in compose).
