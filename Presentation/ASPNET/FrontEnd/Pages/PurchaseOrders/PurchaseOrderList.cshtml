@@ -63,9 +63,9 @@
     </div>
 
     <div class="modal fade pos-modal" ref="mainModalRef" id="MainModal" aria-hidden="true" tabindex="-1" data-bs-focus="false" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable" v-bind:class="{ 'pos-dialog-expanded': state.modalExpanded }">
             <div class="modal-content" v-on:keydown="handler.onModalKeydown">
-                <div class="modal-header pos-header">
+                <div class="modal-header pos-header" v-on:dblclick.self="handler.toggleModalExpanded">
                     <div class="pos-header-title">
                         <span class="pos-header-icon" v-bind:class="{ 'is-danger': state.deleteMode }">
                             <i v-bind:class="state.deleteMode ? 'fas fa-trash' : 'fas fa-truck-loading'"></i>
@@ -80,7 +80,14 @@
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" tabindex="-1"></button>
+                    <div class="pos-header-actions">
+                        <button type="button" class="pos-expand-btn" v-on:click="handler.toggleModalExpanded" tabindex="-1"
+                                v-bind:title="state.modalExpanded ? 'Restore size' : 'Expand to full screen'"
+                                v-bind:aria-label="state.modalExpanded ? 'Restore size' : 'Expand to full screen'">
+                            <i v-bind:class="state.modalExpanded ? 'fas fa-compress-alt' : 'fas fa-expand-alt'"></i>
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" tabindex="-1"></button>
+                    </div>
                 </div>
                 <div class="modal-body pos-body">
                     <input type="hidden" v-model="state.id" id="Id" name="Id" />

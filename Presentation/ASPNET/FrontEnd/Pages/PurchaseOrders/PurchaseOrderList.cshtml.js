@@ -1,6 +1,16 @@
 const App = {
     setup() {
+        const MODAL_EXPANDED_KEY = 'purchaseOrder.modalExpanded';
+        const readModalExpanded = () => {
+            try {
+                return localStorage.getItem(MODAL_EXPANDED_KEY) === '1';
+            } catch {
+                return false;
+            }
+        };
+
         const state = Vue.reactive({
+            modalExpanded: readModalExpanded(),
             mainData: [],
             filterOpen: false,
             filter: {
@@ -2057,6 +2067,16 @@ const App = {
             }
         };
 
+        // Expand/restore the order modal; the choice is remembered for the next time it opens.
+        const toggleModalExpanded = () => {
+            state.modalExpanded = !state.modalExpanded;
+            try {
+                localStorage.setItem(MODAL_EXPANDED_KEY, state.modalExpanded ? '1' : '0');
+            } catch {
+                // storage unavailable (private mode) — the toggle still works for this session
+            }
+        };
+
         const onMainModalShown = () => {
             if (state.deleteMode) return;
             if (!state.vendor.id) focusEl(vendorInputRef);
@@ -2248,6 +2268,7 @@ const App = {
                 toggleFilter: filterHandler.toggle,
                 clearFilters: filterHandler.clear,
                 onModalKeydown: onModalKeydown,
+                toggleModalExpanded: toggleModalExpanded,
                 vendorInput: vendorField.onInput,
                 vendorKeydown: vendorField.onKeydown,
                 vendorFocus: vendorField.onFocus,
