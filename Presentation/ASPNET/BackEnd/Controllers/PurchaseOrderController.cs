@@ -58,6 +58,20 @@ public class PurchaseOrderController : BaseApiController
     }
 
     [Authorize]
+    [HttpPost("ReceiveNow")]
+    public async Task<ActionResult<ApiSuccessResult<ReceivePurchaseOrderNowResult>>> ReceiveNowAsync(ReceivePurchaseOrderNowRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<ReceivePurchaseOrderNowResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(ReceiveNowAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
     [HttpGet("GetPurchaseOrderList")]
     public async Task<ActionResult<ApiSuccessResult<GetPurchaseOrderListResult>>> GetPurchaseOrderListAsync(
         CancellationToken cancellationToken,

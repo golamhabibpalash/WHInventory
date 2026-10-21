@@ -1,5 +1,3 @@
-using Application.Common.Repositories;
-using Application.Features.NumberSequenceManager;
 using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
@@ -33,34 +31,24 @@ public class CreateGoodsReceiveValidator : AbstractValidator<CreateGoodsReceiveR
 
 public class CreateGoodsReceiveHandler : IRequestHandler<CreateGoodsReceiveRequest, CreateGoodsReceiveResult>
 {
-    private readonly ICommandRepository<GoodsReceive> _deliveryOrderRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly NumberSequenceService _numberSequenceService;
+    private readonly GoodsReceiveService _goodsReceiveService;
 
     public CreateGoodsReceiveHandler(
-        ICommandRepository<GoodsReceive> deliveryOrderRepository,
-        IUnitOfWork unitOfWork,
-        NumberSequenceService numberSequenceService
+        GoodsReceiveService goodsReceiveService
         )
     {
-        _deliveryOrderRepository = deliveryOrderRepository;
-        _unitOfWork = unitOfWork;
-        _numberSequenceService = numberSequenceService;
+        _goodsReceiveService = goodsReceiveService;
     }
 
     public async Task<CreateGoodsReceiveResult> Handle(CreateGoodsReceiveRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = new GoodsReceive();
-        entity.CreatedById = request.CreatedById;
-
-        entity.Number = _numberSequenceService.GenerateNumber(nameof(GoodsReceive), "", "GR");
-        entity.ReceiveDate = request.ReceiveDate;
-        entity.Status = (GoodsReceiveStatus)int.Parse(request.Status!);
-        entity.Description = request.Description;
-        entity.PurchaseOrderId = request.PurchaseOrderId;
-
-        await _deliveryOrderRepository.CreateAsync(entity, cancellationToken);
-        await _unitOfWork.SaveAsync(cancellationToken);
+        var entity = await _goodsReceiveService.CreateHeaderAsync(
+            request.ReceiveDate,
+            (GoodsReceiveStatus)int.Parse(request.Status!),
+            request.Description,
+            request.PurchaseOrderId,
+            request.CreatedById,
+            cancellationToken);
 
         return new CreateGoodsReceiveResult
         {

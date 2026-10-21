@@ -52,6 +52,7 @@ const App = {
                 description: ''
             },
             isSubmitting: false,
+            isReceiving: false,
             isAddingLine: false,
             productPick: {
                 productId: null,
@@ -545,7 +546,8 @@ const App = {
             },
             getPurchaseOrderSingle: async (id) => {
                 try {
-                    const response = await AxiosManager.get('/PurchaseOrder/GetPurchaseOrderSingle', { params: { id } });
+                    // AxiosManager.get ignores config.params, so the id must be built into the URL.
+                    const response = await AxiosManager.get('/PurchaseOrder/GetPurchaseOrderSingle?id=' + encodeURIComponent(id), {});
                     return response;
                 } catch (error) {
                     throw error;
@@ -575,6 +577,16 @@ const App = {
                 try {
                     const response = await AxiosManager.post('/PurchaseOrder/DeletePurchaseOrder', {
                         id, deletedById
+                    });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            receiveNowMainData: async (purchaseOrderId, receiveDate, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/PurchaseOrder/ReceiveNow', {
+                        purchaseOrderId, receiveDate: DateFormatManager.toApiDate(receiveDate), description, createdById
                     });
                     return response;
                 } catch (error) {
@@ -904,6 +916,94 @@ const App = {
                     });
                 } finally {
                     state.isSubmitting = false;
+                }
+            },
+            receiveNow: async () => {
+                if (state.isReceiving || state.isSubmitting) return;
+                if (state.deleteMode) return;
+
+                if (!validateForm()) {
+                    focusFirstError();
+                    return;
+                }
+
+                state.isReceiving = true;
+                let savedNumber = '';
+
+                try {
+                    // 1. Persist the purchase order (reusing the normal save paths).
+                    if (!state.id) {
+                        const header = await ensureHeaderSaved();
+                        if (!header.ok) {
+                            if (header.message) {
+                                Swal.fire({ icon: 'error', title: 'Save Failed', text: header.message });
+                            } else {
+                                focusFirstError();
+                            }
+                            return;
+                        }
+                    } else {
+                        const saveResponse = await services.updateMainData(
+                            state.id, state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendor.id, StorageManager.getUserId());
+
+                        if (saveResponse.data.code !== 200) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Save Failed',
+                                text: saveResponse.data.message ?? 'Please check your data.'
+                            });
+                            return;
+                        }
+                        applySavedHeader(saveResponse.data.content.data);
+                    }
+
+                    savedNumber = state.number;
+
+                    // 2. Receive the remaining quantities through the existing goods-receive workflow.
+                    let receiveResponse;
+                    try {
+                        receiveResponse = await services.receiveNowMainData(
+                            state.id, state.orderDate, state.description, StorageManager.getUserId());
+                    } catch (error) {
+                        // The order is saved; only receiving failed. Keep it and offer a retry.
+                        await methods.populateMainData();
+                        mainGrid.refresh();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Order Saved, Receiving Failed',
+                            html: `Purchase order <strong>${savedNumber}</strong> was saved, but receiving is still pending.<br>`
+                                + `${(error.response?.data?.message ?? 'Please try again.')}`,
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
+                    const result = receiveResponse?.data?.content;
+                    await methods.populateMainData();
+                    mainGrid.refresh();
+                    await methods.refreshPaymentSummary(state.id);
+
+                    if (receiveResponse.data.code === 200 && result?.received) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Received',
+                            html: `Purchase order <strong>${savedNumber}</strong> received.<br>Goods receive: <strong>${result.goodsReceiveNumber ?? ''}</strong>`
+                        });
+                    } else if (result?.alreadyReceived) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Already Received',
+                            html: `Purchase order <strong>${savedNumber}</strong> has no outstanding quantities to receive.`
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Order Saved, Receiving Incomplete',
+                            text: receiveResponse.data.message ?? 'The order was saved but receiving did not complete.'
+                        });
+                    }
+                } finally {
+                    state.isReceiving = false;
                 }
             },
             onMainModalHidden: () => {
@@ -2144,6 +2244,7 @@ const App = {
             methods,
             handler: handlerRef = {
                 handleSubmit: methods.handleFormSubmit,
+                receiveNow: methods.receiveNow,
                 toggleFilter: filterHandler.toggle,
                 clearFilters: filterHandler.clear,
                 onModalKeydown: onModalKeydown,
@@ -2313,7 +2414,9 @@ const App = {
                             id: data.id ?? '',
                             number: data.number ?? '',
                             orderDate: data.orderDate ?? '',
-                            orderStatusName: data.orderStatusName ?? '',
+                            // GetPurchaseOrderSingle returns the raw entity (no status name), so resolve
+                            // it from the loaded status lookup; fall back to any name on the payload.
+                            orderStatusName: (state.purchaseOrderStatusListLookupData ?? []).find(s => String(s.id) === String(data.orderStatus))?.name ?? data.orderStatusName ?? '',
                             statusClass: statusMap[data.orderStatus] ?? 'text-bg-secondary',
                             description: data.description ?? '',
                             referenceNumber: data.referenceNumber ?? '',
