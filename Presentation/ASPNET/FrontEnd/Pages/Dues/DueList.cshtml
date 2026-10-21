@@ -6,6 +6,7 @@
 @section styles {
     <link rel="stylesheet" href="~/css/order-list.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/purchase-order-list.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pos-order-modal.css" asp-append-version="true" />
 }
 
 <div id="app" v-cloak>
@@ -72,6 +73,56 @@
         </div>
 
         <div ref="mainGridRef" id="MainGrid"></div>
+    </div>
+
+    <!-- Collect Due Modal -->
+    <div class="modal fade" ref="collectDueModalRef" id="CollectDueModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-hand-holding-usd me-2"></i>Collect Due</h5>
+                    <button type="button" class="btn-close btn-close-white" v-on:click="handler.closeCollectDue" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Collecting for <strong>{{ state.collectDue.customerName || 'this customer' }}</strong>. The amount is applied to the oldest unpaid orders first.
+                    </p>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <label>Amount <span class="text-danger">*</span></label>
+                            <input v-model.number="state.collectDue.amount" type="number" step="0.01" min="0" class="form-control text-end" />
+                            <small class="text-muted">Due: {{ handler.formatAmount(state.collectDue.due) }}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Method <span class="text-danger">*</span></label>
+                            <select class="form-select" v-model="state.collectDue.paymentMethodId">
+                                <option value="">Select...</option>
+                                <option v-for="m in state.paymentMethodListLookupData" v-bind:key="m.id" v-bind:value="m.id">{{ m.name }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <label>Date <span class="text-danger">*</span></label>
+                            <input ref="collectDueDateRef">
+                        </div>
+                        <div class="col-md-6">
+                            <label>Reference</label>
+                            <input v-model="state.collectDue.referenceNumber" type="text" class="form-control" placeholder="Optional" />
+                        </div>
+                    </div>
+                    <p class="text-danger small mb-0" v-if="state.collectDue.error">{{ state.collectDue.error }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" v-on:click="handler.closeCollectDue"><i class="fas fa-times me-2"></i>Cancel</button>
+                    <button type="button" class="btn btn-success" v-on:click="handler.submitCollectDue" v-bind:disabled="state.collectDue.isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-1" v-if="state.collectDue.isSubmitting"></span>
+                        <i class="fas fa-check me-2" v-else></i>
+                        {{ state.collectDue.isSubmitting ? 'Collecting...' : 'Collect' }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

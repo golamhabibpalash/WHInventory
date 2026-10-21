@@ -10,6 +10,18 @@ const App = {
                 toDate: null,
             },
             customerListLookupData: [],
+            paymentMethodListLookupData: [],
+            collectDue: {
+                customerId: null,
+                customerName: '',
+                due: 0,
+                amount: null,
+                paymentMethodId: '',
+                paymentDate: '',
+                referenceNumber: '',
+                isSubmitting: false,
+                error: ''
+            },
         });
 
         const mainGridRef = Vue.ref(null);
@@ -18,6 +30,8 @@ const App = {
         const filterStatusRef = Vue.ref(null);
         const filterFromDateRef = Vue.ref(null);
         const filterToDateRef = Vue.ref(null);
+        const collectDueModalRef = Vue.ref(null);
+        const collectDueDateRef = Vue.ref(null);
 
         const services = {
             getMainData: async () => {
@@ -31,6 +45,22 @@ const App = {
             getCustomerListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/Customer/GetCustomerList', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPaymentMethodListLookupData: async () => {
+                try {
+                    const response = await AxiosManager.get('/PaymentMethod/GetPaymentMethodList?activeOnly=true', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            collectCustomerDue: async (payload) => {
+                try {
+                    const response = await AxiosManager.post('/Customer/CollectCustomerDue', payload);
                     return response;
                 } catch (error) {
                     throw error;
@@ -57,7 +87,22 @@ const App = {
                     lastOrderDate: row.lastOrderDate ? new Date(row.lastOrderDate) : null,
                 }));
             },
+            populatePaymentMethodListLookupData: async () => {
+                const response = await services.getPaymentMethodListLookupData();
+                state.paymentMethodListLookupData = response?.data?.content?.data ?? [];
+            },
         };
+
+        // Pre-select the only method, or Cash, so collecting is one step for the common case.
+        const defaultPaymentMethodId = () => {
+            const list = state.paymentMethodListLookupData ?? [];
+            if (list.length === 1) return list[0].id;
+            return list.find(m => String(m.name ?? '').toLowerCase().includes('cash'))?.id ?? '';
+        };
+
+        const notify = (icon, title) => Swal.fire({
+            toast: true, position: 'top-end', icon, title, timer: 2000, showConfirmButton: false
+        });
 
         // ── List filtering (client-side over the already-fetched list; no API change) ──────────
         const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -207,6 +252,85 @@ const App = {
 
         const watcherStops = [];
 
+        // ── Collect Due ───────────────────────────────────────────────────────────────────────
+        const collectDueModal = {
+            obj: null,
+            create: () => {
+                collectDueModal.obj = new bootstrap.Modal(collectDueModalRef.value, { backdrop: 'static', keyboard: false });
+            }
+        };
+
+        const collectDueDatePicker = {
+            obj: null,
+            mount: (element) => {
+                if (collectDueDatePicker.obj) { collectDueDatePicker.obj.destroy(); collectDueDatePicker.obj = null; }
+                if (!element) return;
+                collectDueDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'Select date',
+                    value: DateFormatManager.fromApiDate(state.collectDue.paymentDate),
+                    change: (e) => { state.collectDue.paymentDate = DateFormatManager.toApiDate(e.value) ?? ''; }
+                });
+                collectDueDatePicker.obj.appendTo(element);
+            },
+            refresh: () => {
+                if (collectDueDatePicker.obj) collectDueDatePicker.obj.value = DateFormatManager.fromApiDate(state.collectDue.paymentDate);
+            }
+        };
+
+        Vue.watch(() => collectDueDateRef.value, (element) => collectDueDatePicker.mount(element));
+
+        const openCollectDue = (row) => {
+            if (!row || !row.customerId || !(row.dueAmount > 0)) return;
+            state.collectDue.customerId = row.customerId;
+            state.collectDue.customerName = row.customerName ?? '';
+            state.collectDue.due = row.dueAmount ?? 0;
+            state.collectDue.amount = Number(Number(row.dueAmount ?? 0).toFixed(2));
+            state.collectDue.paymentMethodId = defaultPaymentMethodId();
+            state.collectDue.paymentDate = DateFormatManager.toApiDate(new Date());
+            state.collectDue.referenceNumber = '';
+            state.collectDue.error = '';
+            collectDueModal.obj.show();
+            collectDueDatePicker.refresh();
+        };
+
+        const closeCollectDue = () => { collectDueModal.obj.hide(); };
+
+        const submitCollectDue = async () => {
+            state.collectDue.error = '';
+            const amount = Number(state.collectDue.amount);
+            if (!amount || amount <= 0) { state.collectDue.error = 'Enter an amount greater than zero.'; return; }
+            if (amount > state.collectDue.due + 0.005) { state.collectDue.error = `Amount exceeds the due of ${NumberFormatManager.formatToLocale(state.collectDue.due)}.`; return; }
+            if (!state.collectDue.paymentMethodId) { state.collectDue.error = 'Select a payment method.'; return; }
+            if (!state.collectDue.paymentDate) { state.collectDue.error = 'Payment date is required.'; return; }
+            if (state.collectDue.isSubmitting) return;
+            try {
+                state.collectDue.isSubmitting = true;
+                const response = await services.collectCustomerDue({
+                    customerId: state.collectDue.customerId,
+                    amount: amount,
+                    paymentMethodId: state.collectDue.paymentMethodId,
+                    paymentDate: state.collectDue.paymentDate,
+                    referenceNumber: state.collectDue.referenceNumber || null,
+                    excludeSalesOrderId: null,
+                    createdById: StorageManager.getUserId()
+                });
+                if (response.data.code === 200) {
+                    const data = response.data.content.data;
+                    collectDueModal.obj.hide();
+                    await methods.populateMainData();
+                    mainGrid.refresh();
+                    notify('success', `Collected ${NumberFormatManager.formatToLocale(data.amountCollected)}. Due: ${NumberFormatManager.formatToLocale(data.remainingDue)}`);
+                } else {
+                    state.collectDue.error = response.data.message ?? 'Could not collect the due.';
+                }
+            } catch (error) {
+                state.collectDue.error = error.response?.data?.message ?? 'Could not collect the due. Please try again.';
+            } finally {
+                state.collectDue.isSubmitting = false;
+            }
+        };
+
         const mainGrid = {
             obj: null,
             create: async (dataSource) => {
@@ -239,7 +363,8 @@ const App = {
                         { field: 'billedAmount', headerText: 'Billed', width: 150, minWidth: 150, type: 'number', format: 'N2', textAlign: 'Right' },
                         { field: 'paidAmount', headerText: 'Paid', width: 150, minWidth: 150, type: 'number', format: 'N2', textAlign: 'Right' },
                         { field: 'dueAmount', headerText: 'Due', width: 150, minWidth: 150, type: 'number', format: 'N2', textAlign: 'Right' },
-                        { field: 'dueStatus', headerText: 'Status', width: 120, minWidth: 120 }
+                        { field: 'dueStatus', headerText: 'Status', width: 120, minWidth: 120 },
+                        { field: 'payAction', headerText: 'Action', width: 110, minWidth: 110, textAlign: 'Center', allowSorting: false, allowFiltering: false }
                     ],
                     toolbar: [
                         'ExcelExport',
@@ -249,6 +374,18 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.autoFitColumns(['customerNumber', 'customerName', 'phoneNumber', 'orderCount', 'lastOrderDate', 'billedAmount', 'paidAmount', 'dueAmount', 'dueStatus']);
+                    },
+                    queryCellInfo: (args) => {
+                        if (args.column.field === 'payAction') {
+                            const row = args.data;
+                            if (row && (row.dueAmount || 0) > 0.005) {
+                                args.cell.innerHTML = '<button type="button" class="btn btn-sm btn-success py-0 px-2"><i class="fas fa-hand-holding-usd me-1"></i>Pay</button>';
+                                const btn = args.cell.querySelector('button');
+                                if (btn) btn.onclick = () => openCollectDue(row);
+                            } else {
+                                args.cell.innerHTML = '<span class="text-muted">—</span>';
+                            }
+                        }
                     },
                     excelExportComplete: () => { },
                     rowSelected: () => {
@@ -293,8 +430,11 @@ const App = {
                 await SecurityManager.validateToken();
 
                 await methods.populateCustomerListLookupData();
+                await methods.populatePaymentMethodListLookupData();
                 await methods.populateMainData();
                 await mainGrid.create(getFilteredData());
+
+                collectDueModal.create();
 
                 // Reflect the active-filter count on the toolbar Filter button (primary tint + badge).
                 watcherStops.push(Vue.watch(activeFilterCount, (count) => {
@@ -320,6 +460,7 @@ const App = {
             filterStatusDropdown.obj?.destroy();
             filterFromDatePicker.obj?.destroy();
             filterToDatePicker.obj?.destroy();
+            collectDueDatePicker.obj?.destroy();
         });
 
         return {
@@ -329,6 +470,8 @@ const App = {
             filterStatusRef,
             filterFromDateRef,
             filterToDateRef,
+            collectDueModalRef,
+            collectDueDateRef,
             activeFilterCount,
             listStats,
             state,
@@ -336,6 +479,8 @@ const App = {
                 toggleFilter: filterHandler.toggle,
                 clearFilters: filterHandler.clear,
                 formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
+                closeCollectDue: closeCollectDue,
+                submitCollectDue: submitCollectDue,
             },
         };
     }

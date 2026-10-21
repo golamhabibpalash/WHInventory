@@ -94,6 +94,15 @@ const App = {
                 amount: null,
                 referenceNumber: ''
             },
+            // "Pay Due" against the customer's previous (other-order) receivable.
+            collectDue: {
+                amount: null,
+                paymentMethodId: '',
+                paymentDate: '',
+                referenceNumber: '',
+                isSubmitting: false,
+                error: ''
+            },
             subTotalAmount: '0.00',
             discountAmount: '0.00',
             taxAmount: '0.00',
@@ -132,6 +141,8 @@ const App = {
         const saveButtonRef = Vue.ref(null);
         const taxQuickModalRef = Vue.ref(null);
         const viewModalRef = Vue.ref(null);
+        const collectDueModalRef = Vue.ref(null);
+        const collectDueDateRef = Vue.ref(null);
 
         // Running net line total for the "Select Product" form (unit price less commission %).
         const posLineTotal = Vue.computed(() =>
@@ -734,6 +745,36 @@ const App = {
 
         Vue.watch(() => paymentDateRef.value, (element) => paymentDatePicker.mount(element));
 
+        // Date picker for the Collect Due modal — same rebuild-on-mount approach as the payment date.
+        const collectDueDatePicker = {
+            obj: null,
+            mount: (element) => {
+                if (collectDueDatePicker.obj) {
+                    collectDueDatePicker.obj.destroy();
+                    collectDueDatePicker.obj = null;
+                }
+                if (!element) return;
+
+                collectDueDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'Select date',
+                    cssClass: 'e-small',
+                    value: DateFormatManager.fromApiDate(state.collectDue.paymentDate),
+                    change: (e) => {
+                        state.collectDue.paymentDate = DateFormatManager.toApiDate(e.value) ?? '';
+                    }
+                });
+                collectDueDatePicker.obj.appendTo(element);
+            },
+            refresh: () => {
+                if (collectDueDatePicker.obj) {
+                    collectDueDatePicker.obj.value = DateFormatManager.fromApiDate(state.collectDue.paymentDate);
+                }
+            }
+        };
+
+        Vue.watch(() => collectDueDateRef.value, (element) => collectDueDatePicker.mount(element));
+
         // Pre-select the only method, or Cash, so Enter in the amount field can record the payment.
         const defaultPaymentMethodId = () => {
             const list = state.paymentMethodListLookupData ?? [];
@@ -963,6 +1004,14 @@ const App = {
             createPayment: async (payload) => {
                 try {
                     const response = await AxiosManager.post('/Payment/CreatePayment', payload);
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            collectCustomerDue: async (payload) => {
+                try {
+                    const response = await AxiosManager.post('/Customer/CollectCustomerDue', payload);
                     return response;
                 } catch (error) {
                     throw error;
@@ -2173,6 +2222,16 @@ const App = {
             }
         };
 
+        const collectDueModal = {
+            obj: null,
+            create: () => {
+                collectDueModal.obj = new bootstrap.Modal(collectDueModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
         Vue.onMounted(async () => {
             try {
                 await SecurityManager.authorizePage(['SalesOrders']);
@@ -2192,6 +2251,7 @@ const App = {
 
                 mainModal.create();
                 viewModal.create();
+                collectDueModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
                 orderDatePicker.create();
 
@@ -2252,6 +2312,7 @@ const App = {
                 const dpInst = paymentDateRef.value?.ej2_instances?.[0];
                 dpInst?.destroy();
             }
+            collectDueDatePicker.obj?.destroy();
         });
 
         return {
@@ -2282,6 +2343,8 @@ const App = {
             posAvailable,
             taxQuickModalRef,
             viewModalRef,
+            collectDueModalRef,
+            collectDueDateRef,
             state,
             methods,
             listStats,
@@ -2309,6 +2372,67 @@ const App = {
                     if (!value) return '—';
                     const d = new Date(value);
                     return isNaN(d) ? value : d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                },
+                openCollectDue: () => {
+                    if (!state.customer.id || !(state.previousDue > 0)) return;
+                    state.collectDue.amount = Number(Number(state.previousDue).toFixed(2));
+                    state.collectDue.paymentMethodId = defaultPaymentMethodId();
+                    state.collectDue.paymentDate = DateFormatManager.toApiDate(new Date());
+                    state.collectDue.referenceNumber = '';
+                    state.collectDue.error = '';
+                    collectDueModal.obj.show();
+                    collectDueDatePicker.refresh();
+                },
+                closeCollectDue: () => {
+                    collectDueModal.obj.hide();
+                },
+                submitCollectDue: async () => {
+                    state.collectDue.error = '';
+                    const amount = Number(state.collectDue.amount);
+                    if (!amount || amount <= 0) {
+                        state.collectDue.error = 'Enter an amount greater than zero.';
+                        return;
+                    }
+                    if (amount > state.previousDue + 0.005) {
+                        state.collectDue.error = `Amount exceeds the due of ${NumberFormatManager.formatToLocale(state.previousDue)}.`;
+                        return;
+                    }
+                    if (!state.collectDue.paymentMethodId) {
+                        state.collectDue.error = 'Select a payment method.';
+                        return;
+                    }
+                    if (!state.collectDue.paymentDate) {
+                        state.collectDue.error = 'Payment date is required.';
+                        return;
+                    }
+                    if (state.collectDue.isSubmitting) return;
+                    try {
+                        state.collectDue.isSubmitting = true;
+                        const response = await services.collectCustomerDue({
+                            customerId: state.customer.id,
+                            amount: amount,
+                            paymentMethodId: state.collectDue.paymentMethodId,
+                            paymentDate: state.collectDue.paymentDate,
+                            referenceNumber: state.collectDue.referenceNumber || null,
+                            // Leave the order being edited out — its balance shows in the payment panel.
+                            excludeSalesOrderId: state.id || null,
+                            createdById: StorageManager.getUserId()
+                        });
+                        if (response.data.code === 200) {
+                            const data = response.data.content.data;
+                            collectDueModal.obj.hide();
+                            await methods.populatePreviousDue(state.customer.id);
+                            await methods.populateMainData();
+                            mainGrid.refresh();
+                            notify('success', `Collected ${NumberFormatManager.formatToLocale(data.amountCollected)}. Due: ${NumberFormatManager.formatToLocale(data.remainingDue)}`);
+                        } else {
+                            state.collectDue.error = response.data.message ?? 'Could not collect the due.';
+                        }
+                    } catch (error) {
+                        state.collectDue.error = error.response?.data?.message ?? 'Could not collect the due. Please try again.';
+                    } finally {
+                        state.collectDue.isSubmitting = false;
+                    }
                 },
                 editFromView: () => {
                     const id = state.view.id;
