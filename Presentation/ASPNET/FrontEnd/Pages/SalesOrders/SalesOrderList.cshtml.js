@@ -341,6 +341,14 @@ const App = {
                 : 'status-pill';
         };
 
+        // Delivery progress pill (Complete / Partial / Not Started / N/A) — see order-list.css.
+        const deliveryPillClass = (statusName) => {
+            const key = String(statusName ?? '').toLowerCase().replace(/[^a-z]/g, '');
+            return ['complete', 'partial', 'notstarted', 'na'].includes(key)
+                ? `status-pill status-pill--${key}`
+                : 'status-pill';
+        };
+
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
         const listStats = Vue.computed(() => {
@@ -1131,8 +1139,18 @@ const App = {
                     };
                     // Auto-apply the resolved policy/promotion/QB price unless the cashier has already
                     // typed one (Min/Max band is still enforced on the server).
-                    if (autoApply && !state.productPick.priceEdited && content.calculatedPrice !== null && content.calculatedPrice !== undefined && Number(content.calculatedPrice) > 0) {
-                        state.productPick.unitPrice = Number(content.calculatedPrice);
+                    if (autoApply && !state.productPick.priceEdited) {
+                        const resolvedPrice = content.calculatedPrice !== null && content.calculatedPrice !== undefined
+                            ? Number(content.calculatedPrice)
+                            : 0;
+                        if (resolvedPrice > 0) {
+                            state.productPick.unitPrice = resolvedPrice;
+                        } else {
+                            // No promotion/policy/quantity-break price for this context: fall back to the
+                            // product's minimum allowed selling price when set, else its listed price.
+                            const product = state.productListLookupData.find(p => p.id === productId);
+                            state.productPick.unitPrice = product?.minSellingPrice ?? product?.unitPrice ?? 0;
+                        }
                     }
                 } catch (error) {
                     if (seq !== state.priceResolveSeq) {
@@ -1559,6 +1577,9 @@ const App = {
                         { field: 'orderDate', headerText: 'SO Date', width: 150, format: 'dd/MM/yyyy' },
                         { field: 'customerName', headerText: 'Customer', width: 200, minWidth: 200 },
                         { field: 'orderStatusName', headerText: 'Status', width: 140, minWidth: 120 },
+                        { field: 'totalOrderedQty', headerText: 'Ordered Qty', width: 110, minWidth: 100, format: 'N2', textAlign: 'Right', type: 'number' },
+                        { field: 'totalDeliveredQty', headerText: 'Delivered Qty', width: 120, minWidth: 110, format: 'N2', textAlign: 'Right', type: 'number' },
+                        { field: 'deliveryStatus', headerText: 'Delivery', width: 130, minWidth: 120 },
                         { field: 'taxName', headerText: 'Tax', width: 150, minWidth: 150 },
                         { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2', textAlign: 'Right' },
                         { field: 'createdAtUtc', headerText: 'Created At', width: 150, format: 'dd/MM/yyyy HH:mm' },
@@ -1583,6 +1604,10 @@ const App = {
                         if (args.column.field === 'orderStatusName') {
                             const name = args.data?.orderStatusName;
                             args.cell.innerHTML = `<span class="${statusPillClass(name)}">${escapeHtml(name || '—')}</span>`;
+                        }
+                        if (args.column.field === 'deliveryStatus') {
+                            const name = args.data?.deliveryStatus;
+                            args.cell.innerHTML = `<span class="${deliveryPillClass(name)}">${escapeHtml(name || '—')}</span>`;
                         }
                         if (args.column.field === 'number') {
                             args.cell.style.cursor = 'pointer';
