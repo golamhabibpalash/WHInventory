@@ -30,6 +30,7 @@ public class UpdateProductRequest : IRequest<UpdateProductResult>
     public bool? IsWarrantyApplicable { get; init; } = false;
     public int? WarrantyDays { get; init; }
     public double? LowStockThreshold { get; init; }
+    public bool IsActive { get; init; } = true;
     public string? UpdatedById { get; init; }
 }
 
@@ -112,6 +113,7 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductRequest, Update
         entity.IsWarrantyApplicable = request.IsWarrantyApplicable;
         entity.WarrantyDays = (request.IsWarrantyApplicable == true) ? request.WarrantyDays : null;
         entity.LowStockThreshold = request.LowStockThreshold;
+        entity.IsActive = request.IsActive;
 
         _repository.Update(entity);
         await _unitOfWork.SaveAsync(cancellationToken);

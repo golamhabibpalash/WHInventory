@@ -443,6 +443,10 @@ public static class DI
             ");
 
             dataContext.Database.ExecuteSqlRaw(@"
+                ALTER TABLE core.""Product"" ADD COLUMN IF NOT EXISTS ""IsActive"" boolean NOT NULL DEFAULT TRUE;
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
                 ALTER TABLE core.""Company"" ADD COLUMN IF NOT EXISTS ""AllowPriceOutsideBand"" boolean NOT NULL DEFAULT FALSE;
             ");
 
@@ -811,6 +815,13 @@ public static class DI
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'MaxSellingPrice')
                 BEGIN
                     ALTER TABLE [Product] ADD [MaxSellingPrice] float NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Product' AND COLUMN_NAME = 'IsActive')
+                BEGIN
+                    ALTER TABLE [Product] ADD [IsActive] bit NOT NULL DEFAULT 1;
                 END
             ");
 

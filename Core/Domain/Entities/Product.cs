@@ -35,4 +35,10 @@ public class Product : BaseEntity
     /// Null falls back to <c>Constants.InventoryConsts.LowStockThreshold</c>.
     /// </summary>
     public double? LowStockThreshold { get; set; }
+
+    /// <summary>
+    /// Inactive products stay in the catalogue and on existing documents, but cannot be picked
+    /// on new purchase/sales orders and are left out of low-stock counts.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
 }

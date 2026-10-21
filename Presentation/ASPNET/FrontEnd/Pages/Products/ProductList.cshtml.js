@@ -28,6 +28,7 @@ const App = {
             isWarrantyApplicable: false,
             warrantyDays: null,
             lowStockThreshold: null,
+            isActive: true,
             barcode: '',
             showBarcodePreview: false,
             imageName: '',
@@ -79,6 +80,7 @@ const App = {
                 isWarrantyApplicable: false,
                 warrantyDays: null,
                 lowStockThreshold: null,
+                isActive: true,
                 barcode: '',
                 imageName: '',
                 imagePreviewUrl: '',
@@ -221,6 +223,7 @@ const App = {
             state.isWarrantyApplicable = false;
             state.warrantyDays = null;
             state.lowStockThreshold = null;
+            state.isActive = true;
             state.barcode = '';
             state.showBarcodePreview = false;
             state.imageName = '';
@@ -252,20 +255,20 @@ const App = {
                     throw error;
                 }
             },
-            createMainData: async (name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
+            createMainData: async (name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, isActive, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Product/CreateProduct', {
-                        name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
+                        name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, isActive, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, createdById
                     });
                     return response;
                 } catch (error) {
                     throw error;
                 }
             },
-            updateMainData: async (id, name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
+            updateMainData: async (id, name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, isActive, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById) => {
                 try {
                     const response = await AxiosManager.post('/Product/UpdateProduct', {
-                        id, name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
+                        id, name, unitPrice, minSellingPrice, maxSellingPrice, lowStockThreshold, isActive, physical, isWarrantyApplicable, warrantyDays, description, productGroupId, unitMeasureId, brandId, imageName, barcode, updatedById
                     });
                     return response;
                 } catch (error) {
@@ -479,6 +482,7 @@ const App = {
                 state.isWarrantyApplicable = record.isWarrantyApplicable ?? false;
                 state.warrantyDays = record.warrantyDays ?? null;
                 state.lowStockThreshold = record.lowStockThreshold ?? null;
+                state.isActive = record.isActive ?? true;
                 state.barcode = record.barcode ?? '';
                 state.imageName = record.imageName ?? '';
                 await Promise.all([
@@ -1158,6 +1162,7 @@ const App = {
                     isWarrantyApplicable: rowData.isWarrantyApplicable ?? false,
                     warrantyDays: rowData.warrantyDays ?? null,
                     lowStockThreshold: rowData.lowStockThreshold ?? null,
+                    isActive: rowData.isActive ?? true,
                     barcode: rowData.barcode ?? '',
                     imageName: rowData.imageName ?? '',
                     imagePreviewUrl: '',
@@ -1215,10 +1220,10 @@ const App = {
                     const brandId = state.brandId === '' ? null : state.brandId;
 
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.lowStockThreshold, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.lowStockThreshold, state.isActive, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.lowStockThreshold, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.unitPrice, state.minSellingPrice, state.maxSellingPrice, state.lowStockThreshold, state.isActive, state.physical, state.isWarrantyApplicable, state.warrantyDays, state.description, state.productGroupId, state.unitMeasureId, brandId, state.imageName, state.barcode || null, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -1239,6 +1244,7 @@ const App = {
                             state.physical = response?.data?.content?.data.physical ?? false;
                             state.isWarrantyApplicable = response?.data?.content?.data.isWarrantyApplicable ?? false;
                             state.warrantyDays = response?.data?.content?.data.warrantyDays ?? null;
+                            state.isActive = response?.data?.content?.data.isActive ?? true;
                             state.barcode = response?.data?.content?.data.barcode ?? '';
                             state.imageName = response?.data?.content?.data.imageName ?? '';
                             await methods.loadDocuments(state.id);
@@ -1401,6 +1407,7 @@ const App = {
                         { field: 'barcode', headerText: 'Barcode', width: 150, minWidth: 150 },
                         { field: 'physical', headerText: 'Physical Product', width: 140, minWidth: 140, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
                         { field: 'isWarrantyApplicable', headerText: 'Warranty', width: 120, minWidth: 120, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
+                        { field: 'isActive', headerText: 'Active', width: 100, minWidth: 100, textAlign: 'Center', type: 'boolean', displayAsCheckBox: true },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' }
                     ],
                     toolbar: [
@@ -1415,7 +1422,7 @@ const App = {
                     beforeDataBound: () => { },
                     dataBound: function () {
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
-                        mainGrid.obj.autoFitColumns(['number', 'name', 'productGroupName', 'brandName', 'unitPrice', 'unitMeasureName', 'physical', 'isWarrantyApplicable', 'createdAtUtc']);
+                        mainGrid.obj.autoFitColumns(['number', 'name', 'productGroupName', 'brandName', 'unitPrice', 'unitMeasureName', 'physical', 'isWarrantyApplicable', 'isActive', 'createdAtUtc']);
                         methods.loadVisibleThumbnails();
                     },
                     excelExportComplete: () => { },
@@ -1496,6 +1503,7 @@ const App = {
                                 state.isWarrantyApplicable = selectedRecord.isWarrantyApplicable ?? false;
                                 state.warrantyDays = selectedRecord.warrantyDays ?? null;
                                 state.lowStockThreshold = selectedRecord.lowStockThreshold ?? null;
+                                state.isActive = selectedRecord.isActive ?? true;
                                 state.barcode = selectedRecord.barcode ?? '';
                                 state.imageName = selectedRecord.imageName ?? '';
                                 await methods.loadImagePreview(state.imageName);
@@ -1551,7 +1559,7 @@ const App = {
                         id: '', number: '', name: '', description: '',
                         unitPrice: 0, minSellingPrice: null, maxSellingPrice: null, lowStockThreshold: null,
                         unitMeasureName: '', productGroupName: '', brandName: '',
-                        physical: false, isWarrantyApplicable: false, warrantyDays: null,
+                        physical: false, isWarrantyApplicable: false, warrantyDays: null, isActive: true,
                         barcode: '', imageName: '', imagePreviewUrl: '',
                         documents: [], createdAtUtc: null
                     };

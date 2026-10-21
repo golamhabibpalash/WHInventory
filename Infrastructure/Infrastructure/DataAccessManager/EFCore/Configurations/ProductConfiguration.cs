@@ -27,6 +27,7 @@ public class ProductConfiguration : BaseEntityConfiguration<Product>
         builder.Property(x => x.IsWarrantyApplicable).IsRequired(false);
         builder.Property(x => x.WarrantyDays).IsRequired(false);
         builder.Property(x => x.LowStockThreshold).IsRequired(false);
+        builder.Property(x => x.IsActive).IsRequired();
 
         builder.HasOne(x => x.Brand).WithMany().HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.SetNull);
 

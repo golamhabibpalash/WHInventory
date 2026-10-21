@@ -350,6 +350,7 @@ const App = {
             if (!term || state.productPick.productId) return [];
             const scored = [];
             for (const p of state.productListLookupData ?? []) {
+                if (p.isActive === false) continue;
                 const name = (p.name || '').toLowerCase();
                 const number = (p.number || '').toLowerCase();
                 const barcode = (p.barcode || '').toLowerCase();
@@ -369,8 +370,9 @@ const App = {
         const findExactProduct = (term) => {
             const lower = term.trim().toLowerCase();
             if (!lower) return null;
-            return (state.productListLookupData ?? []).find(p =>
-                (p.barcode && p.barcode.toLowerCase() === lower) || (p.number && p.number.toLowerCase() === lower)) ?? null;
+            // Inactive products stay in the lookup (existing lines still show them) but can't be picked.
+            return (state.productListLookupData ?? []).find(p => p.isActive !== false && (
+                (p.barcode && p.barcode.toLowerCase() === lower) || (p.number && p.number.toLowerCase() === lower))) ?? null;
         };
 
         let cartFlashTimer = null;
@@ -1910,7 +1912,7 @@ const App = {
                 try {
                     const response = await services.getProductByBarcode(term);
                     const found = response?.data?.content?.data;
-                    const product = found && state.productListLookupData.find(p => p.id === found.id);
+                    const product = found && state.productListLookupData.find(p => p.id === found.id && p.isActive !== false);
                     if (product) {
                         await cart.quickAdd(product);
                         return;

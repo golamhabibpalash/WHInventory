@@ -95,7 +95,7 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
             .Where(x => x.Physical == true)
-            .Select(x => new { x.Id, GroupName = x.ProductGroup!.Name, x.CreatedAtUtc, x.LowStockThreshold, x.UnitPrice })
+            .Select(x => new { x.Id, GroupName = x.ProductGroup!.Name, x.CreatedAtUtc, x.LowStockThreshold, x.UnitPrice, x.IsActive })
             .ToListAsync(cancellationToken);
 
         var trendRows = await ledger
@@ -197,12 +197,13 @@ public class GetOverviewDashboardHandler : IRequestHandler<GetOverviewDashboardR
         var totalStockValue = products
             .Sum(p => Math.Max(stockNowByProduct.GetValueOrDefault(p.Id, 0.0), 0.0) * (p.UnitPrice ?? 0.0));
 
+        // Inactive products are no longer replenished, so they never count as low stock.
         var lowStockCount = products
-            .Count(p => stockNowByProduct.GetValueOrDefault(p.Id, 0.0) <= EffectiveThreshold(p.LowStockThreshold));
+            .Count(p => p.IsActive && stockNowByProduct.GetValueOrDefault(p.Id, 0.0) <= EffectiveThreshold(p.LowStockThreshold));
 
         // Products that did not exist a month ago cannot be part of the month-ago baseline.
         var lowStockCountThen = products
-            .Count(p => p.CreatedAtUtc < comparisonStart &&
+            .Count(p => p.IsActive && p.CreatedAtUtc < comparisonStart &&
                         stockThenByProduct.GetValueOrDefault(p.Id, 0.0) <= EffectiveThreshold(p.LowStockThreshold));
 
         var inboundToday = trendRows

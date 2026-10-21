@@ -81,7 +81,7 @@ public class GetLowStockProductListHandler : IRequestHandler<GetLowStockProductL
         var products = await _context.Product
             .AsNoTracking()
             .ApplyIsDeletedFilter(false)
-            .Where(x => x.Physical == true)
+            .Where(x => x.Physical == true && x.IsActive)
             .Select(x => new
             {
                 x.Id,

@@ -28,6 +28,7 @@ public record GetProductListDto
     public bool? IsWarrantyApplicable { get; init; }
     public int? WarrantyDays { get; init; }
     public double? LowStockThreshold { get; init; }
+    public bool IsActive { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
 }
 

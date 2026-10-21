@@ -31,6 +31,7 @@ public class CreateProductRequest : IRequest<CreateProductResult>
     public bool? IsWarrantyApplicable { get; init; } = false;
     public int? WarrantyDays { get; init; }
     public double? LowStockThreshold { get; init; }
+    public bool IsActive { get; init; } = true;
     public string? CreatedById { get; init; }
 }
 
@@ -109,6 +110,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Create
         entity.IsWarrantyApplicable = request.IsWarrantyApplicable;
         entity.WarrantyDays = (request.IsWarrantyApplicable == true) ? request.WarrantyDays : null;
         entity.LowStockThreshold = request.LowStockThreshold;
+        entity.IsActive = request.IsActive;
 
         await _repository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);
