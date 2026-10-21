@@ -131,6 +131,20 @@ public class CustomerController : BaseApiController
     }
 
     [Authorize]
+    [HttpPost("CollectCustomerDue")]
+    public async Task<ActionResult<ApiSuccessResult<CollectCustomerDueResult>>> CollectCustomerDueAsync(CollectCustomerDueRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<CollectCustomerDueResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(CollectCustomerDueAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
     [HttpGet("GetCustomerDueList")]
     public async Task<ActionResult<ApiSuccessResult<GetCustomerDueListResult>>> GetCustomerDueListAsync(
         CancellationToken cancellationToken,
