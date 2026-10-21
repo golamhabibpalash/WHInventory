@@ -419,7 +419,9 @@ const App = {
                         return;
                     }
 
-                    const response = state.id === ''
+                    const wasCreating = state.id === '';
+
+                    const response = wasCreating
                         ? await services.createMainData(state.deliveryDate, state.description, state.status, state.salesOrderId, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
@@ -433,17 +435,33 @@ const App = {
                             state.mainTitle = 'Edit Delivery Order';
                             state.id = response?.data?.content?.data.id ?? '';
                             state.number = response?.data?.content?.data.number ?? '';
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Save Successful',
-                                text: 'Form will be closed...',
-                                timer: 1000,
-                                showConfirmButton: false
-                            });
-                            setTimeout(() => {
-                                mainModal.obj.hide();
-                                resetFormState();
-                            }, 1000);
+
+                            if (wasCreating) {
+                                // Keep the modal open and reveal the delivery-item section so the user can
+                                // add items straight away (same flow as the Goods Receive page).
+                                state.showComplexDiv = true;
+                                await methods.populateSecondaryData(state.id);
+                                secondaryGrid.refresh();
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Save Successful',
+                                    text: 'You can now add delivery items.',
+                                    timer: 1000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Save Successful',
+                                    text: 'Form will be closed...',
+                                    timer: 1000,
+                                    showConfirmButton: false
+                                });
+                                setTimeout(() => {
+                                    mainModal.obj.hide();
+                                    resetFormState();
+                                }, 1000);
+                            }
 
                         } else {
                             Swal.fire({
