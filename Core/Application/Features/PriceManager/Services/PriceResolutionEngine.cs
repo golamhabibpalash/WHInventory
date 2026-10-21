@@ -156,8 +156,15 @@ public class PriceResolutionEngine
             return BuildResult(calculatedPrice, PriceSource.ProductPricePolicy, costPrice);
         }
 
-        // 5. Default product unit price fallback
-        var defaultPrice = await GetDefaultProductPriceAsync(productId, cancellationToken);
+        // 5. No promotion/policy/quantity-break applies: default to the product's minimum selling
+        //    price when set (the floor a seller should charge), otherwise its listed unit price.
+        var fallback = await _context.Product
+            .AsNoTracking()
+            .ApplyIsDeletedFilter(false)
+            .Where(p => p.Id == productId)
+            .Select(p => new { p.MinSellingPrice, p.UnitPrice })
+            .FirstOrDefaultAsync(cancellationToken);
+        var defaultPrice = fallback?.MinSellingPrice ?? fallback?.UnitPrice ?? 0;
         return BuildResult(defaultPrice, PriceSource.DefaultProductPrice, costPrice);
     }
 
