@@ -58,6 +58,20 @@ public class SalesOrderController : BaseApiController
     }
 
     [Authorize]
+    [HttpPost("DeliverNow")]
+    public async Task<ActionResult<ApiSuccessResult<DeliverSalesOrderNowResult>>> DeliverNowAsync(DeliverSalesOrderNowRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<DeliverSalesOrderNowResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(DeliverNowAsync)}",
+            Content = response
+        });
+    }
+
+    [Authorize]
     [HttpGet("GetSalesOrderList")]
     public async Task<ActionResult<ApiSuccessResult<GetSalesOrderListResult>>> GetSalesOrderListAsync(
         CancellationToken cancellationToken,

@@ -54,6 +54,7 @@ const App = {
             },
             isSubmitting: false,
             isAddingLine: false,
+            isDelivering: false,
             productPick: {
                 productId: null,
                 unitPrice: 0,
@@ -823,6 +824,16 @@ const App = {
                     throw error;
                 }
             },
+            deliverNowMainData: async (salesOrderId, deliveryDate, description, createdById) => {
+                try {
+                    const response = await AxiosManager.post('/SalesOrder/DeliverNow', {
+                        salesOrderId, deliveryDate: DateFormatManager.toApiDate(deliveryDate), description, createdById
+                    });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             getCustomerListLookupData: async () => {
                 try {
                     const response = await AxiosManager.get('/Customer/GetCustomerList', {});
@@ -1229,6 +1240,97 @@ const App = {
                     });
                 } finally {
                     state.isSubmitting = false;
+                }
+            },
+            // Save (or update) the order, then ship everything still outstanding for it in one
+            // action. The sale is saved first; if delivery then fails the order stays saved and
+            // the user can retry without creating a second order.
+            deliverNow: async () => {
+                if (state.isDelivering || state.isSubmitting) return;
+                if (state.deleteMode) return;
+
+                if (!validateForm()) {
+                    focusFirstError();
+                    return;
+                }
+
+                state.isDelivering = true;
+                let savedNumber = '';
+
+                try {
+                    // 1. Persist the sale (reusing the normal save paths).
+                    if (!state.id) {
+                        const header = await ensureHeaderSaved();
+                        if (!header.ok) {
+                            if (header.message) {
+                                Swal.fire({ icon: 'error', title: 'Save Failed', text: header.message });
+                            } else {
+                                focusFirstError();
+                            }
+                            return;
+                        }
+                    } else {
+                        const saveResponse = await services.updateMainData(
+                            state.id, state.orderDate, state.description, state.orderStatus, state.taxId, customerPayload(), StorageManager.getUserId());
+
+                        if (saveResponse.data.code !== 200) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Save Failed',
+                                text: saveResponse.data.message ?? 'Please check your data.'
+                            });
+                            return;
+                        }
+                        applySavedHeader(saveResponse.data.content.data);
+                    }
+
+                    savedNumber = state.number;
+
+                    // 2. Deliver the remaining quantities through the existing delivery workflow.
+                    let deliverResponse;
+                    try {
+                        deliverResponse = await services.deliverNowMainData(
+                            state.id, state.orderDate, state.description, StorageManager.getUserId());
+                    } catch (error) {
+                        // The sale is saved; only delivery failed. Keep it and offer a retry.
+                        await methods.populateMainData();
+                        mainGrid.refresh();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Sale Saved, Delivery Failed',
+                            html: `Sales order <strong>${savedNumber}</strong> was saved, but delivery is still pending.<br>`
+                                + `${(error.response?.data?.message ?? 'Please try again.')}`,
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
+                    const result = deliverResponse?.data?.content;
+                    await methods.populateMainData();
+                    mainGrid.refresh();
+                    await methods.refreshPaymentSummary(state.id);
+
+                    if (deliverResponse.data.code === 200 && result?.delivered) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Delivered',
+                            html: `Sales order <strong>${savedNumber}</strong> delivered.<br>Delivery order: <strong>${result.deliveryOrderNumber ?? ''}</strong>`
+                        });
+                    } else if (result?.alreadyDelivered) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Already Delivered',
+                            html: `Sales order <strong>${savedNumber}</strong> has no outstanding quantities to deliver.`
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Sale Saved, Delivery Incomplete',
+                            text: deliverResponse.data.message ?? 'The order was saved but delivery did not complete.'
+                        });
+                    }
+                } finally {
+                    state.isDelivering = false;
                 }
             },
             onMainModalHidden: () => {
@@ -2160,6 +2262,7 @@ const App = {
             listStats,
             handler: handlerRef = {
                 handleSubmit: methods.handleFormSubmit,
+                deliverNow: methods.deliverNow,
                 toggleFilter: filterHandler.toggle,
                 clearFilters: filterHandler.clear,
                 openAddModal: openAddModal,

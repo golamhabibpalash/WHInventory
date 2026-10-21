@@ -582,12 +582,24 @@
                     <div class="pos-footer-actions">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="button"
+                                id="MainDeliverNowButton"
+                                class="btn btn-success"
+                                v-if="!state.deleteMode"
+                                title="Save the sale and deliver all remaining quantities"
+                                v-on:click="handler.deliverNow"
+                                v-bind:disabled="state.isDelivering || state.isSubmitting"
+                                v-bind:aria-busy="state.isDelivering ? 'true' : 'false'">
+                            <span class="spinner-border spinner-border-sm me-2" v-if="state.isDelivering" role="status" aria-hidden="true"></span>
+                            <i v-if="!state.isDelivering" class="fas fa-truck me-2"></i><span v-if="!state.isDelivering">Deliver Now</span>
+                            <span v-else>Delivering...</span>
+                        </button>
+                        <button type="button"
                                 ref="saveButtonRef"
                                 id="MainSaveButton"
                                 class="btn"
                                 v-bind:class="state.deleteMode ? 'btn-danger' : 'btn-primary'"
                                 v-on:click="handler.handleSubmit"
-                                v-bind:disabled="state.isSubmitting"
+                                v-bind:disabled="state.isSubmitting || state.isDelivering"
                                 v-bind:aria-busy="state.isSubmitting ? 'true' : 'false'">
                             <span class="spinner-border spinner-border-sm me-2" v-if="state.isSubmitting" role="status" aria-hidden="true"></span>
                             <i v-if="!state.isSubmitting" v-bind:class="state.deleteMode ? 'fas fa-trash me-2' : 'fas fa-save me-2'"></i><span v-if="!state.isSubmitting">{{ state.deleteMode ? 'Delete Order' : 'Save Order' }}</span>
