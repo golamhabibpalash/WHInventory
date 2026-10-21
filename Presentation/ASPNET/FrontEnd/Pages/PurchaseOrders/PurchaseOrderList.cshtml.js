@@ -1557,12 +1557,14 @@ const App = {
                             args.cell.style.color = 'var(--primary)';
                             args.cell.style.fontWeight = '600';
                             args.cell.onclick = () => {
-                                const rowData = args.rowData;
-                                if (rowData?.id) handlerRef.openViewModal(rowData.id);
+                                openForRecord(args.rowData);
                             };
                         }
                     },
                     excelExportComplete: () => { },
+                    recordDoubleClick: (args) => {
+                        openForRecord(args.rowData);
+                    },
                     rowSelected: () => {
                         const enable = mainGrid.obj.getSelectedRecords().length === 1;
                         mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'PrintPDFCustom'], enable);
@@ -1991,6 +1993,18 @@ const App = {
             await methods.populateSecondaryData(record.id);
 
             mainModal.obj.show();
+        };
+
+        // Double-click a row / click the PO number: Draft orders are still being worked on, so
+        // they open straight into Edit; Confirmed/Cancelled/etc. open the read-only View (which
+        // carries its own "Edit Order" button).
+        const openForRecord = (record) => {
+            if (!record?.id) return;
+            if (String(record.orderStatusName ?? '').toLowerCase() === 'draft') {
+                openEditForRecord(record);
+            } else {
+                handlerRef.openViewModal(record.id);
+            }
         };
 
         const mainModal = {
