@@ -1,4 +1,5 @@
 using Application.Common.Repositories;
+using Application.Features.GoodsReceiveManager;
 using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
@@ -40,16 +41,19 @@ public class UpdatePurchaseOrderHandler : IRequestHandler<UpdatePurchaseOrderReq
     private readonly ICommandRepository<PurchaseOrder> _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly PurchaseOrderService _purchaseOrderService;
+    private readonly GoodsReceiveService _goodsReceiveService;
 
     public UpdatePurchaseOrderHandler(
         ICommandRepository<PurchaseOrder> repository,
         IUnitOfWork unitOfWork,
-        PurchaseOrderService purchaseOrderService
+        PurchaseOrderService purchaseOrderService,
+        GoodsReceiveService goodsReceiveService
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _purchaseOrderService = purchaseOrderService;
+        _goodsReceiveService = goodsReceiveService;
     }
 
     public async Task<UpdatePurchaseOrderResult> Handle(UpdatePurchaseOrderRequest request, CancellationToken cancellationToken)
@@ -75,6 +79,7 @@ public class UpdatePurchaseOrderHandler : IRequestHandler<UpdatePurchaseOrderReq
         await _unitOfWork.SaveAsync(cancellationToken);
 
         await _purchaseOrderService.Recalculate(entity.Id);
+        await _goodsReceiveService.SyncDraftForPurchaseOrderAsync(entity.Id, request.UpdatedById, cancellationToken);
 
         return new UpdatePurchaseOrderResult
         {

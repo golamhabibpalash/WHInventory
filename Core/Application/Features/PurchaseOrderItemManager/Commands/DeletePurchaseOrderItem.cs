@@ -1,4 +1,5 @@
 using Application.Common.Repositories;
+using Application.Features.GoodsReceiveManager;
 using Application.Features.PurchaseOrderManager;
 using Domain.Entities;
 using FluentValidation;
@@ -30,16 +31,19 @@ public class DeletePurchaseOrderItemHandler : IRequestHandler<DeletePurchaseOrde
     private readonly ICommandRepository<PurchaseOrderItem> _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly PurchaseOrderService _purchaseOrderService;
+    private readonly GoodsReceiveService _goodsReceiveService;
 
     public DeletePurchaseOrderItemHandler(
         ICommandRepository<PurchaseOrderItem> repository,
         IUnitOfWork unitOfWork,
-        PurchaseOrderService purchaseOrderService
+        PurchaseOrderService purchaseOrderService,
+        GoodsReceiveService goodsReceiveService
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _purchaseOrderService = purchaseOrderService;
+        _goodsReceiveService = goodsReceiveService;
     }
 
     public async Task<DeletePurchaseOrderItemResult> Handle(DeletePurchaseOrderItemRequest request, CancellationToken cancellationToken)
@@ -58,6 +62,7 @@ public class DeletePurchaseOrderItemHandler : IRequestHandler<DeletePurchaseOrde
         await _unitOfWork.SaveAsync(cancellationToken);
 
         await _purchaseOrderService.Recalculate(entity.PurchaseOrderId ?? "");
+        await _goodsReceiveService.SyncDraftForPurchaseOrderAsync(entity.PurchaseOrderId, request.DeletedById, cancellationToken);
 
         return new DeletePurchaseOrderItemResult
         {

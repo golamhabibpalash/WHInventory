@@ -1,4 +1,5 @@
 using Application.Common.Repositories;
+using Application.Features.GoodsReceiveManager;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -28,14 +29,17 @@ public class DeletePurchaseOrderHandler : IRequestHandler<DeletePurchaseOrderReq
 {
     private readonly ICommandRepository<PurchaseOrder> _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly GoodsReceiveService _goodsReceiveService;
 
     public DeletePurchaseOrderHandler(
         ICommandRepository<PurchaseOrder> repository,
-        IUnitOfWork unitOfWork
+        IUnitOfWork unitOfWork,
+        GoodsReceiveService goodsReceiveService
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _goodsReceiveService = goodsReceiveService;
     }
 
     public async Task<DeletePurchaseOrderResult> Handle(DeletePurchaseOrderRequest request, CancellationToken cancellationToken)
@@ -52,6 +56,9 @@ public class DeletePurchaseOrderHandler : IRequestHandler<DeletePurchaseOrderReq
 
         _repository.Delete(entity);
         await _unitOfWork.SaveAsync(cancellationToken);
+
+        // The order no longer resolves, so its draft goods receive (if any) is cleaned up.
+        await _goodsReceiveService.SyncDraftForPurchaseOrderAsync(entity.Id, request.DeletedById, cancellationToken);
 
         return new DeletePurchaseOrderResult
         {

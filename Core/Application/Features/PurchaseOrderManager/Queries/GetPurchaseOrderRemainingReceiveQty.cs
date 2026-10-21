@@ -1,6 +1,7 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using Domain.Entities;
+using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,7 +58,8 @@ public class GetPurchaseOrderRemainingReceiveQtyHandler : IRequestHandler<GetPur
                 .AsNoTracking()
                 .ApplyIsDeletedFilter(false)
                 .Where(x => x.ModuleId != null && goodsReceiveIds.Contains(x.ModuleId)
-                         && x.ModuleName == nameof(GoodsReceive))
+                         && x.ModuleName == nameof(GoodsReceive)
+                         && x.Status == InventoryTransactionStatus.Confirmed)
                 .GroupBy(x => x.ProductId)
                 .Select(g => new { ProductId = g.Key, ReceivedQty = g.Sum(x => x.Movement ?? 0.0) })
                 .ToListAsync(cancellationToken);

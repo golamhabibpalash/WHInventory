@@ -1,5 +1,6 @@
 using Application.Common.Extensions;
 using Application.Common.Repositories;
+using Application.Features.GoodsReceiveManager;
 using Application.Features.PurchaseOrderManager;
 using Domain.Entities;
 using FluentValidation;
@@ -44,16 +45,19 @@ public class UpdatePurchaseOrderItemHandler : IRequestHandler<UpdatePurchaseOrde
     private readonly ICommandRepository<PurchaseOrderItem> _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly PurchaseOrderService _purchaseOrderService;
+    private readonly GoodsReceiveService _goodsReceiveService;
 
     public UpdatePurchaseOrderItemHandler(
         ICommandRepository<PurchaseOrderItem> repository,
         IUnitOfWork unitOfWork,
-        PurchaseOrderService purchaseOrderService
+        PurchaseOrderService purchaseOrderService,
+        GoodsReceiveService goodsReceiveService
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _purchaseOrderService = purchaseOrderService;
+        _goodsReceiveService = goodsReceiveService;
     }
 
     public async Task<UpdatePurchaseOrderItemResult> Handle(UpdatePurchaseOrderItemRequest request, CancellationToken cancellationToken)
@@ -81,6 +85,7 @@ public class UpdatePurchaseOrderItemHandler : IRequestHandler<UpdatePurchaseOrde
         await _unitOfWork.SaveAsync(cancellationToken);
 
         await _purchaseOrderService.Recalculate(entity.PurchaseOrderId ?? "");
+        await _goodsReceiveService.SyncDraftForPurchaseOrderAsync(entity.PurchaseOrderId, request.UpdatedById, cancellationToken);
 
         return new UpdatePurchaseOrderItemResult
         {

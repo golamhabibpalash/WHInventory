@@ -96,10 +96,12 @@ public class PurchaseOrderService
         var totalReceived = 0.0;
         if (goodsReceiveIds.Count > 0)
         {
+            // Only Confirmed goods-receive lines add stock; a Draft receipt reserves nothing.
             totalReceived = await _queryContext.InventoryTransaction
                 .AsNoTracking()
                 .ApplyIsDeletedFilter(false)
-                .Where(x => x.ModuleName == nameof(GoodsReceive) && goodsReceiveIds.Contains(x.ModuleId!))
+                .Where(x => x.ModuleName == nameof(GoodsReceive) && goodsReceiveIds.Contains(x.ModuleId!)
+                         && x.Status == InventoryTransactionStatus.Confirmed)
                 .SumAsync(x => x.Movement ?? 0.0, cancellationToken);
         }
 

@@ -1,6 +1,5 @@
 using Application.Common.Extensions;
 using Application.Common.Repositories;
-using Application.Common.Tenancy;
 using Application.Features.GoodsReceiveManager;
 using Domain.Entities;
 using Domain.Enums;
@@ -55,26 +54,16 @@ public class ReceivePurchaseOrderNowValidator : AbstractValidator<ReceivePurchas
 
 public class ReceivePurchaseOrderNowHandler : IRequestHandler<ReceivePurchaseOrderNowRequest, ReceivePurchaseOrderNowResult>
 {
-    // Striped locks: one in-process gate per (tenant, purchase order) hash bucket, so two concurrent
-    // Receive Now requests for the same order cannot both read the same "remaining" quantities and
-    // both receive them. Bounded memory; mirrors CustomerResolutionService's in-process locking and
-    // assumes a single app instance (see docker-compose). The inventory service's per-line
-    // over-receive check is the second, database-level guard.
-    private static readonly SemaphoreSlim[] _stripes = Enumerable.Range(0, 64).Select(_ => new SemaphoreSlim(1, 1)).ToArray();
-
     private readonly ICommandRepository<PurchaseOrder> _purchaseOrderRepository;
     private readonly GoodsReceiveService _goodsReceiveService;
-    private readonly ITenantContext _tenantContext;
 
     public ReceivePurchaseOrderNowHandler(
         ICommandRepository<PurchaseOrder> purchaseOrderRepository,
-        GoodsReceiveService goodsReceiveService,
-        ITenantContext tenantContext
+        GoodsReceiveService goodsReceiveService
         )
     {
         _purchaseOrderRepository = purchaseOrderRepository;
         _goodsReceiveService = goodsReceiveService;
-        _tenantContext = tenantContext;
     }
 
     public async Task<ReceivePurchaseOrderNowResult> Handle(ReceivePurchaseOrderNowRequest request, CancellationToken cancellationToken = default)
@@ -99,62 +88,53 @@ public class ReceivePurchaseOrderNowHandler : IRequestHandler<ReceivePurchaseOrd
                 "Set the order status to Confirmed and try again.");
         }
 
-        var key = $"{_tenantContext.TenantId}|{purchaseOrder.Id}";
-        var stripe = _stripes[(int)((uint)StringComparer.Ordinal.GetHashCode(key) % (uint)_stripes.Length)];
-
-        await stripe.WaitAsync(cancellationToken);
-        try
+        // ReceiveRemainingAsync takes the per-order striped lock itself (shared with the draft
+        // goods-receive sync), so no lock is taken here — it would self-deadlock.
+        var remainingLines = await _goodsReceiveService.GetRemainingLinesAsync(purchaseOrder.Id, cancellationToken);
+        if (remainingLines.Count == 0)
         {
-            var remainingLines = await _goodsReceiveService.GetRemainingLinesAsync(purchaseOrder.Id, cancellationToken);
-            if (remainingLines.Count == 0)
-            {
-                // Everything ordered has already been received: do not create a second goods receive.
-                return new ReceivePurchaseOrderNowResult
-                {
-                    PurchaseOrderId = purchaseOrder.Id,
-                    Received = false,
-                    AlreadyReceived = true
-                };
-            }
-
-            var goodsReceive = await _goodsReceiveService.ReceiveRemainingAsync(
-                request.ReceiveDate,
-                request.Description,
-                purchaseOrder.Id,
-                request.CreatedById,
-                cancellationToken);
-
-            if (goodsReceive == null)
-            {
-                return new ReceivePurchaseOrderNowResult
-                {
-                    PurchaseOrderId = purchaseOrder.Id,
-                    Received = false,
-                    AlreadyReceived = true
-                };
-            }
-
+            // Everything ordered has already been received: do not create a second goods receive.
             return new ReceivePurchaseOrderNowResult
             {
                 PurchaseOrderId = purchaseOrder.Id,
-                Received = true,
-                AlreadyReceived = false,
-                GoodsReceiveId = goodsReceive.Id,
-                GoodsReceiveNumber = goodsReceive.Number,
-                ReceiveDate = goodsReceive.ReceiveDate,
-                Lines = remainingLines
-                    .Select(x => new ReceivePurchaseOrderNowLineDto
-                    {
-                        ProductId = x.ProductId,
-                        ProductName = x.ProductName,
-                        Quantity = x.RemainingQuantity
-                    })
-                    .ToList()
+                Received = false,
+                AlreadyReceived = true
             };
         }
-        finally
+
+        var goodsReceive = await _goodsReceiveService.ReceiveRemainingAsync(
+            request.ReceiveDate,
+            request.Description,
+            purchaseOrder.Id,
+            request.CreatedById,
+            cancellationToken);
+
+        if (goodsReceive == null)
         {
-            stripe.Release();
+            return new ReceivePurchaseOrderNowResult
+            {
+                PurchaseOrderId = purchaseOrder.Id,
+                Received = false,
+                AlreadyReceived = true
+            };
         }
+
+        return new ReceivePurchaseOrderNowResult
+        {
+            PurchaseOrderId = purchaseOrder.Id,
+            Received = true,
+            AlreadyReceived = false,
+            GoodsReceiveId = goodsReceive.Id,
+            GoodsReceiveNumber = goodsReceive.Number,
+            ReceiveDate = goodsReceive.ReceiveDate,
+            Lines = remainingLines
+                .Select(x => new ReceivePurchaseOrderNowLineDto
+                {
+                    ProductId = x.ProductId,
+                    ProductName = x.ProductName,
+                    Quantity = x.RemainingQuantity
+                })
+                .ToList()
+        };
     }
 }

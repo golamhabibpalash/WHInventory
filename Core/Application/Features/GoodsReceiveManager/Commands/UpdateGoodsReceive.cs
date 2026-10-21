@@ -1,5 +1,6 @@
 using Application.Common.Repositories;
 using Application.Features.InventoryTransactionManager;
+using Application.Features.PurchaseOrderManager;
 using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
@@ -38,16 +39,19 @@ public class UpdateGoodsReceiveHandler : IRequestHandler<UpdateGoodsReceiveReque
     private readonly ICommandRepository<GoodsReceive> _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly InventoryTransactionService _inventoryTransactionService;
+    private readonly PurchaseOrderService _purchaseOrderService;
 
     public UpdateGoodsReceiveHandler(
         ICommandRepository<GoodsReceive> repository,
         IUnitOfWork unitOfWork,
-        InventoryTransactionService inventoryTransactionService
+        InventoryTransactionService inventoryTransactionService,
+        PurchaseOrderService purchaseOrderService
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _inventoryTransactionService = inventoryTransactionService;
+        _purchaseOrderService = purchaseOrderService;
     }
 
     public async Task<UpdateGoodsReceiveResult> Handle(UpdateGoodsReceiveRequest request, CancellationToken cancellationToken)
@@ -80,6 +84,9 @@ public class UpdateGoodsReceiveHandler : IRequestHandler<UpdateGoodsReceiveReque
             null,
             cancellationToken
             );
+
+        // Confirming/cancelling the receipt changes what has really been received on the order.
+        await _purchaseOrderService.RecalculatePOStatus(entity.PurchaseOrderId, cancellationToken);
 
         return new UpdateGoodsReceiveResult
         {
