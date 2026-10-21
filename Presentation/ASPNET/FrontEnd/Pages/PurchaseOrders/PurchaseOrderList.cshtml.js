@@ -22,7 +22,26 @@ const App = {
             orderDate: new Date(),
             description: '',
             referenceNumber: '',
-            vendorId: null,
+            // Vendor combo: search existing vendors by name/phone. status: idle | open | selected.
+            // A vendor is master data (created via the quick-create modal), never inline on save.
+            vendor: {
+                input: '',
+                status: 'idle',
+                id: null,
+                name: '',
+                number: '',
+                phoneNumber: '',
+                suggestions: [],
+                open: false,
+                activeIndex: -1
+            },
+            productSearch: {
+                term: '',
+                open: false,
+                activeIndex: 0
+            },
+            pickError: '',
+            cartFlash: '',
             taxId: null,
             orderStatus: null,
             errors: {
@@ -43,6 +62,18 @@ const App = {
             productHint: {
                 name: '',
                 number: ''
+            },
+            paymentMethodListLookupData: [],
+            paymentList: [],
+            paymentSummary: null,
+            isFullySettled: false,
+            isPaymentSubmitting: false,
+            paymentError: '',
+            newPayment: {
+                paymentDate: '',
+                paymentMethodId: '',
+                amount: null,
+                referenceNumber: ''
             },
             subTotalAmount: '0.00',
             discountAmount: '0.00',
@@ -101,13 +132,17 @@ const App = {
         const filterTaxRef = Vue.ref(null);
         const filterFromDateRef = Vue.ref(null);
         const filterToDateRef = Vue.ref(null);
+        const paymentDateRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const orderDateRef = Vue.ref(null);
-        const numberRef = Vue.ref(null);
-        const vendorIdRef = Vue.ref(null);
         const taxIdRef = Vue.ref(null);
         const orderStatusRef = Vue.ref(null);
-        const productPickRef = Vue.ref(null);
+        const vendorInputRef = Vue.ref(null);
+        const productSearchRef = Vue.ref(null);
+        const pickQtyRef = Vue.ref(null);
+        const pickPriceRef = Vue.ref(null);
+        const paymentAmountRef = Vue.ref(null);
+        const saveButtonRef = Vue.ref(null);
         const vendorQuickModalRef = Vue.ref(null);
         const vendorQuickGroupIdRef = Vue.ref(null);
         const vendorQuickCategoryIdRef = Vue.ref(null);
@@ -116,7 +151,7 @@ const App = {
         const taxQuickModalRef = Vue.ref(null);
         const viewModalRef = Vue.ref(null);
 
-        // Running net line total for the "Select Product" form (unit cost less commission %).
+        // Running net line total for the "Add Products" form (unit cost less commission %).
         const posLineTotal = Vue.computed(() =>
             (state.productPick.unitPrice || 0) * (1 - Math.min(100, Math.max(0, state.productPick.commission || 0)) / 100) * (state.productPick.quantity || 0));
 
@@ -172,13 +207,176 @@ const App = {
 
         const onWindowResize = () => { if (state.filterOpen) positionFilterPanel(); };
 
+        const focusEl = (elRef, select = false) => Vue.nextTick(() => {
+            const el = elRef.value;
+            if (!el) return;
+            el.focus();
+            if (select) el.select?.();
+        });
+
         const resetProductPick = () => {
             state.productPick = { productId: null, unitPrice: 0, commission: 0, quantity: 1 };
             state.productHint = { name: '', number: '' };
-            if (productPickLookup.obj) {
-                productPickLookup.obj.value = null;
-                productPickLookup.obj.text = '';
+            state.productSearch.term = '';
+            state.productSearch.open = false;
+            state.productSearch.activeIndex = 0;
+            state.pickError = '';
+        };
+
+        // ── Vendor: search combo over the already-loaded vendor list ───────────────────────────
+        const emptyVendor = () => ({
+            input: '', status: 'idle', id: null, name: '', number: '', phoneNumber: '',
+            suggestions: [], open: false, activeIndex: -1
+        });
+
+        const resetVendor = () => {
+            state.vendor = emptyVendor();
+        };
+
+        const setVendor = (v) => {
+            state.vendor = {
+                ...emptyVendor(),
+                input: v.name ?? '',
+                status: 'selected',
+                id: v.id,
+                name: v.name ?? '',
+                number: v.number ?? '',
+                phoneNumber: v.phoneNumber ?? ''
+            };
+            state.errors.vendorId = '';
+        };
+
+        // Resolve a vendor id back to its record for display (edit/view). Falls back to the name
+        // carried on the list row if the vendor list has not finished loading yet.
+        const loadVendor = (vendorId, fallbackName) => {
+            resetVendor();
+            if (!vendorId) return;
+            const v = (state.vendorListLookupData ?? []).find(x => x.id === vendorId);
+            setVendor(v ?? { id: vendorId, name: fallbackName ?? '', number: '', phoneNumber: '' });
+        };
+
+        const filterVendors = (term) => {
+            const t = (term ?? '').trim().toLowerCase();
+            const src = state.vendorListLookupData ?? [];
+            const matched = t
+                ? src.filter(v => (v.name || '').toLowerCase().includes(t) || (v.phoneNumber || '').toLowerCase().includes(t))
+                : src;
+            return matched.slice(0, 8);
+        };
+
+        const vendorField = {
+            onInput: () => {
+                const c = state.vendor;
+                c.id = null;
+                c.name = '';
+                c.number = '';
+                c.phoneNumber = '';
+                c.status = 'idle';
+                state.errors.vendorId = '';
+                c.suggestions = filterVendors(c.input);
+                c.open = c.suggestions.length > 0;
+                c.activeIndex = c.suggestions.length ? 0 : -1;
+            },
+            select: (v) => {
+                setVendor(v);
+                focusEl(productSearchRef);
+            },
+            onKeydown: (e) => {
+                const c = state.vendor;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    if (!c.suggestions.length) return;
+                    e.preventDefault();
+                    if (!c.open) {
+                        c.open = true;
+                        c.activeIndex = Math.max(0, c.activeIndex);
+                        return;
+                    }
+                    const delta = e.key === 'ArrowDown' ? 1 : -1;
+                    c.activeIndex = (c.activeIndex + delta + c.suggestions.length) % c.suggestions.length;
+                } else if (e.key === 'Escape') {
+                    if (c.open) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        c.open = false;
+                    }
+                } else if (e.key === 'Tab') {
+                    c.open = false;
+                } else if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    if (c.open && c.suggestions[c.activeIndex]) {
+                        vendorField.select(c.suggestions[c.activeIndex]);
+                    } else if (c.suggestions.length === 1) {
+                        vendorField.select(c.suggestions[0]);
+                    } else if (c.id) {
+                        c.open = false;
+                        focusEl(productSearchRef);
+                    } else {
+                        state.errors.vendorId = 'Pick a vendor from the list, or add a new one.';
+                    }
+                }
+            },
+            onFocus: () => {
+                const c = state.vendor;
+                if (!c.id) {
+                    c.suggestions = filterVendors(c.input);
+                    c.open = c.suggestions.length > 0;
+                    if (c.activeIndex < 0 && c.suggestions.length) c.activeIndex = 0;
+                }
+            },
+            // Suggestion clicks use mousedown.prevent, so blur here is a real focus change.
+            onBlur: () => {
+                state.vendor.open = false;
+            },
+            clear: () => {
+                resetVendor();
+                focusEl(vendorInputRef);
             }
+        };
+
+        // ── Product search (name / SKU / barcode; also the scanner target) ──────────────────
+        const productMatches = Vue.computed(() => {
+            const term = state.productSearch.term.trim().toLowerCase();
+            if (!term || state.productPick.productId) return [];
+            const scored = [];
+            for (const p of state.productListLookupData ?? []) {
+                const name = (p.name || '').toLowerCase();
+                const number = (p.number || '').toLowerCase();
+                const barcode = (p.barcode || '').toLowerCase();
+                let score = -1;
+                if (barcode === term || number === term) score = 0;
+                else if (name.startsWith(term)) score = 1;
+                else if (name.includes(term)) score = 2;
+                else if (number.includes(term) || (barcode && barcode.includes(term))) score = 3;
+                if (score >= 0) scored.push({ p, score });
+            }
+            return scored
+                .sort((a, b) => a.score - b.score || (a.p.name || '').localeCompare(b.p.name || ''))
+                .slice(0, 8)
+                .map(x => x.p);
+        });
+
+        const findExactProduct = (term) => {
+            const lower = term.trim().toLowerCase();
+            if (!lower) return null;
+            return (state.productListLookupData ?? []).find(p =>
+                (p.barcode && p.barcode.toLowerCase() === lower) || (p.number && p.number.toLowerCase() === lower)) ?? null;
+        };
+
+        let cartFlashTimer = null;
+        const flashCart = (message) => {
+            clearTimeout(cartFlashTimer);
+            state.cartFlash = message;
+            cartFlashTimer = setTimeout(() => { state.cartFlash = ''; }, 2500);
+        };
+
+        // Empty product search + Enter: the cart is done, go to payment (or Save when there is none).
+        const focusCheckout = () => {
+            if (!state.secondaryData.length) {
+                state.pickError = 'Search for a product to add it to the cart.';
+                return;
+            }
+            if (paymentAmountRef.value) focusEl(paymentAmountRef, true);
+            else focusEl(saveButtonRef);
         };
 
         const validateForm = function () {
@@ -193,7 +391,7 @@ const App = {
                 state.errors.orderDate = 'Order date is required.';
                 isValid = false;
             }
-            if (!state.vendorId) {
+            if (!state.vendor.id) {
                 state.errors.vendorId = 'Vendor is required.';
                 isValid = false;
             }
@@ -209,13 +407,110 @@ const App = {
             return isValid;
         };
 
+        // Put the caret on the first field validateForm flagged.
+        const focusFirstError = () => {
+            if (state.errors.vendorId) focusEl(vendorInputRef, true);
+            else if (state.errors.orderDate) orderDatePicker.focus();
+            else if (state.errors.orderStatus) purchaseOrderStatusListLookup.obj?.focusIn();
+            else if (state.errors.taxId) taxListLookup.obj?.focusIn();
+        };
+
+        // Names exactly which order detail is missing, for the message under the product entry.
+        const missingDetailsMessage = () => {
+            const missing = [];
+            if (state.errors.orderDate) missing.push('order date');
+            if (state.errors.orderStatus) missing.push('status');
+            if (state.errors.taxId) missing.push('tax');
+            return missing.length
+                ? `Select the ${missing.join(', ')} in Order Details (below the cart) first.`
+                : 'Complete the order details first.';
+        };
+
+        // Status and tax rarely change between orders: start each new order with the last ones used.
+        const DEFAULTS_KEY = 'purchaseOrder.defaults';
+        const readOrderDefaults = () => {
+            try {
+                return JSON.parse(localStorage.getItem(DEFAULTS_KEY) || '{}') || {};
+            } catch (error) {
+                return {};
+            }
+        };
+        const rememberOrderDefaults = () => {
+            try {
+                localStorage.setItem(DEFAULTS_KEY, JSON.stringify({ orderStatus: state.orderStatus, taxId: state.taxId }));
+            } catch (error) {
+                // Storage unavailable (private mode etc.) — defaults are a convenience only.
+            }
+        };
+        const applyOrderDefaults = () => {
+            const saved = readOrderDefaults();
+            const statuses = state.purchaseOrderStatusListLookupData ?? [];
+            const taxes = state.taxListLookupData ?? [];
+            const savedStatus = statuses.find(x => String(x.id) === String(saved.orderStatus));
+            const draft = statuses.find(x => String(x.name).toLowerCase() === 'draft');
+            state.orderStatus = savedStatus ? String(savedStatus.id) : (draft ? String(draft.id) : null);
+            // Tax: last used on this device → tax of the most recent purchase order → the only tax.
+            const savedTax = taxes.find(x => x.id === saved.taxId);
+            const latestOrder = [...(state.mainData ?? [])].sort((a, b) => (b.createdAtUtc ?? 0) - (a.createdAtUtc ?? 0))[0];
+            const recentTax = latestOrder && taxes.find(x => x.id === latestOrder.taxId);
+            state.taxId = savedTax?.id ?? recentTax?.id ?? (taxes.length === 1 ? taxes[0].id : null);
+        };
+
+        const paymentDatePicker = {
+            obj: null,
+            // The payment form is behind a v-if, so its host element comes and goes with the
+            // modal. Rebuild the picker each time Vue hands back a fresh node.
+            mount: (element) => {
+                if (paymentDatePicker.obj) {
+                    paymentDatePicker.obj.destroy();
+                    paymentDatePicker.obj = null;
+                }
+                if (!element) return;
+
+                paymentDatePicker.obj = new ej.calendars.DatePicker({
+                    format: 'dd/MM/yyyy',
+                    placeholder: 'Select date',
+                    cssClass: 'e-small',
+                    value: DateFormatManager.fromApiDate(state.newPayment.paymentDate),
+                    change: (e) => {
+                        state.newPayment.paymentDate = DateFormatManager.toApiDate(e.value) ?? '';
+                    }
+                });
+                paymentDatePicker.obj.appendTo(element);
+            },
+            refresh: () => {
+                if (paymentDatePicker.obj) {
+                    paymentDatePicker.obj.value = DateFormatManager.fromApiDate(state.newPayment.paymentDate);
+                }
+            }
+        };
+
+        Vue.watch(() => paymentDateRef.value, (element) => paymentDatePicker.mount(element));
+
+        // Pre-select the only method, or Cash, so Enter in the amount field can record the payment.
+        const defaultPaymentMethodId = () => {
+            const list = state.paymentMethodListLookupData ?? [];
+            if (list.length === 1) return list[0].id;
+            return list.find(m => String(m.name ?? '').toLowerCase().includes('cash'))?.id ?? '';
+        };
+
+        const resetNewPaymentState = () => {
+            state.newPayment = {
+                paymentDate: DateFormatManager.toApiDate(new Date()),
+                paymentMethodId: defaultPaymentMethodId(),
+                amount: null,
+                referenceNumber: ''
+            };
+            paymentDatePicker.refresh();
+        };
+
         const resetFormState = () => {
             state.id = '';
             state.number = '';
             state.orderDate = new Date();
             state.description = '';
             state.referenceNumber = '';
-            state.vendorId = null;
+            resetVendor();
             state.taxId = null;
             state.orderStatus = null;
             state.errors = {
@@ -226,7 +521,13 @@ const App = {
                 description: ''
             };
             state.secondaryData = [];
+            state.paymentList = [];
+            state.paymentSummary = null;
+            state.isFullySettled = false;
+            state.paymentError = '';
+            resetNewPaymentState();
             state.subTotalAmount = '0.00';
+            state.discountAmount = '0.00';
             state.taxAmount = '0.00';
             state.totalAmount = '0.00';
             state.amountInWords = '';
@@ -350,6 +651,57 @@ const App = {
                     throw error;
                 }
             },
+            getProductByBarcode: async (barcode) => {
+                try {
+                    // AxiosManager.get ignores config.params, so the query is built into the URL.
+                    const response = await AxiosManager.get(`/Product/GetProductByBarcode?barcode=${encodeURIComponent(barcode)}`, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPaymentMethodListLookupData: async () => {
+                try {
+                    const response = await AxiosManager.get('/PaymentMethod/GetPaymentMethodList?activeOnly=true', {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPaymentListByModule: async (purchaseOrderId) => {
+                try {
+                    const response = await AxiosManager.get(
+                        `/Payment/GetPaymentListByModule?moduleName=PurchaseOrder&moduleId=${purchaseOrderId}`, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            getPaymentSummaryData: async (purchaseOrderId) => {
+                try {
+                    const response = await AxiosManager.get(
+                        `/Payment/GetPaymentSummary?moduleName=PurchaseOrder&moduleId=${purchaseOrderId}`, {});
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            createPayment: async (payload) => {
+                try {
+                    const response = await AxiosManager.post('/Payment/CreatePayment', payload);
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
+            deletePaymentData: async (id, deletedById) => {
+                try {
+                    const response = await AxiosManager.post('/Payment/DeletePayment', { id, deletedById });
+                    return response;
+                } catch (error) {
+                    throw error;
+                }
+            },
             createVendor: async (name, vendorGroupId, vendorCategoryId, street, city, state, zipCode, country, phoneNumber, emailAddress, createdById) => {
                 try {
                     const response = await AxiosManager.post('/Vendor/CreateVendor', {
@@ -406,7 +758,7 @@ const App = {
         const methods = {
             populateVendorListLookupData: async () => {
                 const response = await services.getVendorListLookupData();
-                state.vendorListLookupData = response?.data?.content?.data;
+                state.vendorListLookupData = response?.data?.content?.data ?? [];
             },
             populateTaxListLookupData: async () => {
                 const response = await services.getTaxListLookupData();
@@ -440,6 +792,11 @@ const App = {
                 const response = await services.getProductListLookupData();
                 state.productListLookupData = response?.data?.content?.data ?? [];
             },
+            populatePaymentMethodListLookupData: async () => {
+                const response = await services.getPaymentMethodListLookupData();
+                state.paymentMethodListLookupData = response?.data?.content?.data ?? [];
+                if (!state.newPayment.paymentMethodId) state.newPayment.paymentMethodId = defaultPaymentMethodId();
+            },
             populateVendorGroupListLookupData: async () => {
                 const response = await services.getVendorGroupListLookupData();
                 state.vendorGroupListLookupData = response?.data?.content?.data ?? [];
@@ -463,94 +820,95 @@ const App = {
                     state.totalAmount = NumberFormatManager.formatToLocale(record.afterTaxAmount ?? 0);
                     state.amountInWords = AmountInWordsManager.convert(record.afterTaxAmount ?? 0);
                 }
-            },
-            handleFormSubmit: async () => {
-                state.isSubmitting = true;
 
-                if (!validateForm()) {
-                    state.isSubmitting = false;
+                await methods.refreshPaymentLedger(id);
+            },
+            refreshPaymentLedger: async (id) => {
+                if (!id) {
+                    state.paymentList = [];
+                    state.paymentSummary = null;
+                    state.isFullySettled = false;
                     return;
                 }
 
-                const wasCreating = state.id === '';
+                try {
+                    const [listResponse, summaryResponse] = await Promise.all([
+                        services.getPaymentListByModule(id),
+                        services.getPaymentSummaryData(id)
+                    ]);
+
+                    state.paymentList = listResponse?.data?.content?.data ?? [];
+                    state.paymentSummary = summaryResponse?.data?.content?.data ?? null;
+                    state.isFullySettled = state.paymentSummary?.isFullySettled ?? false;
+                } catch (error) {
+                    state.paymentList = [];
+                    state.paymentSummary = null;
+                    state.isFullySettled = false;
+                }
+            },
+            handleFormSubmit: async () => {
+                // Rapid Enter / double-clicks: one save at a time.
+                if (state.isSubmitting) return;
+                state.isSubmitting = true;
 
                 try {
-                    const response = wasCreating
-                        ? await services.createMainData(state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId())
-                        : state.deleteMode
-                            ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId());
+                    if (state.deleteMode) {
+                        const response = await services.deleteMainData(state.id, StorageManager.getUserId());
+                        if (response.data.code === 200) {
+                            await methods.populateMainData();
+                            mainGrid.refresh();
+                            notify('success', 'Purchase order deleted');
+                            mainModal.obj.hide();
+                            resetFormState();
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Delete Failed', text: response.data.message ?? 'Please try again.' });
+                        }
+                        return;
+                    }
+
+                    if (!state.id) {
+                        // New order: the same path the first "Add" uses, so both share one in-flight create.
+                        const result = await ensureHeaderSaved();
+                        if (result.ok) {
+                            notify('success', `Purchase order ${state.number} created`);
+                            focusEl(productSearchRef);
+                        } else if (result.message) {
+                            Swal.fire({ icon: 'error', title: 'Save Failed', text: result.message });
+                        }
+                        return;
+                    }
+
+                    if (!validateForm()) {
+                        focusFirstError();
+                        return;
+                    }
+
+                    const response = await services.updateMainData(
+                        state.id, state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendor.id, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
+                        applySavedHeader(response.data.content.data);
                         await methods.populateMainData();
                         mainGrid.refresh();
-
-                        if (!state.deleteMode) {
-                            state.id = response?.data?.content?.data.id ?? '';
-                            state.number = response?.data?.content?.data.number ?? '';
-                            state.orderDate = response?.data?.content?.data.orderDate ? new Date(response.data.content.data.orderDate) : null;
-                            state.description = response?.data?.content?.data.description ?? '';
-                            state.referenceNumber = response?.data?.content?.data.referenceNumber ?? '';
-                            state.vendorId = response?.data?.content?.data.vendorId ?? '';
-                            state.taxId = response?.data?.content?.data.taxId ?? '';
-                            taxListLookup.trackingChange = true;
-                            state.orderStatus = String(response?.data?.content?.data.orderStatus ?? '');
-                            state.mainTitle = `Purchase Order ${state.number}`;
-
-                            if (wasCreating) {
-                                // POS flow: stay on the same screen with the order now created,
-                                // so the buyer can go straight to adding products.
-                                await methods.populateSecondaryData(state.id);
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Purchase Order Created',
-                                    text: `${state.number} saved. Add products to build the cart.`,
-                                    timer: 1000,
-                                    showConfirmButton: false
-                                });
-                            } else {
-                                // Header edit: persist without leaving the POS screen.
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Order Details Saved',
-                                    timer: 1000,
-                                    showConfirmButton: false
-                                });
-                            }
-                        } else {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Delete Successful',
-                                text: 'Form will be closed...',
-                                timer: 1000,
-                                showConfirmButton: false
-                            });
-                            setTimeout(() => {
-                                mainModal.obj.hide();
-                                resetFormState();
-                            }, 1000);
-                        }
-
+                        await methods.refreshPaymentSummary(state.id);
+                        notify('success', 'Order saved');
                     } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
-                            text: response.data.message ?? 'Please check your data.',
-                            confirmButtonText: 'Try Again'
-                        });
+                        Swal.fire({ icon: 'error', title: 'Save Failed', text: response.data.message ?? 'Please check your data.' });
                     }
                 } catch (error) {
+                    // Entered data stays on screen; only the message is shown.
                     Swal.fire({
                         icon: 'error',
-                        title: 'An Error Occurred',
-                        text: error.response?.data?.message ?? 'Please try again.',
-                        confirmButtonText: 'OK'
+                        title: state.deleteMode ? 'Delete Failed' : 'Save Failed',
+                        text: error.response?.data?.message ?? 'Please try again.'
                     });
                 } finally {
                     state.isSubmitting = false;
                 }
             },
             onMainModalHidden: () => {
+                state.vendor.open = false;
+                state.productSearch.open = false;
                 state.errors.orderDate = '';
                 state.errors.vendorId = '';
                 state.errors.taxId = '';
@@ -559,40 +917,56 @@ const App = {
             }
         };
 
-        const vendorListLookup = {
+        const taxListLookup = {
             obj: null,
+            trackingChange: false,
             create: () => {
-                if (state.vendorListLookupData && Array.isArray(state.vendorListLookupData)) {
-                    vendorListLookup.obj = new ej.dropdowns.DropDownList({
-                        dataSource: state.vendorListLookupData,
-                        fields: { value: 'id', text: 'name' },
-                        placeholder: 'Select a Vendor',
-                        filterBarPlaceholder: 'Search',
-                        sortOrder: 'Ascending',
+                if (state.taxListLookupData && Array.isArray(state.taxListLookupData)) {
+                    taxListLookup.obj = new ej.dropdowns.DropDownList({
                         allowFiltering: true,
-                        filtering: (e) => {
-                            e.preventDefaultAction = true;
-                            const term = (e.text || '').toLowerCase();
-                            if (!term) {
-                                e.updateData(state.vendorListLookupData);
-                                return;
+                        filterType: 'Contains',
+                        dataSource: state.taxListLookupData,
+                        fields: { value: 'id', text: 'name' },
+                        placeholder: 'Select a Tax',
+                        value: state.taxId,
+                        change: async (e) => {
+                            state.taxId = e.value;
+                            if (e.isInteracted && taxListLookup.trackingChange) {
+                                await methods.handleFormSubmit();
                             }
-                            const filtered = state.vendorListLookupData.filter(v =>
-                                (v.name || '').toLowerCase().includes(term) ||
-                                (v.phoneNumber || '').toLowerCase().includes(term)
-                            );
-                            e.updateData(filtered);
-                        },
-                        change: (e) => {
-                            state.vendorId = e.value;
                         }
                     });
-                    vendorListLookup.obj.appendTo(vendorIdRef.value);
+                    taxListLookup.obj.appendTo(taxIdRef.value);
                 }
             },
             refresh: () => {
-                if (vendorListLookup.obj) {
-                    vendorListLookup.obj.value = state.vendorId;
+                if (taxListLookup.obj) {
+                    taxListLookup.obj.value = state.taxId;
+                }
+            }
+        };
+
+        const purchaseOrderStatusListLookup = {
+            obj: null,
+            create: () => {
+                if (state.purchaseOrderStatusListLookupData && Array.isArray(state.purchaseOrderStatusListLookupData)) {
+                    purchaseOrderStatusListLookup.obj = new ej.dropdowns.DropDownList({
+                        allowFiltering: true,
+                        filterType: 'Contains',
+                        dataSource: state.purchaseOrderStatusListLookupData,
+                        fields: { value: 'id', text: 'name' },
+                        placeholder: 'Select an Order Status',
+                        value: state.orderStatus,
+                        change: (e) => {
+                            state.orderStatus = e.value;
+                        }
+                    });
+                    purchaseOrderStatusListLookup.obj.appendTo(orderStatusRef.value);
+                }
+            },
+            refresh: () => {
+                if (purchaseOrderStatusListLookup.obj) {
+                    purchaseOrderStatusListLookup.obj.value = state.orderStatus;
                 }
             }
         };
@@ -648,58 +1022,6 @@ const App = {
                     }
                 });
                 vendorCategoryListLookupQuick.obj.appendTo(vendorQuickCategoryIdRef.value);
-            }
-        };
-
-        const taxListLookup = {
-            obj: null,
-            trackingChange: false,
-            create: () => {
-                if (state.taxListLookupData && Array.isArray(state.taxListLookupData)) {
-                    taxListLookup.obj = new ej.dropdowns.DropDownList({
-                        allowFiltering: true,
-                        filterType: 'Contains',
-                        dataSource: state.taxListLookupData,
-                        fields: { value: 'id', text: 'name' },
-                        placeholder: 'Select a Tax',
-                        change: async (e) => {
-                            state.taxId = e.value;
-                            if (e.isInteracted && taxListLookup.trackingChange) {
-                                await methods.handleFormSubmit();
-                            }
-                        }
-                    });
-                    taxListLookup.obj.appendTo(taxIdRef.value);
-                }
-            },
-            refresh: () => {
-                if (taxListLookup.obj) {
-                    taxListLookup.obj.value = state.taxId;
-                }
-            }
-        };
-
-        const purchaseOrderStatusListLookup = {
-            obj: null,
-            create: () => {
-                if (state.purchaseOrderStatusListLookupData && Array.isArray(state.purchaseOrderStatusListLookupData)) {
-                    purchaseOrderStatusListLookup.obj = new ej.dropdowns.DropDownList({
-                        allowFiltering: true,
-                        filterType: 'Contains',
-                        dataSource: state.purchaseOrderStatusListLookupData,
-                        fields: { value: 'id', text: 'name' },
-                        placeholder: 'Select an Order Status',
-                        change: (e) => {
-                            state.orderStatus = e.value;
-                        }
-                    });
-                    purchaseOrderStatusListLookup.obj.appendTo(orderStatusRef.value);
-                }
-            },
-            refresh: () => {
-                if (purchaseOrderStatusListLookup.obj) {
-                    purchaseOrderStatusListLookup.obj.value = state.orderStatus;
-                }
             }
         };
 
@@ -838,17 +1160,6 @@ const App = {
             }
         };
 
-        const numberText = {
-            obj: null,
-            create: () => {
-                numberText.obj = new ej.inputs.TextBox({
-                    placeholder: '[auto]',
-                    readonly: true
-                });
-                numberText.obj.appendTo(numberRef.value);
-            }
-        };
-
         const watcherStops = [];
 
         watcherStops.push(Vue.watch(
@@ -856,14 +1167,6 @@ const App = {
             (newVal, oldVal) => {
                 orderDatePicker.refresh();
                 state.errors.orderDate = '';
-            }
-        ));
-
-        watcherStops.push(Vue.watch(
-            () => state.vendorId,
-            (newVal, oldVal) => {
-                vendorListLookup.refresh();
-                state.errors.vendorId = '';
             }
         ));
 
@@ -945,6 +1248,8 @@ const App = {
             },
             open: async () => {
                 vendorQuickHandler.resetForm();
+                // Seed the search box into the new-vendor name so a typed-but-unmatched term carries over.
+                if (!state.vendor.id && state.vendor.input) state.vendorQuickName = state.vendor.input.trim();
                 await methods.populateVendorGroupListLookupData();
                 await methods.populateVendorCategoryListLookupData();
                 vendorQuickModal.obj.show();
@@ -993,13 +1298,10 @@ const App = {
                     if (response.data.code === 200) {
                         const newVendor = response.data.content.data;
 
-                        // Refresh vendor dropdown data source and auto-select new vendor
+                        // Refresh the vendor list and select the new vendor in the search combo.
                         await methods.populateVendorListLookupData();
-                        vendorListLookup.obj.setProperties({
-                            dataSource: state.vendorListLookupData,
-                            value: newVendor.id
-                        });
-                        state.vendorId = newVendor.id;
+                        filterVendorDropdown.obj?.setProperties({ dataSource: state.vendorListLookupData });
+                        setVendor(newVendor);
 
                         vendorQuickModal.obj.hide();
                         Swal.fire({
@@ -1009,6 +1311,7 @@ const App = {
                             timer: 1000,
                             showConfirmButton: false
                         });
+                        focusEl(productSearchRef);
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -1153,7 +1456,6 @@ const App = {
                     if (response.data.code === 200) {
                         const newTax = response.data.content.data;
 
-                        // Refresh tax dropdown data source and auto-select the new tax
                         await methods.populateTaxListLookupData();
                         taxListLookup.obj.setProperties({
                             dataSource: state.taxListLookupData,
@@ -1222,7 +1524,7 @@ const App = {
                         { field: 'vendorName', headerText: 'Vendor', width: 200, minWidth: 200 },
                         { field: 'orderStatusName', headerText: 'Status', width: 150, minWidth: 150 },
                         { field: 'taxName', headerText: 'Tax', width: 150, minWidth: 150 },
-                        { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2' },
+                        { field: 'afterTaxAmount', headerText: 'Total Amount', width: 150, minWidth: 150, format: 'N2', textAlign: 'Right' },
                         { field: 'createdAtUtc', headerText: 'Created At UTC', width: 150, format: 'dd/MM/yyyy HH:mm' },
                         { field: 'createdByName', headerText: 'Created By', width: 150, minWidth: 150 }
                     ],
@@ -1256,7 +1558,7 @@ const App = {
                             args.cell.style.fontWeight = '600';
                             args.cell.onclick = () => {
                                 const rowData = args.rowData;
-                                if (rowData?.id) handler.openViewModal(rowData.id);
+                                if (rowData?.id) handlerRef.openViewModal(rowData.id);
                             };
                         }
                     },
@@ -1289,29 +1591,15 @@ const App = {
                         }
 
                         if (args.item.id === 'EditCustom') {
-                            state.deleteMode = false;
-                            resetProductPick();
                             if (mainGrid.obj.getSelectedRecords().length) {
-                                const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
-                                state.mainTitle = `Purchase Order ${selectedRecord.number ?? ''}`;
-                                state.id = selectedRecord.id ?? '';
-                                state.number = selectedRecord.number ?? '';
-                                state.orderDate = selectedRecord.orderDate ? new Date(selectedRecord.orderDate) : null;
-                                state.description = selectedRecord.description ?? '';
-                                state.referenceNumber = selectedRecord.referenceNumber ?? '';
-                                state.vendorId = selectedRecord.vendorId ?? '';
-                                state.taxId = selectedRecord.taxId ?? '';
-                                taxListLookup.trackingChange = true;
-                                state.orderStatus = String(selectedRecord.orderStatus ?? '');
-
-                                await methods.populateSecondaryData(selectedRecord.id);
-
-                                mainModal.obj.show();
+                                await openEditForRecord(mainGrid.obj.getSelectedRecords()[0]);
                             }
                         }
 
                         if (args.item.id === 'DeleteCustom') {
                             state.deleteMode = true;
+                            state.paymentError = '';
+                            resetNewPaymentState();
                             resetProductPick();
                             if (mainGrid.obj.getSelectedRecords().length) {
                                 const selectedRecord = mainGrid.obj.getSelectedRecords()[0];
@@ -1320,9 +1608,10 @@ const App = {
                                 state.number = selectedRecord.number ?? '';
                                 state.orderDate = selectedRecord.orderDate ? new Date(selectedRecord.orderDate) : null;
                                 state.description = selectedRecord.description ?? '';
-                                state.vendorId = selectedRecord.vendorId ?? '';
+                                state.referenceNumber = selectedRecord.referenceNumber ?? '';
                                 state.taxId = selectedRecord.taxId ?? '';
                                 state.orderStatus = String(selectedRecord.orderStatus ?? '');
+                                loadVendor(selectedRecord.vendorId, selectedRecord.vendorName);
 
                                 await methods.populateSecondaryData(selectedRecord.id);
 
@@ -1348,80 +1637,65 @@ const App = {
             }
         };
 
-        // "Select Product" search box in the POS panel. Mirrors vendorListLookup: a Syncfusion
-        // DropDownList over the product list.
-        const productPickLookup = {
-            obj: null,
-            create: () => {
-                if (!Array.isArray(state.productListLookupData)) return;
+        // Non-blocking confirmation: a toast never takes focus away from the field being typed in.
+        const notify = (icon, title) => Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon,
+            title,
+            timer: 1800,
+            showConfirmButton: false,
+            returnFocus: false
+        });
 
-                productPickLookup.obj = new ej.dropdowns.DropDownList({
-                    dataSource: state.productListLookupData,
-                    fields: { value: 'id', text: 'name' },
-                    placeholder: 'Search a product to add',
-                    filterBarPlaceholder: 'Search',
-                    sortOrder: 'Ascending',
-                    allowFiltering: true,
-                    filtering: (e) => {
-                        e.preventDefaultAction = true;
-                        let query = new ej.data.Query();
-                        if (e.text !== '') {
-                            query = query.where('name', 'contains', e.text, true);
-                        }
-                        e.updateData(state.productListLookupData, query);
-                    },
-                    change: (e) => {
-                        const product = state.productListLookupData.find(item => item.id === e.value);
-                        if (!product) {
-                            state.productHint = { name: '', number: '' };
-                            return;
-                        }
-                        state.productPick.productId = product.id;
-                        state.productPick.unitPrice = product.unitPrice ?? 0;
-                        state.productPick.commission = 0;
-                        state.productPick.quantity = 1;
-                        state.productHint = { name: product.name, number: product.number ?? '' };
-                    }
-                });
-                productPickLookup.obj.appendTo(productPickRef.value);
-            }
+        // Copy a saved header back into the form.
+        const applySavedHeader = (data) => {
+            state.id = data.id ?? '';
+            state.number = data.number ?? '';
+            state.orderDate = data.orderDate ? new Date(data.orderDate) : null;
+            state.description = data.description ?? '';
+            state.referenceNumber = data.referenceNumber ?? '';
+            state.taxId = data.taxId ?? '';
+            taxListLookup.trackingChange = true;
+            state.orderStatus = String(data.orderStatus ?? '');
+            loadVendor(data.vendorId, data.vendor?.name);
+            state.mainTitle = `Purchase Order ${state.number}`;
         };
 
-        // The POS screen adds line items against a saved header. If the buyer starts by picking
-        // a product before saving, create the header on the fly from the order bar fields.
-        const ensureHeaderSaved = async () => {
-            if (state.id) return true;
+        // Line items are saved against a header, so the first add (or Save) creates it from the
+        // order fields. Concurrent callers share one request, so a double Enter can't create two orders.
+        let headerSave = null;
+        const ensureHeaderSaved = () => {
+            if (state.id) return Promise.resolve({ ok: true });
+            if (headerSave) return headerSave;
 
             if (!validateForm()) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Complete the order details',
-                    text: 'Vendor, tax, status and order date are required before adding products.'
-                });
-                return false;
+                focusFirstError();
+                return Promise.resolve({ ok: false });
             }
 
-            try {
-                const response = await services.createMainData(
-                    state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendorId, StorageManager.getUserId());
+            headerSave = (async () => {
+                try {
+                    const response = await services.createMainData(
+                        state.orderDate, state.description, state.referenceNumber, state.orderStatus, state.taxId, state.vendor.id, StorageManager.getUserId());
 
-                if (response.data.code === 200) {
-                    const data = response.data.content.data;
-                    state.id = data.id ?? '';
-                    state.number = data.number ?? '';
-                    state.mainTitle = `Purchase Order ${state.number}`;
-                    taxListLookup.trackingChange = true;
-                    await methods.populateMainData();
-                    mainGrid.refresh();
-                    return true;
+                    if (response.data.code === 200) {
+                        applySavedHeader(response.data.content.data);
+                        rememberOrderDefaults();
+                        await methods.populateMainData();
+                        mainGrid.refresh();
+                        await methods.refreshPaymentLedger(state.id);
+                        return { ok: true };
+                    }
+                    return { ok: false, message: response.data.message ?? 'Could not create the purchase order.' };
+                } catch (error) {
+                    const message = error.response?.data?.message ?? 'Could not create the purchase order. Please try again.';
+                    return { ok: false, message };
+                } finally {
+                    headerSave = null;
                 }
-
-                Swal.fire({ icon: 'error', title: 'Save Failed', text: response.data.message ?? 'Could not create the purchase order.' });
-                return false;
-            } catch (error) {
-                Swal.fire({ icon: 'error', title: 'An Error Occurred', text: error.response?.data?.message ?? 'Please try again.' });
-                return false;
-            }
+            })();
+            return headerSave;
         };
 
         // Refresh everything that depends on the line items after a cart change.
@@ -1446,11 +1720,125 @@ const App = {
             }
         };
 
+        const productField = {
+            onInput: () => {
+                // Typing again after a pick starts a new search.
+                if (state.productPick.productId) {
+                    const term = state.productSearch.term;
+                    resetProductPick();
+                    state.productSearch.term = term;
+                }
+                state.pickError = '';
+                state.productSearch.activeIndex = 0;
+                state.productSearch.open = state.productSearch.term.trim().length > 0;
+            },
+            onKeydown: async (e) => {
+                const ps = state.productSearch;
+                const list = productMatches.value;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    if (!list.length) return;
+                    e.preventDefault();
+                    if (!ps.open) {
+                        ps.open = true;
+                        return;
+                    }
+                    const delta = e.key === 'ArrowDown' ? 1 : -1;
+                    ps.activeIndex = (ps.activeIndex + delta + list.length) % list.length;
+                } else if (e.key === 'Escape') {
+                    if (ps.open || ps.term || state.productPick.productId) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (ps.open) ps.open = false;
+                        else resetProductPick();
+                    }
+                } else if (e.key === 'Tab') {
+                    ps.open = false;
+                } else if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    if (state.isAddingLine) return;
+                    const term = ps.term.trim();
+                    if (!term) {
+                        focusCheckout();
+                    } else if (state.productPick.productId) {
+                        focusEl(pickQtyRef, true);
+                    } else if (findExactProduct(term)) {
+                        // Scanner / exact SKU: add one straight to the cart.
+                        await cart.quickAdd(findExactProduct(term));
+                    } else if (list.length) {
+                        productField.pick(list[Math.min(ps.activeIndex, list.length - 1)]);
+                    } else {
+                        await productField.lookupBarcode(term);
+                    }
+                }
+            },
+            onBlur: () => {
+                state.productSearch.open = false;
+            },
+            pick: (product) => {
+                state.productPick = {
+                    productId: product.id,
+                    unitPrice: product.unitPrice ?? 0,
+                    commission: 0,
+                    quantity: 1
+                };
+                state.productHint = { name: product.name, number: product.number ?? '' };
+                state.productSearch.term = product.name ?? '';
+                state.productSearch.open = false;
+                state.pickError = '';
+                focusEl(pickQtyRef, true);
+            },
+            // Not in the loaded list by name/SKU/barcode: ask the server (barcode lookup).
+            lookupBarcode: async (term) => {
+                try {
+                    const response = await services.getProductByBarcode(term);
+                    const found = response?.data?.content?.data;
+                    const product = found && state.productListLookupData.find(p => p.id === found.id);
+                    if (product) {
+                        await cart.quickAdd(product);
+                        return;
+                    }
+                } catch (error) {
+                    // Falls through to the "no match" message.
+                }
+                state.pickError = `No product matches "${term}".`;
+            }
+        };
+
         const cart = {
+            // Validated line → (header if needed) → server. Returns true when the line was saved.
+            createLine: async (product, unitPrice, commissionRate, quantity, focusOnError) => {
+                state.isAddingLine = true;
+                try {
+                    const header = await ensureHeaderSaved();
+                    if (!header.ok) {
+                        state.pickError = header.message
+                            ?? (state.errors.vendorId ? 'Select a vendor first.' : missingDetailsMessage());
+                        return false;
+                    }
+
+                    await services.createSecondaryData(unitPrice, commissionRate, quantity, null, product.id, state.id, StorageManager.getUserId());
+                    await refreshAfterCartChange();
+
+                    resetProductPick();
+                    flashCart(`Added ${product.name}`);
+                    focusEl(productSearchRef);
+                    return true;
+                } catch (error) {
+                    state.pickError = error.response?.data?.message ?? 'Could not add the item. Please try again.';
+                    focusEl(focusOnError, true);
+                    return false;
+                } finally {
+                    state.isAddingLine = false;
+                }
+            },
             addLine: async () => {
+                if (state.isAddingLine) return;
+                state.pickError = '';
+
                 const product = state.productListLookupData.find(p => p.id === state.productPick.productId);
                 if (!product) {
-                    Swal.fire({ icon: 'warning', title: 'Select a product first' });
+                    state.pickError = 'Search for a product and pick it first.';
+                    focusEl(productSearchRef);
                     return;
                 }
 
@@ -1459,34 +1847,29 @@ const App = {
                 const commissionRate = Number(state.productPick.commission) || 0;
 
                 if (!quantity || quantity <= 0) {
-                    Swal.fire({ icon: 'warning', title: 'Enter a quantity greater than zero' });
+                    state.pickError = 'Enter a quantity greater than zero.';
+                    focusEl(pickQtyRef, true);
                     return;
                 }
                 if (isNaN(unitPrice) || unitPrice < 0) {
-                    Swal.fire({ icon: 'warning', title: 'Enter a valid unit cost' });
+                    state.pickError = 'Enter a valid unit cost.';
+                    focusEl(pickPriceRef, true);
                     return;
                 }
                 if (commissionRate < 0 || commissionRate > 100) {
-                    Swal.fire({ icon: 'warning', title: 'Commission % must be between 0 and 100' });
+                    state.pickError = 'Commission % must be between 0 and 100.';
                     return;
                 }
 
-                try {
-                    state.isAddingLine = true;
-
-                    if (!(await ensureHeaderSaved())) return;
-
-                    await services.createSecondaryData(unitPrice, commissionRate, quantity, null, product.id, state.id, StorageManager.getUserId());
-                    await refreshAfterCartChange();
-
-                    resetProductPick();
-                    Swal.fire({ icon: 'success', title: `Added: ${product.name}`, timer: 1000, showConfirmButton: false });
-                    if (productPickLookup.obj) productPickLookup.obj.focusIn();
-                } catch (error) {
-                    Swal.fire({ icon: 'error', title: 'Could not add item', text: error.response?.data?.message ?? 'An error occurred.' });
-                } finally {
-                    state.isAddingLine = false;
-                }
+                await cart.createLine(product, unitPrice, commissionRate, quantity, pickQtyRef);
+            },
+            // Scan / exact-SKU path: one unit at the product's cost, no further input needed.
+            quickAdd: async (product) => {
+                if (state.isAddingLine) return;
+                state.pickError = '';
+                const unitPrice = product.unitPrice ?? 0;
+                const added = await cart.createLine(product, unitPrice, 0, 1, productSearchRef);
+                if (!added) state.productSearch.term = '';
             },
             stepLineQty: (line, delta) => {
                 const next = Math.max(0, (Number(line.quantity) || 0) + delta);
@@ -1519,20 +1902,13 @@ const App = {
                 }
                 await persistLine(line, { commissionRate });
             },
+            // Routine and easy to redo, so no confirmation; Clear all still asks.
             removeLine: async (line) => {
-                const confirmed = await Swal.fire({
-                    icon: 'warning',
-                    title: 'Remove this item?',
-                    text: line.productName,
-                    showCancelButton: true,
-                    confirmButtonText: 'Remove',
-                    confirmButtonColor: '#dc3545'
-                });
-                if (!confirmed.isConfirmed) return;
-
                 try {
                     await services.deleteSecondaryData(line.id, StorageManager.getUserId());
                     await refreshAfterCartChange();
+                    flashCart(`Removed ${line.productName ?? 'item'}`);
+                    focusEl(productSearchRef);
                 } catch (error) {
                     Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.response?.data?.message ?? 'An error occurred.' });
                 }
@@ -1561,7 +1937,8 @@ const App = {
                         Swal.fire({ icon: 'error', title: 'Error', text: `${failed.length} item(s) could not be removed.` });
                     } else {
                         await refreshAfterCartChange();
-                        Swal.fire({ icon: 'success', title: 'Cart Cleared', timer: 1200, showConfirmButton: false });
+                        notify('success', 'Cart cleared');
+                        focusEl(productSearchRef);
                     }
                 } catch (error) {
                     Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message ?? 'Some items could not be removed.' });
@@ -1570,10 +1947,50 @@ const App = {
             }
         };
 
-        const onMainModalShown = () => {
-            if (!state.deleteMode) {
-                orderDatePicker.focus();
+        // Ctrl/Cmd+Enter anywhere in the order modal saves; plain Enter is handled per field.
+        const onModalKeydown = (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                methods.handleFormSubmit();
             }
+        };
+
+        const onMainModalShown = () => {
+            if (state.deleteMode) return;
+            if (!state.vendor.id) focusEl(vendorInputRef);
+            else focusEl(productSearchRef);
+        };
+
+        const openAddModal = () => {
+            state.deleteMode = false;
+            state.mainTitle = 'New Purchase Order';
+            resetFormState();
+            applyOrderDefaults();
+            mainModal.obj.show();
+        };
+
+        // Load a list record into the order modal for editing. Shared by the Edit toolbar button
+        // and the View modal's "Edit Order" button.
+        const openEditForRecord = async (record) => {
+            if (!record) return;
+            state.deleteMode = false;
+            state.paymentError = '';
+            resetNewPaymentState();
+            resetProductPick();
+            state.mainTitle = `Purchase Order ${record.number ?? ''}`;
+            state.id = record.id ?? '';
+            state.number = record.number ?? '';
+            state.orderDate = record.orderDate ? new Date(record.orderDate) : null;
+            state.description = record.description ?? '';
+            state.referenceNumber = record.referenceNumber ?? '';
+            state.taxId = record.taxId ?? '';
+            taxListLookup.trackingChange = true;
+            state.orderStatus = String(record.orderStatus ?? '');
+            loadVendor(record.vendorId, record.vendorName);
+
+            await methods.populateSecondaryData(record.id);
+
+            mainModal.obj.show();
         };
 
         const mainModal = {
@@ -1585,15 +2002,6 @@ const App = {
                 });
                 mainModalRef.value.addEventListener('shown.bs.modal', onMainModalShown);
             }
-        };
-
-        // Open a blank Add Purchase Order modal. Shared by the toolbar Add button and the
-        // Quick Shortcut "open add form" intent (/…?quickAction=add).
-        const openAddModal = () => {
-            state.deleteMode = false;
-            state.mainTitle = 'Add Purchase Order';
-            resetFormState();
-            mainModal.obj.show();
         };
 
         const viewModal = {
@@ -1618,12 +2026,12 @@ const App = {
                     el.classList.toggle('po-filter-active', count > 0);
                     el.setAttribute('data-filter-count', count);
                 }));
+                window.addEventListener('resize', onWindowResize);
 
                 mainModal.create();
                 viewModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
                 orderDatePicker.create();
-                numberText.create();
 
                 // Quick Shortcut "open add form" intent (/…?quickAction=add) opens the add modal on load.
                 if (new URLSearchParams(window.location.search).get('quickAction') === 'add') {
@@ -1635,45 +2043,59 @@ const App = {
                     methods.populateTaxListLookupData(),
                     methods.populatePurchaseOrderStatusListLookupData(),
                     methods.populateProductListLookupData(),
+                    methods.populatePaymentMethodListLookupData(),
                 ]).then(() => {
+                    // A new order opened before the lookups arrived still gets its defaults.
+                    if (!state.id && !state.deleteMode) {
+                        if (!state.orderStatus || !state.taxId) {
+                            const keepStatus = state.orderStatus, keepTax = state.taxId;
+                            applyOrderDefaults();
+                            state.orderStatus = keepStatus || state.orderStatus;
+                            state.taxId = keepTax || state.taxId;
+                        }
+                    }
+                    filterVendorDropdown.obj?.setProperties({ dataSource: state.vendorListLookupData });
+                    taxListLookup.create();
+                    purchaseOrderStatusListLookup.create();
+                    taxQuickModal.create();
                     vendorQuickModal.create();
                     vendorGroupQuickModal.create();
                     vendorCategoryQuickModal.create();
-                    taxQuickModal.create();
                     vendorGroupListLookupQuick.create();
                     vendorCategoryListLookupQuick.create();
-                    vendorListLookup.create();
-                    taxListLookup.create();
-                    purchaseOrderStatusListLookup.create();
-                    productPickLookup.create();
                     createFilterControls();
                 });
-
-                window.addEventListener('resize', onWindowResize);
             } catch (e) {
             } finally {
-                
+
             }
         });
 
         Vue.onUnmounted(() => {
+            clearTimeout(cartFlashTimer);
             watcherStops.forEach(stop => stop());
             window.removeEventListener('resize', onWindowResize);
             mainModalRef.value?.removeEventListener('hidden.bs.modal', methods.onMainModalHidden);
             mainModalRef.value?.removeEventListener('shown.bs.modal', onMainModalShown);
             mainGrid.obj?.destroy();
             orderDatePicker.obj?.destroy();
-            numberText.obj?.destroy();
-            vendorListLookup.obj?.destroy();
             taxListLookup.obj?.destroy();
             purchaseOrderStatusListLookup.obj?.destroy();
-            productPickLookup.obj?.destroy();
+            vendorGroupListLookupQuick.obj?.destroy();
+            vendorCategoryListLookupQuick.obj?.destroy();
             filterStatusDropdown.obj?.destroy();
             filterVendorDropdown.obj?.destroy();
             filterTaxDropdown.obj?.destroy();
             filterFromDatePicker.obj?.destroy();
             filterToDatePicker.obj?.destroy();
+            if (paymentDateRef.value) {
+                const dpInst = paymentDateRef.value?.ej2_instances?.[0];
+                dpInst?.destroy();
+            }
         });
+
+        // The returned handler object, so handlers can call each other.
+        let handlerRef = null;
 
         return {
             mainGridRef,
@@ -1684,13 +2106,18 @@ const App = {
             filterFromDateRef,
             filterToDateRef,
             activeFilterCount,
+            paymentDateRef,
             mainModalRef,
             orderDateRef,
-            numberRef,
-            vendorIdRef,
             taxIdRef,
             orderStatusRef,
-            productPickRef,
+            vendorInputRef,
+            productSearchRef,
+            pickQtyRef,
+            pickPriceRef,
+            paymentAmountRef,
+            saveButtonRef,
+            productMatches,
             posLineTotal,
             vendorQuickModalRef,
             vendorQuickGroupIdRef,
@@ -1701,10 +2128,21 @@ const App = {
             viewModalRef,
             state,
             methods,
-            handler: {
+            handler: handlerRef = {
                 handleSubmit: methods.handleFormSubmit,
                 toggleFilter: filterHandler.toggle,
                 clearFilters: filterHandler.clear,
+                onModalKeydown: onModalKeydown,
+                vendorInput: vendorField.onInput,
+                vendorKeydown: vendorField.onKeydown,
+                vendorFocus: vendorField.onFocus,
+                vendorBlur: vendorField.onBlur,
+                selectVendor: vendorField.select,
+                clearVendor: vendorField.clear,
+                productInput: productField.onInput,
+                productKeydown: productField.onKeydown,
+                productBlur: productField.onBlur,
+                pickProduct: productField.pick,
                 formatAmount: (value) => NumberFormatManager.formatToLocale(value ?? 0),
                 formatQty: formatQty,
                 formatDate: (value) => {
@@ -1724,6 +2162,110 @@ const App = {
                 commitLineCommission: cart.commitLineCommission,
                 removeLine: cart.removeLine,
                 clearCart: cart.clearAll,
+                formatPaymentDate: (value) => {
+                    if (!value) return '';
+                    const d = new Date(value);
+                    return isNaN(d) ? '' : DateFormatManager.toApiDate(d);
+                },
+                payFullBalance: () => {
+                    state.paymentError = '';
+                    const outstanding = state.paymentSummary?.amountOutstanding ?? 0;
+                    state.newPayment.amount = outstanding > 0 ? Number(outstanding.toFixed(2)) : null;
+                },
+                // Enter in Amount: an empty field first takes the balance due (nothing is recorded),
+                // so a stray double Enter can't post a payment; Enter again records it.
+                paymentAmountEnter: () => {
+                    if (state.newPayment.amount === null || state.newPayment.amount === '') {
+                        const outstanding = state.paymentSummary?.amountOutstanding ?? 0;
+                        if (outstanding > 0) {
+                            state.paymentError = '';
+                            state.newPayment.amount = Number(outstanding.toFixed(2));
+                            focusEl(paymentAmountRef, true);
+                            return;
+                        }
+                    }
+                    handlerRef.submitPayment();
+                },
+                submitPayment: async () => {
+                    state.paymentError = '';
+
+                    const amount = Number(state.newPayment.amount);
+
+                    if (!state.newPayment.paymentDate) {
+                        state.paymentError = 'Payment date is required.';
+                        return;
+                    }
+                    if (!state.newPayment.paymentMethodId) {
+                        state.paymentError = 'Select a payment method.';
+                        document.getElementById('PaymentMethod')?.focus();
+                        return;
+                    }
+                    if (!amount || amount <= 0) {
+                        state.paymentError = 'Enter an amount greater than zero.';
+                        focusEl(paymentAmountRef, true);
+                        return;
+                    }
+
+                    const outstanding = state.paymentSummary?.amountOutstanding ?? 0;
+                    if (amount > outstanding + 0.005) {
+                        state.paymentError = `Amount exceeds the balance due of ${NumberFormatManager.formatToLocale(outstanding)}.`;
+                        return;
+                    }
+
+                    if (state.isPaymentSubmitting) return;
+                    try {
+                        state.isPaymentSubmitting = true;
+
+                        const response = await services.createPayment({
+                            moduleName: 'PurchaseOrder',
+                            moduleId: state.id,
+                            paymentDate: state.newPayment.paymentDate,
+                            amount: amount,
+                            paymentMethodId: state.newPayment.paymentMethodId,
+                            referenceNumber: state.newPayment.referenceNumber || null,
+                            createdById: StorageManager.getUserId()
+                        });
+
+                        if (response.data.code === 200) {
+                            resetNewPaymentState();
+                            await methods.refreshPaymentLedger(state.id);
+                            notify('success', `Payment recorded. Balance due: ${NumberFormatManager.formatToLocale(state.paymentSummary?.amountOutstanding ?? 0)}`);
+                            // Settled → Save is next; otherwise stay on the amount for a split payment.
+                            if (state.isFullySettled) focusEl(saveButtonRef);
+                            else focusEl(paymentAmountRef, true);
+                        }
+                    } catch (error) {
+                        state.paymentError = error.response?.data?.message ?? 'Failed to record the payment.';
+                    } finally {
+                        state.isPaymentSubmitting = false;
+                    }
+                },
+                deletePayment: async (payment) => {
+                    const confirmed = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Remove this payment?',
+                        html: `<strong>${NumberFormatManager.formatToLocale(payment.amount ?? 0)}</strong> via ${payment.paymentMethodName || 'unknown method'}.<br>The balance due will go back up.`,
+                        showCancelButton: true,
+                        confirmButtonText: 'Remove',
+                        confirmButtonColor: '#dc3545'
+                    });
+
+                    if (!confirmed.isConfirmed) return;
+
+                    try {
+                        state.isPaymentSubmitting = true;
+                        await services.deletePaymentData(payment.id, StorageManager.getUserId());
+                        await methods.refreshPaymentLedger(state.id);
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.response?.data?.message ?? 'Failed to remove the payment.'
+                        });
+                    } finally {
+                        state.isPaymentSubmitting = false;
+                    }
+                },
                 openVendorQuickCreate: vendorQuickHandler.open,
                 closeVendorQuickCreate: vendorQuickHandler.close,
                 submitVendorQuickCreate: vendorQuickHandler.submit,
@@ -1788,20 +2330,7 @@ const App = {
                     viewModal.obj.hide();
                     if (id) {
                         const record = state.mainData.find(r => r.id === id);
-                        if (record) {
-                            state.deleteMode = false;
-                            state.mainTitle = `Purchase Order ${record.number ?? ''}`;
-                            state.id = record.id ?? '';
-                            state.number = record.number ?? '';
-                            state.orderDate = record.orderDate ? new Date(record.orderDate) : null;
-                            state.description = record.description ?? '';
-                            state.referenceNumber = record.referenceNumber ?? '';
-                            state.vendorId = record.vendorId ?? '';
-                            state.taxId = record.taxId ?? '';
-                            state.orderStatus = String(record.orderStatus ?? '');
-                            methods.populateSecondaryData(record.id);
-                            mainModal.obj.show();
-                        }
+                        if (record) openEditForRecord(record);
                     }
                 }
             }
