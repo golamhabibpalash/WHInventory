@@ -289,6 +289,7 @@ const App = {
 
                 mainGrid.obj.appendTo(mainGridRef.value);
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
+                GridActionManager.enableRowDoubleClickEdit(mainGrid.obj);
             },
             refresh: () => {
                 mainGrid.obj.setProperties({ dataSource: state.mainData });
@@ -594,6 +595,11 @@ const App = {
                             isValid = false;
                         }
                     });
+
+                    if (state.phoneNumber?.trim() && !/^(?:\+?88)?01[3-9]\d{8}$/.test(state.phoneNumber.trim().replace(/[\s-]/g, ''))) {
+                        state.errors.phoneNumber = 'Enter a valid phone number (e.g. 01711234567 or +8801711234567).';
+                        isValid = false;
+                    }
 
                     if (!isValid) return;
 

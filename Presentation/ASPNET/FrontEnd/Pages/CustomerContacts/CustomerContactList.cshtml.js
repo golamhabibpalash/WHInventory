@@ -1,4 +1,4 @@
-﻿const App = {
+const App = {
     setup() {
         const state = Vue.reactive({
             mainData: [],
@@ -48,8 +48,11 @@
                 state.errors.jobTitle = 'Job Title is required.';
                 isValid = false;
             }
-            if (!state.phoneNumber) {
+            if (!state.phoneNumber?.trim()) {
                 state.errors.phoneNumber = 'Phone number is required.';
+                isValid = false;
+            } else if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(state.phoneNumber.trim().replace(/[\s-]/g, ''))) {
+                state.errors.phoneNumber = 'Enter a valid phone number (e.g. 01711234567 or +8801711234567).';
                 isValid = false;
             }
             if (!state.emailAddress) {
@@ -517,6 +520,7 @@
 
                 mainGrid.obj.appendTo(mainGridRef.value);
                 GridHeightManager.apply(mainGrid.obj, mainGridRef.value);
+                GridActionManager.enableRowDoubleClickEdit(mainGrid.obj);
             },
             refresh: () => {
                 mainGrid.obj.setProperties({ dataSource: state.mainData });
