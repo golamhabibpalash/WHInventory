@@ -14,7 +14,7 @@
         // ── Module grouping configuration (same as UserList) ───────────
         const moduleConfig = [
             { name: 'Dashboards', icon: 'fas fa-tachometer-alt', roles: ['Dashboards'] },
-            { name: 'Sales', icon: 'fas fa-chart-line', roles: ['CustomerGroups', 'CustomerCategories', 'Customers', 'CustomerContacts', 'SalesOrders', 'SalesReports', 'Warranties'] },
+            { name: 'Sales', icon: 'fas fa-chart-line', roles: ['CustomerGroups', 'CustomerCategories', 'Customers', 'CustomerContacts', 'SalesOrders', 'Dues', 'SalesReports', 'Warranties'] },
             { name: 'Purchase', icon: 'fas fa-shopping-cart', roles: ['VendorGroups', 'VendorCategories', 'Vendors', 'VendorContacts', 'PurchaseOrders', 'PurchaseReports'] },
             { name: 'Inventory', icon: 'fas fa-warehouse', roles: ['UnitMeasures', 'ProductGroups', 'Brands', 'Products', 'Warehouses', 'DeliveryOrders', 'SalesReturns', 'GoodsReceives', 'PurchaseReturns', 'TransferOuts', 'TransferIns', 'PositiveAdjustments', 'NegativeAdjustments', 'Scrappings', 'StockCounts', 'TransactionReports', 'StockReports', 'MovementReports'] },
             { name: 'Pricing', icon: 'fas fa-tags', roles: ['PricePolicies', 'ProductPrices', 'Promotions', 'PriceReports'] },
@@ -27,6 +27,9 @@
         ];
 
         function formatRoleName(roleName) {
+            // Permission names that don't read well when split by capitals get an explicit label.
+            const overrides = { Dues: 'Customer Dues' };
+            if (overrides[roleName]) return overrides[roleName];
             return roleName
                 .replace(/([A-Z])/g, ' $1')
                 .replace(/^./, s => s.toUpperCase())

@@ -51,7 +51,7 @@ const App = {
             {
                 name: 'Sales',
                 icon: 'fas fa-chart-line',
-                roles: ['CustomerGroups', 'CustomerCategories', 'Customers', 'CustomerContacts', 'SalesOrders', 'SalesReports', 'Warranties']
+                roles: ['CustomerGroups', 'CustomerCategories', 'Customers', 'CustomerContacts', 'SalesOrders', 'Dues', 'SalesReports', 'Warranties']
             },
             {
                 name: 'Purchase',
@@ -143,6 +143,9 @@ const App = {
         });
 
         function formatRoleName(roleName) {
+            // Permission names that don't read well when split by capitals get an explicit label.
+            const overrides = { Dues: 'Customer Dues' };
+            if (overrides[roleName]) return overrides[roleName];
             return roleName
                 .replace(/([A-Z])/g, ' $1')
                 .replace(/^./, s => s.toUpperCase())
