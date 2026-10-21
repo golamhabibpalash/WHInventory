@@ -64,8 +64,32 @@
                                                 </small>
                                             </div>
                                             <div class="col-md-4">
-                                                <label for="Url">{{ t('quickShortcut.link') }}</label>
-                                                <input v-model="state.url" type="text" class="form-control" placeholder="/PurchaseOrders/PurchaseOrderList" v-bind:disabled="state.deleteMode">
+                                                <label for="Target">{{ t('quickShortcut.target') }}</label>
+                                                <select id="Target" class="form-select" v-model="state.target" v-on:change="handler.onTargetChange" v-bind:disabled="state.deleteMode">
+                                                    <option value="">{{ t('quickShortcut.selectTarget') }}</option>
+                                                    <option v-for="tg in targets" v-bind:key="tg.key" v-bind:value="tg.key">{{ tg.label }}</option>
+                                                    <option v-bind:value="customKey">{{ t('quickShortcut.customLink') }}</option>
+                                                </select>
+                                                <label class="text-danger" v-if="state.target !== customKey">{{ state.errors.url }}</label>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2" v-if="targetSupportsAdd || state.target === customKey">
+                                            <div class="col-md-8" v-if="targetSupportsAdd">
+                                                <label>{{ t('quickShortcut.action') }}</label>
+                                                <div class="d-flex align-items-center gap-3 mt-1">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" id="ActionPage" value="page" v-model="state.action" v-bind:disabled="state.deleteMode">
+                                                        <label class="form-check-label" for="ActionPage">{{ t('quickShortcut.actionOpenPage') }}</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" id="ActionAdd" value="add" v-model="state.action" v-bind:disabled="state.deleteMode">
+                                                        <label class="form-check-label" for="ActionAdd">{{ t('quickShortcut.actionOpenAdd') }}</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4" v-if="state.target === customKey">
+                                                <label for="CustomUrl">{{ t('quickShortcut.link') }}</label>
+                                                <input id="CustomUrl" v-model="state.url" type="text" class="form-control" placeholder="/PurchaseOrders/PurchaseOrderList" v-bind:disabled="state.deleteMode">
                                                 <label class="text-danger">{{ state.errors.url }}</label>
                                             </div>
                                         </div>

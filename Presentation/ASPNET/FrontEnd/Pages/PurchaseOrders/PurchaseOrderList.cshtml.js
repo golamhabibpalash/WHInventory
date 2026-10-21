@@ -1285,10 +1285,7 @@ const App = {
                         }
 
                         if (args.item.id === 'AddCustom') {
-                            state.deleteMode = false;
-                            state.mainTitle = 'Add Purchase Order';
-                            resetFormState();
-                            mainModal.obj.show();
+                            openAddModal();
                         }
 
                         if (args.item.id === 'EditCustom') {
@@ -1590,6 +1587,15 @@ const App = {
             }
         };
 
+        // Open a blank Add Purchase Order modal. Shared by the toolbar Add button and the
+        // Quick Shortcut "open add form" intent (/…?quickAction=add).
+        const openAddModal = () => {
+            state.deleteMode = false;
+            state.mainTitle = 'Add Purchase Order';
+            resetFormState();
+            mainModal.obj.show();
+        };
+
         const viewModal = {
             obj: null,
             create: () => {
@@ -1618,6 +1624,11 @@ const App = {
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
                 orderDatePicker.create();
                 numberText.create();
+
+                // Quick Shortcut "open add form" intent (/…?quickAction=add) opens the add modal on load.
+                if (new URLSearchParams(window.location.search).get('quickAction') === 'add') {
+                    openAddModal();
+                }
 
                 Promise.all([
                     methods.populateVendorListLookupData(),

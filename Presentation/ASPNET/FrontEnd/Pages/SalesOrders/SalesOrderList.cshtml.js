@@ -2068,6 +2068,13 @@ const App = {
                 mainModalRef.value?.addEventListener('hidden.bs.modal', methods.onMainModalHidden);
                 orderDatePicker.create();
 
+                // Quick Shortcut "open add form" intent: /SalesOrders/SalesOrderList?quickAction=add
+                // lands here and opens the New Sales Order modal straight away. Order defaults are
+                // re-applied once the lookups below resolve (the same path a toolbar Add uses).
+                if (new URLSearchParams(window.location.search).get('quickAction') === 'add') {
+                    openAddModal();
+                }
+
                 Promise.all([
                     methods.populateCustomerListLookupData(),
                     methods.populateTaxListLookupData(),

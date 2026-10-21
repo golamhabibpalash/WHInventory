@@ -8,6 +8,10 @@ const App = {
             name: '',
             icon: '',
             url: '',
+            // Form-authoring fields that compose/parse `url` (see SHORTCUT_TARGETS). `target` is a
+            // catalog key or CUSTOM_TARGET; `action` is 'page' or 'add' (add appends ?quickAction=add).
+            target: '',
+            action: 'page',
             sortOrder: 0,
             errors: {
                 name: '',
@@ -17,6 +21,49 @@ const App = {
             isSubmitting: false
         });
 
+        // Pages offered in the Target dropdown. supportsAdd => the page understands the
+        // ?quickAction=add intent and auto-opens its "add" modal on load (wired in that page's
+        // onMounted). Keep paths in sync with the real Razor page routes.
+        const SHORTCUT_TARGETS = [
+            { key: 'sales-order', label: 'Sales Orders', path: '/SalesOrders/SalesOrderList', icon: 'fas fa-cash-register', supportsAdd: true },
+            { key: 'purchase-order', label: 'Purchase Orders', path: '/PurchaseOrders/PurchaseOrderList', icon: 'fas fa-file-invoice', supportsAdd: true },
+            { key: 'delivery-order', label: 'Delivery Orders', path: '/DeliveryOrders/DeliveryOrderList', icon: 'fas fa-truck', supportsAdd: false },
+            { key: 'goods-receive', label: 'Goods Receives', path: '/GoodsReceives/GoodsReceiveList', icon: 'fas fa-dolly-flatbed', supportsAdd: false },
+            { key: 'product', label: 'Products', path: '/Products/ProductList', icon: 'fas fa-box', supportsAdd: false },
+            { key: 'customer', label: 'Customers', path: '/Customers/CustomerList', icon: 'fas fa-users', supportsAdd: false },
+            { key: 'vendor', label: 'Vendors', path: '/Vendors/VendorList', icon: 'fas fa-truck-loading', supportsAdd: false }
+        ];
+        const CUSTOM_TARGET = 'custom';
+
+        const selectedTarget = () => SHORTCUT_TARGETS.find(t => t.key === state.target) || null;
+
+        const targetSupportsAdd = Vue.computed(() => !!selectedTarget()?.supportsAdd);
+
+        // Compose the stored URL from the picker (or the typed custom link).
+        const resolveUrl = () => {
+            if (state.target === CUSTOM_TARGET) return (state.url || '').trim();
+            const t = selectedTarget();
+            if (!t) return '';
+            return (t.supportsAdd && state.action === 'add') ? `${t.path}?quickAction=add` : t.path;
+        };
+
+        // Split a stored URL back into the picker fields (for Edit/Delete). An unknown path falls
+        // back to the Custom link so legacy/hand-made shortcuts stay editable.
+        const applyUrlToForm = (url) => {
+            const raw = String(url || '');
+            const [path, query] = raw.split('?');
+            const t = SHORTCUT_TARGETS.find(x => x.path.toLowerCase() === (path || '').toLowerCase());
+            if (!t) {
+                state.target = CUSTOM_TARGET;
+                state.action = 'page';
+                state.url = raw;
+                return;
+            }
+            state.target = t.key;
+            state.action = (t.supportsAdd && new URLSearchParams(query || '').get('quickAction') === 'add') ? 'add' : 'page';
+            state.url = '';
+        };
+
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
         const nameRef = Vue.ref(null);
@@ -24,6 +71,8 @@ const App = {
         Vue.watch(() => state.name, () => { state.errors.name = ''; });
         Vue.watch(() => state.icon, () => { state.errors.icon = ''; });
         Vue.watch(() => state.url, () => { state.errors.url = ''; });
+        Vue.watch(() => state.target, () => { state.errors.url = ''; });
+        Vue.watch(() => state.action, () => { state.errors.url = ''; });
 
         const validateForm = function () {
             state.errors.name = '';
@@ -40,10 +89,14 @@ const App = {
                 state.errors.icon = I18n.t('quickShortcut.iconRequired');
                 isValid = false;
             }
-            if (!state.url) {
+            const resolvedUrl = resolveUrl();
+            if (!state.target) {
+                state.errors.url = I18n.t('quickShortcut.targetRequired');
+                isValid = false;
+            } else if (!resolvedUrl) {
                 state.errors.url = I18n.t('quickShortcut.linkRequired');
                 isValid = false;
-            } else if (!state.url.startsWith('/')) {
+            } else if (!resolvedUrl.startsWith('/')) {
                 state.errors.url = "Link must start with '/', e.g. /PurchaseOrders/PurchaseOrderList.";
                 isValid = false;
             }
@@ -56,6 +109,8 @@ const App = {
             state.name = '';
             state.icon = '';
             state.url = '';
+            state.target = '';
+            state.action = 'page';
             state.sortOrder = 0;
             state.errors = {
                 name: '',
@@ -116,6 +171,17 @@ const App = {
         };
 
         const handler = {
+            // Picking a target pre-fills name/icon when blank and clears a stale "add" choice on
+            // page-only targets. The admin can still override name/icon afterwards.
+            onTargetChange: () => {
+                const t = selectedTarget();
+                if (t) {
+                    if (!state.name) state.name = t.label;
+                    if (!state.icon) state.icon = t.icon;
+                    if (!t.supportsAdd) state.action = 'page';
+                }
+                state.errors.url = '';
+            },
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -124,11 +190,12 @@ const App = {
                         return;
                     }
 
+                    const resolvedUrl = resolveUrl();
                     const response = state.id === ''
-                        ? await services.createMainData(state.name, state.icon, state.url, state.sortOrder || 0, StorageManager.getUserId())
+                        ? await services.createMainData(state.name, state.icon, resolvedUrl, state.sortOrder || 0, StorageManager.getUserId())
                         : state.deleteMode
                             ? await services.deleteMainData(state.id, StorageManager.getUserId())
-                            : await services.updateMainData(state.id, state.name, state.icon, state.url, state.sortOrder || 0, StorageManager.getUserId());
+                            : await services.updateMainData(state.id, state.name, state.icon, resolvedUrl, state.sortOrder || 0, StorageManager.getUserId());
 
                     if (response.data.code === 200) {
                         await methods.populateMainData();
@@ -139,7 +206,7 @@ const App = {
                             state.id = response?.data?.content?.data.id ?? '';
                             state.name = response?.data?.content?.data.name ?? '';
                             state.icon = response?.data?.content?.data.icon ?? '';
-                            state.url = response?.data?.content?.data.url ?? '';
+                            applyUrlToForm(response?.data?.content?.data.url ?? '');
                             state.sortOrder = response?.data?.content?.data.sortOrder ?? 0;
 
                             Swal.fire({
@@ -311,7 +378,7 @@ const App = {
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.icon = selectedRecord.icon ?? '';
-                                state.url = selectedRecord.url ?? '';
+                                applyUrlToForm(selectedRecord.url);
                                 state.sortOrder = selectedRecord.sortOrder ?? 0;
                                 mainModal.obj.show();
                             }
@@ -325,7 +392,7 @@ const App = {
                                 state.id = selectedRecord.id ?? '';
                                 state.name = selectedRecord.name ?? '';
                                 state.icon = selectedRecord.icon ?? '';
-                                state.url = selectedRecord.url ?? '';
+                                applyUrlToForm(selectedRecord.url);
                                 state.sortOrder = selectedRecord.sortOrder ?? 0;
                                 mainModal.obj.show();
                             }
@@ -355,6 +422,9 @@ const App = {
             mainGridRef,
             mainModalRef,
             nameRef,
+            targets: SHORTCUT_TARGETS,
+            customKey: CUSTOM_TARGET,
+            targetSupportsAdd,
             state,
             handler,
             t: I18n.t,
