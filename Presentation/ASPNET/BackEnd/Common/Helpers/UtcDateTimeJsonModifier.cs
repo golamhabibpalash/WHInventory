@@ -14,12 +14,12 @@ namespace ASPNET.BackEnd.Common.Helpers;
 /// JavaScript reads them as browser-local — the clock mismatch users see outside the server's zone.
 ///
 /// The naming convention in this codebase is that UTC instants end in "Utc". This modifier attaches
-/// a <see cref="UtcDateTimeConverter"/> to exactly those properties, leaving business dates
-/// (OrderDate, MovementDate, DeliveryDate, ...) timezone-naive so no zone can shift them by a day.
+/// a converter to exactly those properties, leaving business dates (OrderDate, MovementDate,
+/// DeliveryDate, ...) timezone-naive so no zone can shift them by a day.
 /// </summary>
 public static class UtcDateTimeJsonModifier
 {
-    private static readonly UtcDateTimeConverter _converter = new();
+    private static readonly UtcDateTimeConverterFactory _converter = new();
 
     public static void Apply(JsonTypeInfo typeInfo)
     {
@@ -30,11 +30,7 @@ public static class UtcDateTimeJsonModifier
 
         foreach (var property in typeInfo.Properties)
         {
-            var name = property.Name;
-            var isUtc = name.EndsWith("Utc", StringComparison.OrdinalIgnoreCase)
-                || name.EndsWith("UtcDate", StringComparison.OrdinalIgnoreCase);
-
-            if (!isUtc)
+            if (!property.Name.EndsWith("Utc", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -42,8 +38,52 @@ public static class UtcDateTimeJsonModifier
             var propertyType = property.PropertyType;
             if (propertyType == typeof(DateTime) || propertyType == typeof(DateTime?))
             {
+                // A factory (not a JsonConverter<DateTime>) is required so the converter can also be
+                // used for DateTime? properties; binding a JsonConverter<DateTime> to a nullable
+                // property makes serialization throw at runtime.
                 property.CustomConverter = _converter;
             }
+        }
+    }
+
+    private sealed class UtcDateTimeConverterFactory : JsonConverterFactory
+    {
+        private readonly UtcDateTimeConverter _converter = new();
+        private readonly NullableUtcDateTimeConverter _nullableConverter = new();
+
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return typeToConvert == typeof(DateTime) || typeToConvert == typeof(DateTime?);
+        }
+
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+        {
+            return typeToConvert == typeof(DateTime?) ? _nullableConverter : _converter;
+        }
+    }
+
+    private sealed class NullableUtcDateTimeConverter : JsonConverter<DateTime?>
+    {
+        public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var value = reader.GetString();
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            return DateTime.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+        {
+            if (value == null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
+
+            UtcDateTimeConverter.WriteUtc(writer, value.Value);
         }
     }
 
@@ -61,6 +101,11 @@ public static class UtcDateTimeJsonModifier
         }
 
         public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+        {
+            WriteUtc(writer, value);
+        }
+
+        internal static void WriteUtc(Utf8JsonWriter writer, DateTime value)
         {
             var utc = value.Kind switch
             {

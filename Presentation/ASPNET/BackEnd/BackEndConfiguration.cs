@@ -45,10 +45,12 @@ public static class BackEndConfiguration
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
                 options.JsonSerializerOptions.WriteIndented = true;
-                options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
+                // Append rather than replace: assigning TypeInfoResolver directly would drop the
+                // framework's default resolver chain (polymorphism, cycles, etc.).
+                options.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, new DefaultJsonTypeInfoResolver
                 {
                     Modifiers = { UtcDateTimeJsonModifier.Apply }
-                };
+                });
             });
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
