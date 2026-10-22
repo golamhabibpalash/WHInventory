@@ -9,9 +9,11 @@ using ASPNET.BackEnd.Hubs;
 using Infrastructure;
 using Infrastructure.DataAccessManager.EFCore;
 using Infrastructure.SeedManager;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization.Metadata;
+using System.Threading.RateLimiting;
 
 namespace ASPNET.BackEnd;
 
@@ -96,8 +98,37 @@ public static class BackEndConfiguration
         //>>> Business-timezone clock (appsettings.json -> TimeZoneId)
         services.AddSingleton<IBusinessClock, BusinessClock>();
 
+        //>>> Real client IP behind the Cloudflare tunnel (compose exposes no direct app port), so
+        //>>> per-IP rate limiting partitions by the actual caller rather than the proxy.
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
+
+        //>>> Throttle anonymous auth endpoints (login/register/password reset/refresh) to blunt
+        //>>> brute-force and enumeration. Per-account password attempts are already locked out by
+        //>>> ASP.NET Identity; this caps request volume per client IP as well.
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy(AuthRateLimitPolicy, httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 15,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
+        });
+
         return services;
     }
+
+    //>>> Rate-limit policy name applied to the sensitive anonymous auth endpoints.
+    public const string AuthRateLimitPolicy = "auth";
 
     public static IEndpointRouteBuilder MapBackEndRoutes(this IEndpointRouteBuilder endpoints)
     {
@@ -114,6 +145,12 @@ public static class BackEndConfiguration
         IConfiguration configuration
         )
     {
+        // >>> Refuse to boot a non-Development host that still carries the repo's placeholder
+        // secrets. The JWT signing key is symmetric (HS256): if the committed default survives
+        // into production, anyone can forge a token with any TenantId claim and read or modify
+        // every tenant's data, defeating the EF global tenant filters entirely. Fail closed.
+        GuardProductionSecrets(environment, configuration);
+
         // >>> Create database
         host.CreateDatabase();
 
@@ -121,7 +158,11 @@ public static class BackEndConfiguration
         host.SeedSystemData();
 
         //seed database with demo data
-        if (configuration.GetValue<bool>("IsDemoVersion"))
+        // Demo/sample data must never land in a production database, even if the flag is left on
+        // (the repo ships IsDemoVersion=true for developer convenience and there is no guarantee a
+        // production deployment overrides it). appsettings.Production.json also sets it false; this
+        // is the belt-and-braces guard that holds even when that file is absent.
+        if (configuration.GetValue<bool>("IsDemoVersion") && !environment.IsProduction())
         {
             host.SeedDemoData();
         }
@@ -138,5 +179,36 @@ public static class BackEndConfiguration
         return app;
     }
 
+    // Known-insecure values shipped in the repo's appsettings.json. These are safe only in
+    // Development; any other environment must override them with real secrets.
+    private const string PlaceholderJwtKey = "YourVeryStrongAndSecureSecretKeyWhichIs32Chars!";
+    private const string PlaceholderAdminPassword = "123456";
+
+    private static void GuardProductionSecrets(IWebHostEnvironment environment, IConfiguration configuration)
+    {
+        if (environment.IsDevelopment())
+        {
+            return;
+        }
+
+        var violations = new List<string>();
+
+        if (string.Equals(configuration["Jwt:Key"], PlaceholderJwtKey, StringComparison.Ordinal))
+        {
+            violations.Add("Jwt:Key is still the repo placeholder. Set a unique secret (>= 32 chars) via environment/secret store.");
+        }
+
+        if (string.Equals(configuration["AspNetIdentity:DefaultAdmin:Password"], PlaceholderAdminPassword, StringComparison.Ordinal))
+        {
+            violations.Add("AspNetIdentity:DefaultAdmin:Password is still the default '123456'. Set a strong password.");
+        }
+
+        if (violations.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Refusing to start in the '{environment.EnvironmentName}' environment with insecure default secrets:"
+                + Environment.NewLine + " - " + string.Join(Environment.NewLine + " - ", violations));
+        }
+    }
 
 }

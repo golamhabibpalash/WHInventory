@@ -32,6 +32,10 @@ services:
       TZ: Asia/Dhaka
       ConnectionStrings__DefaultConnection: >-
         Host=db;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+      # Real secrets — the app refuses to start in Production with the repo placeholders.
+      # Supply these in .env (see .env.example). JWT_KEY must be >= 32 characters.
+      Jwt__Key: ${JWT_KEY}
+      AspNetIdentity__DefaultAdmin__Password: ${ADMIN_PASSWORD}
     volumes:
       - app_data:/app/wwwroot/app_data
     networks:

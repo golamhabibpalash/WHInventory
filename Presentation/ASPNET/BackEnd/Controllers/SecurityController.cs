@@ -6,6 +6,7 @@ using ASPNET.BackEnd.Common.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace ASPNET.BackEnd.Controllers;
@@ -36,6 +37,7 @@ public class SecurityController : BaseApiController
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(BackEndConfiguration.AuthRateLimitPolicy)]
     [HttpPost("Login")]
     public async Task<ActionResult<ApiSuccessResult<LoginResult>>> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
@@ -64,6 +66,7 @@ public class SecurityController : BaseApiController
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(BackEndConfiguration.AuthRateLimitPolicy)]
     [HttpPost("Register")]
     public async Task<ActionResult<ApiSuccessResult<RegisterResult>>> RegisterAsync(
         RegisterRequest request,
@@ -101,6 +104,7 @@ public class SecurityController : BaseApiController
 
 
     [AllowAnonymous]
+    [EnableRateLimiting(BackEndConfiguration.AuthRateLimitPolicy)]
     [HttpPost("ForgotPassword")]
     public async Task<ActionResult<ApiSuccessResult<ForgotPasswordResult>>> ForgotPasswordAsync(
         ForgotPasswordRequest request,
@@ -118,6 +122,7 @@ public class SecurityController : BaseApiController
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(BackEndConfiguration.AuthRateLimitPolicy)]
     [HttpPost("ForgotPasswordConfirmation")]
     public async Task<ActionResult<ApiSuccessResult<ForgotPasswordConfirmationResult>>> ForgotPasswordConfirmationAsync(
         ForgotPasswordConfirmationRequest request,
@@ -134,6 +139,7 @@ public class SecurityController : BaseApiController
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(BackEndConfiguration.AuthRateLimitPolicy)]
     [HttpPost("RefreshToken")]
     public async Task<ActionResult<ApiSuccessResult<RefreshTokenResult>>> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
