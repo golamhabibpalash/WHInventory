@@ -15,7 +15,7 @@ public class CompanyController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "Companies")]
     [HttpPost("UpdateCompanyLogo")]
     public async Task<ActionResult<ApiSuccessResult<UpdateCompanyLogoResult>>> UpdateCompanyLogoAsync(UpdateCompanyLogoRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class CompanyController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Companies")]
     [HttpPost("CreateCompany")]
     public async Task<ActionResult<ApiSuccessResult<CreateCompanyResult>>> CreateCompanyAsync(CreateCompanyRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class CompanyController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Companies")]
     [HttpPost("UpdateCompany")]
     public async Task<ActionResult<ApiSuccessResult<UpdateCompanyResult>>> UpdateCompanyAsync(UpdateCompanyRequest request, CancellationToken cancellationToken)
     {

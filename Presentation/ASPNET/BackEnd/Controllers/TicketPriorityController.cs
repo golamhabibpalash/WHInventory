@@ -15,7 +15,7 @@ public class TicketPriorityController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "TicketConfigurations")]
     [HttpPost("CreateTicketPriority")]
     public async Task<ActionResult<ApiSuccessResult<CreateTicketPriorityResult>>> CreateTicketPriorityAsync(CreateTicketPriorityRequest request, CancellationToken cancellationToken)
     {
@@ -23,7 +23,7 @@ public class TicketPriorityController : BaseApiController
         return Ok(new ApiSuccessResult<CreateTicketPriorityResult> { Code = StatusCodes.Status200OK, Message = $"Success executing {nameof(CreateTicketPriorityAsync)}", Content = response });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TicketConfigurations")]
     [HttpPost("UpdateTicketPriority")]
     public async Task<ActionResult<ApiSuccessResult<UpdateTicketPriorityResult>>> UpdateTicketPriorityAsync(UpdateTicketPriorityRequest request, CancellationToken cancellationToken)
     {
@@ -31,7 +31,7 @@ public class TicketPriorityController : BaseApiController
         return Ok(new ApiSuccessResult<UpdateTicketPriorityResult> { Code = StatusCodes.Status200OK, Message = $"Success executing {nameof(UpdateTicketPriorityAsync)}", Content = response });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TicketConfigurations")]
     [HttpPost("DeleteTicketPriority")]
     public async Task<ActionResult<ApiSuccessResult<DeleteTicketPriorityResult>>> DeleteTicketPriorityAsync(DeleteTicketPriorityRequest request, CancellationToken cancellationToken)
     {

@@ -15,7 +15,7 @@ public class PaymentController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "Dues,SalesOrders")]
     [HttpPost("CreatePayment")]
     public async Task<ActionResult<ApiSuccessResult<CreatePaymentResult>>> CreatePaymentAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class PaymentController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Dues,SalesOrders")]
     [HttpPost("UpdatePayment")]
     public async Task<ActionResult<ApiSuccessResult<UpdatePaymentResult>>> UpdatePaymentAsync(UpdatePaymentRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class PaymentController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Dues,SalesOrders")]
     [HttpPost("DeletePayment")]
     public async Task<ActionResult<ApiSuccessResult<DeletePaymentResult>>> DeletePaymentAsync(DeletePaymentRequest request, CancellationToken cancellationToken)
     {

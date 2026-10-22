@@ -17,7 +17,7 @@ public class ProductPriceController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "ProductPrices")]
     [HttpPost("CreateProductPrice")]
     public async Task<ActionResult<ApiSuccessResult<CreateProductPriceResult>>> CreateProductPriceAsync(CreateProductPriceRequest request, CancellationToken cancellationToken)
     {
@@ -31,7 +31,7 @@ public class ProductPriceController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "ProductPrices")]
     [HttpPost("UpdateProductPrice")]
     public async Task<ActionResult<ApiSuccessResult<UpdateProductPriceResult>>> UpdateProductPriceAsync(UpdateProductPriceRequest request, CancellationToken cancellationToken)
     {
@@ -45,7 +45,7 @@ public class ProductPriceController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "ProductPrices")]
     [HttpPost("DeleteProductPrice")]
     public async Task<ActionResult<ApiSuccessResult<DeleteProductPriceResult>>> DeleteProductPriceAsync(DeleteProductPriceRequest request, CancellationToken cancellationToken)
     {
@@ -78,7 +78,7 @@ public class ProductPriceController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "ProductPrices")]
     [HttpPost("CreateQuantityBreak")]
     public async Task<ActionResult<ApiSuccessResult<CreateQuantityBreakResult>>> CreateQuantityBreakAsync(CreateQuantityBreakRequest request, CancellationToken cancellationToken)
     {
@@ -92,7 +92,7 @@ public class ProductPriceController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "ProductPrices")]
     [HttpPost("UpdateQuantityBreak")]
     public async Task<ActionResult<ApiSuccessResult<UpdateQuantityBreakResult>>> UpdateQuantityBreakAsync(UpdateQuantityBreakRequest request, CancellationToken cancellationToken)
     {
@@ -106,7 +106,7 @@ public class ProductPriceController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "ProductPrices")]
     [HttpPost("DeleteQuantityBreak")]
     public async Task<ActionResult<ApiSuccessResult<DeleteQuantityBreakResult>>> DeleteQuantityBreakAsync(DeleteQuantityBreakRequest request, CancellationToken cancellationToken)
     {

@@ -15,7 +15,7 @@ public class PurchaseOrderController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseOrders")]
     [HttpPost("CreatePurchaseOrder")]
     public async Task<ActionResult<ApiSuccessResult<CreatePurchaseOrderResult>>> CreatePurchaseOrderAsync(CreatePurchaseOrderRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class PurchaseOrderController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseOrders")]
     [HttpPost("UpdatePurchaseOrder")]
     public async Task<ActionResult<ApiSuccessResult<UpdatePurchaseOrderResult>>> UpdatePurchaseOrderAsync(UpdatePurchaseOrderRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class PurchaseOrderController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseOrders")]
     [HttpPost("DeletePurchaseOrder")]
     public async Task<ActionResult<ApiSuccessResult<DeletePurchaseOrderResult>>> DeletePurchaseOrderAsync(DeletePurchaseOrderRequest request, CancellationToken cancellationToken)
     {
@@ -57,7 +57,7 @@ public class PurchaseOrderController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseOrders")]
     [HttpPost("ReceiveNow")]
     public async Task<ActionResult<ApiSuccessResult<ReceivePurchaseOrderNowResult>>> ReceiveNowAsync(ReceivePurchaseOrderNowRequest request, CancellationToken cancellationToken)
     {

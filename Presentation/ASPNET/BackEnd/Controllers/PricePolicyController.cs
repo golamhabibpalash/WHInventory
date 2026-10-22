@@ -15,7 +15,7 @@ public class PricePolicyController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "PricePolicies")]
     [HttpPost("CreatePricePolicy")]
     public async Task<ActionResult<ApiSuccessResult<CreatePricePolicyResult>>> CreatePricePolicyAsync(CreatePricePolicyRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class PricePolicyController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PricePolicies")]
     [HttpPost("UpdatePricePolicy")]
     public async Task<ActionResult<ApiSuccessResult<UpdatePricePolicyResult>>> UpdatePricePolicyAsync(UpdatePricePolicyRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class PricePolicyController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PricePolicies")]
     [HttpPost("DeletePricePolicy")]
     public async Task<ActionResult<ApiSuccessResult<DeletePricePolicyResult>>> DeletePricePolicyAsync(DeletePricePolicyRequest request, CancellationToken cancellationToken)
     {

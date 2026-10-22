@@ -15,7 +15,7 @@ public class VendorGroupController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "VendorGroups")]
     [HttpPost("CreateVendorGroup")]
     public async Task<ActionResult<ApiSuccessResult<CreateVendorGroupResult>>> CreateVendorGroupAsync(CreateVendorGroupRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class VendorGroupController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "VendorGroups")]
     [HttpPost("UpdateVendorGroup")]
     public async Task<ActionResult<ApiSuccessResult<UpdateVendorGroupResult>>> UpdateVendorGroupAsync(UpdateVendorGroupRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class VendorGroupController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "VendorGroups")]
     [HttpPost("DeleteVendorGroup")]
     public async Task<ActionResult<ApiSuccessResult<DeleteVendorGroupResult>>> DeleteVendorGroupAsync(DeleteVendorGroupRequest request, CancellationToken cancellationToken)
     {

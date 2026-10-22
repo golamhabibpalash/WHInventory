@@ -15,7 +15,7 @@ public class DeliveryOrderController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "DeliveryOrders")]
     [HttpPost("CreateDeliveryOrder")]
     public async Task<ActionResult<ApiSuccessResult<CreateDeliveryOrderResult>>> CreateDeliveryOrderAsync(CreateDeliveryOrderRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class DeliveryOrderController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "DeliveryOrders")]
     [HttpPost("UpdateDeliveryOrder")]
     public async Task<ActionResult<ApiSuccessResult<UpdateDeliveryOrderResult>>> UpdateDeliveryOrderAsync(UpdateDeliveryOrderRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class DeliveryOrderController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "DeliveryOrders")]
     [HttpPost("DeleteDeliveryOrder")]
     public async Task<ActionResult<ApiSuccessResult<DeleteDeliveryOrderResult>>> DeleteDeliveryOrderAsync(DeleteDeliveryOrderRequest request, CancellationToken cancellationToken)
     {

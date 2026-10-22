@@ -15,7 +15,7 @@ public class GoodsReceiveController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "GoodsReceives")]
     [HttpPost("CreateGoodsReceive")]
     public async Task<ActionResult<ApiSuccessResult<CreateGoodsReceiveResult>>> CreateGoodsReceiveAsync(CreateGoodsReceiveRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class GoodsReceiveController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "GoodsReceives")]
     [HttpPost("UpdateGoodsReceive")]
     public async Task<ActionResult<ApiSuccessResult<UpdateGoodsReceiveResult>>> UpdateGoodsReceiveAsync(UpdateGoodsReceiveRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class GoodsReceiveController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "GoodsReceives")]
     [HttpPost("DeleteGoodsReceive")]
     public async Task<ActionResult<ApiSuccessResult<DeleteGoodsReceiveResult>>> DeleteGoodsReceiveAsync(DeleteGoodsReceiveRequest request, CancellationToken cancellationToken)
     {

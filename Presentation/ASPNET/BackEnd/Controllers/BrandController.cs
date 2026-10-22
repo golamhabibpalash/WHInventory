@@ -16,7 +16,7 @@ public class BrandController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "Brands")]
     [HttpPost("CreateBrand")]
     public async Task<ActionResult<ApiSuccessResult<CreateBrandResult>>> CreateBrandAsync(CreateBrandRequest request, CancellationToken cancellationToken)
     {
@@ -30,7 +30,7 @@ public class BrandController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Brands")]
     [HttpPost("UpdateBrand")]
     public async Task<ActionResult<ApiSuccessResult<UpdateBrandResult>>> UpdateBrandAsync(UpdateBrandRequest request, CancellationToken cancellationToken)
     {
@@ -44,7 +44,7 @@ public class BrandController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Brands")]
     [HttpPost("DeleteBrand")]
     public async Task<ActionResult<ApiSuccessResult<DeleteBrandResult>>> DeleteBrandAsync(DeleteBrandRequest request, CancellationToken cancellationToken)
     {
@@ -58,7 +58,7 @@ public class BrandController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Brands")]
     [HttpPost("ToggleBrandStatus")]
     public async Task<ActionResult<ApiSuccessResult<ToggleBrandStatusResult>>> ToggleBrandStatusAsync(ToggleBrandStatusRequest request, CancellationToken cancellationToken)
     {
@@ -117,7 +117,7 @@ public class BrandController : BaseApiController
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "brand-import-template.xlsx");
     }
 
-    [Authorize]
+    [Authorize(Roles = "Brands")]
     [HttpPost("BulkCreateBrand")]
     public async Task<ActionResult<ApiSuccessResult<BulkCreateBrandResult>>> BulkCreateBrandAsync(IFormFile file, CancellationToken cancellationToken)
     {

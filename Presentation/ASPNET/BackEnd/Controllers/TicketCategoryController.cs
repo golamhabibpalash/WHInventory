@@ -15,7 +15,7 @@ public class TicketCategoryController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "TicketConfigurations")]
     [HttpPost("CreateTicketCategory")]
     public async Task<ActionResult<ApiSuccessResult<CreateTicketCategoryResult>>> CreateTicketCategoryAsync(CreateTicketCategoryRequest request, CancellationToken cancellationToken)
     {
@@ -23,7 +23,7 @@ public class TicketCategoryController : BaseApiController
         return Ok(new ApiSuccessResult<CreateTicketCategoryResult> { Code = StatusCodes.Status200OK, Message = $"Success executing {nameof(CreateTicketCategoryAsync)}", Content = response });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TicketConfigurations")]
     [HttpPost("UpdateTicketCategory")]
     public async Task<ActionResult<ApiSuccessResult<UpdateTicketCategoryResult>>> UpdateTicketCategoryAsync(UpdateTicketCategoryRequest request, CancellationToken cancellationToken)
     {
@@ -31,7 +31,7 @@ public class TicketCategoryController : BaseApiController
         return Ok(new ApiSuccessResult<UpdateTicketCategoryResult> { Code = StatusCodes.Status200OK, Message = $"Success executing {nameof(UpdateTicketCategoryAsync)}", Content = response });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TicketConfigurations")]
     [HttpPost("DeleteTicketCategory")]
     public async Task<ActionResult<ApiSuccessResult<DeleteTicketCategoryResult>>> DeleteTicketCategoryAsync(DeleteTicketCategoryRequest request, CancellationToken cancellationToken)
     {

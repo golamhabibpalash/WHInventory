@@ -15,7 +15,7 @@ public class TransferInController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferIns")]
     [HttpPost("CreateTransferIn")]
     public async Task<ActionResult<ApiSuccessResult<CreateTransferInResult>>> CreateTransferInAsync(CreateTransferInRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class TransferInController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferIns")]
     [HttpPost("UpdateTransferIn")]
     public async Task<ActionResult<ApiSuccessResult<UpdateTransferInResult>>> UpdateTransferInAsync(UpdateTransferInRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class TransferInController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferIns")]
     [HttpPost("DeleteTransferIn")]
     public async Task<ActionResult<ApiSuccessResult<DeleteTransferInResult>>> DeleteTransferInAsync(DeleteTransferInRequest request, CancellationToken cancellationToken)
     {

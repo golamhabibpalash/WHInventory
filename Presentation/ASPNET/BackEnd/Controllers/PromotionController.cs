@@ -15,7 +15,7 @@ public class PromotionController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "Promotions")]
     [HttpPost("CreatePromotion")]
     public async Task<ActionResult<ApiSuccessResult<CreatePromotionResult>>> CreatePromotionAsync(CreatePromotionRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class PromotionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Promotions")]
     [HttpPost("UpdatePromotion")]
     public async Task<ActionResult<ApiSuccessResult<UpdatePromotionResult>>> UpdatePromotionAsync(UpdatePromotionRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class PromotionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Promotions")]
     [HttpPost("DeletePromotion")]
     public async Task<ActionResult<ApiSuccessResult<DeletePromotionResult>>> DeletePromotionAsync(DeletePromotionRequest request, CancellationToken cancellationToken)
     {

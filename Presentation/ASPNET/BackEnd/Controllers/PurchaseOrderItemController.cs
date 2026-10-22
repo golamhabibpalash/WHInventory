@@ -15,7 +15,7 @@ public class PurchaseOrderItemController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseOrders")]
     [HttpPost("CreatePurchaseOrderItem")]
     public async Task<ActionResult<ApiSuccessResult<CreatePurchaseOrderItemResult>>> CreatePurchaseOrderItemAsync(CreatePurchaseOrderItemRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class PurchaseOrderItemController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseOrders")]
     [HttpPost("UpdatePurchaseOrderItem")]
     public async Task<ActionResult<ApiSuccessResult<UpdatePurchaseOrderItemResult>>> UpdatePurchaseOrderItemAsync(UpdatePurchaseOrderItemRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class PurchaseOrderItemController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseOrders")]
     [HttpPost("DeletePurchaseOrderItem")]
     public async Task<ActionResult<ApiSuccessResult<DeletePurchaseOrderItemResult>>> DeletePurchaseOrderItemAsync(DeletePurchaseOrderItemRequest request, CancellationToken cancellationToken)
     {

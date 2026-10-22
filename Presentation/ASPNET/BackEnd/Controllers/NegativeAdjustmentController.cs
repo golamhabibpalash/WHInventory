@@ -15,7 +15,7 @@ public class NegativeAdjustmentController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "NegativeAdjustments")]
     [HttpPost("CreateNegativeAdjustment")]
     public async Task<ActionResult<ApiSuccessResult<CreateNegativeAdjustmentResult>>> CreateNegativeAdjustmentAsync(CreateNegativeAdjustmentRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class NegativeAdjustmentController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "NegativeAdjustments")]
     [HttpPost("UpdateNegativeAdjustment")]
     public async Task<ActionResult<ApiSuccessResult<UpdateNegativeAdjustmentResult>>> UpdateNegativeAdjustmentAsync(UpdateNegativeAdjustmentRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class NegativeAdjustmentController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "NegativeAdjustments")]
     [HttpPost("DeleteNegativeAdjustment")]
     public async Task<ActionResult<ApiSuccessResult<DeleteNegativeAdjustmentResult>>> DeleteNegativeAdjustmentAsync(DeleteNegativeAdjustmentRequest request, CancellationToken cancellationToken)
     {

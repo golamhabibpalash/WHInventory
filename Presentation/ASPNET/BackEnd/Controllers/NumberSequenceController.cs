@@ -16,7 +16,7 @@ public class NumberSequenceController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "NumberSequences")]
     [HttpPost("UpdateNumberSequence")]
     public async Task<ActionResult<ApiSuccessResult<UpdateNumberSequenceResult>>> UpdateNumberSequenceAsync(UpdateNumberSequenceRequest request, CancellationToken cancellationToken)
     {

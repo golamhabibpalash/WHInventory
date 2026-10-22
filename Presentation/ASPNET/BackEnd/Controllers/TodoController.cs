@@ -15,7 +15,7 @@ public class TodoController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "Todos")]
     [HttpPost("CreateTodo")]
     public async Task<ActionResult<ApiSuccessResult<CreateTodoResult>>> CreateTodoAsync(CreateTodoRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class TodoController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Todos")]
     [HttpPost("UpdateTodo")]
     public async Task<ActionResult<ApiSuccessResult<UpdateTodoResult>>> UpdateTodoAsync(UpdateTodoRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class TodoController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Todos")]
     [HttpPost("DeleteTodo")]
     public async Task<ActionResult<ApiSuccessResult<DeleteTodoResult>>> DeleteTodoAsync(DeleteTodoRequest request, CancellationToken cancellationToken)
     {

@@ -15,7 +15,7 @@ public class StockCountController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "StockCounts")]
     [HttpPost("CreateStockCount")]
     public async Task<ActionResult<ApiSuccessResult<CreateStockCountResult>>> CreateStockCountAsync(CreateStockCountRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class StockCountController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "StockCounts")]
     [HttpPost("UpdateStockCount")]
     public async Task<ActionResult<ApiSuccessResult<UpdateStockCountResult>>> UpdateStockCountAsync(UpdateStockCountRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class StockCountController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "StockCounts")]
     [HttpPost("DeleteStockCount")]
     public async Task<ActionResult<ApiSuccessResult<DeleteStockCountResult>>> DeleteStockCountAsync(DeleteStockCountRequest request, CancellationToken cancellationToken)
     {

@@ -15,7 +15,7 @@ public class WarehouseController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "Warehouses")]
     [HttpPost("CreateWarehouse")]
     public async Task<ActionResult<ApiSuccessResult<CreateWarehouseResult>>> CreateWarehouseAsync(CreateWarehouseRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class WarehouseController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Warehouses")]
     [HttpPost("UpdateWarehouse")]
     public async Task<ActionResult<ApiSuccessResult<UpdateWarehouseResult>>> UpdateWarehouseAsync(UpdateWarehouseRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class WarehouseController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Warehouses")]
     [HttpPost("DeleteWarehouse")]
     public async Task<ActionResult<ApiSuccessResult<DeleteWarehouseResult>>> DeleteWarehouseAsync(DeleteWarehouseRequest request, CancellationToken cancellationToken)
     {

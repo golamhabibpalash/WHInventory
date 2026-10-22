@@ -15,7 +15,7 @@ public class TicketTagController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "TicketConfigurations")]
     [HttpPost("CreateTicketTag")]
     public async Task<ActionResult<ApiSuccessResult<CreateTicketTagResult>>> CreateTicketTagAsync(CreateTicketTagRequest request, CancellationToken cancellationToken)
     {
@@ -23,7 +23,7 @@ public class TicketTagController : BaseApiController
         return Ok(new ApiSuccessResult<CreateTicketTagResult> { Code = StatusCodes.Status200OK, Message = $"Success executing {nameof(CreateTicketTagAsync)}", Content = response });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TicketConfigurations")]
     [HttpPost("DeleteTicketTag")]
     public async Task<ActionResult<ApiSuccessResult<DeleteTicketTagResult>>> DeleteTicketTagAsync(DeleteTicketTagRequest request, CancellationToken cancellationToken)
     {

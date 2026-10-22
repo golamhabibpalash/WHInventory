@@ -15,7 +15,7 @@ public class SalesOrderController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesOrders")]
     [HttpPost("CreateSalesOrder")]
     public async Task<ActionResult<ApiSuccessResult<CreateSalesOrderResult>>> CreateSalesOrderAsync(CreateSalesOrderRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class SalesOrderController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesOrders")]
     [HttpPost("UpdateSalesOrder")]
     public async Task<ActionResult<ApiSuccessResult<UpdateSalesOrderResult>>> UpdateSalesOrderAsync(UpdateSalesOrderRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class SalesOrderController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesOrders")]
     [HttpPost("DeleteSalesOrder")]
     public async Task<ActionResult<ApiSuccessResult<DeleteSalesOrderResult>>> DeleteSalesOrderAsync(DeleteSalesOrderRequest request, CancellationToken cancellationToken)
     {
@@ -57,7 +57,7 @@ public class SalesOrderController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesOrders")]
     [HttpPost("DeliverNow")]
     public async Task<ActionResult<ApiSuccessResult<DeliverSalesOrderNowResult>>> DeliverNowAsync(DeliverSalesOrderNowRequest request, CancellationToken cancellationToken)
     {

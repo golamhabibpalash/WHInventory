@@ -15,7 +15,7 @@ public class QuickShortcutController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "QuickShortcuts")]
     [HttpPost("CreateQuickShortcut")]
     public async Task<ActionResult<ApiSuccessResult<CreateQuickShortcutResult>>> CreateQuickShortcutAsync(CreateQuickShortcutRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class QuickShortcutController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "QuickShortcuts")]
     [HttpPost("UpdateQuickShortcut")]
     public async Task<ActionResult<ApiSuccessResult<UpdateQuickShortcutResult>>> UpdateQuickShortcutAsync(UpdateQuickShortcutRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class QuickShortcutController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "QuickShortcuts")]
     [HttpPost("DeleteQuickShortcut")]
     public async Task<ActionResult<ApiSuccessResult<DeleteQuickShortcutResult>>> DeleteQuickShortcutAsync(DeleteQuickShortcutRequest request, CancellationToken cancellationToken)
     {

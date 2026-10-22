@@ -15,7 +15,7 @@ public class PurchaseReturnController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseReturns")]
     [HttpPost("CreatePurchaseReturn")]
     public async Task<ActionResult<ApiSuccessResult<CreatePurchaseReturnResult>>> CreatePurchaseReturnAsync(CreatePurchaseReturnRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class PurchaseReturnController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseReturns")]
     [HttpPost("UpdatePurchaseReturn")]
     public async Task<ActionResult<ApiSuccessResult<UpdatePurchaseReturnResult>>> UpdatePurchaseReturnAsync(UpdatePurchaseReturnRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class PurchaseReturnController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseReturns")]
     [HttpPost("DeletePurchaseReturn")]
     public async Task<ActionResult<ApiSuccessResult<DeletePurchaseReturnResult>>> DeletePurchaseReturnAsync(DeletePurchaseReturnRequest request, CancellationToken cancellationToken)
     {

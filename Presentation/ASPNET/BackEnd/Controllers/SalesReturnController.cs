@@ -15,7 +15,7 @@ public class SalesReturnController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesReturns")]
     [HttpPost("CreateSalesReturn")]
     public async Task<ActionResult<ApiSuccessResult<CreateSalesReturnResult>>> CreateSalesReturnAsync(CreateSalesReturnRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class SalesReturnController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesReturns")]
     [HttpPost("UpdateSalesReturn")]
     public async Task<ActionResult<ApiSuccessResult<UpdateSalesReturnResult>>> UpdateSalesReturnAsync(UpdateSalesReturnRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class SalesReturnController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesReturns")]
     [HttpPost("DeleteSalesReturn")]
     public async Task<ActionResult<ApiSuccessResult<DeleteSalesReturnResult>>> DeleteSalesReturnAsync(DeleteSalesReturnRequest request, CancellationToken cancellationToken)
     {

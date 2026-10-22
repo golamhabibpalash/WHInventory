@@ -15,7 +15,7 @@ public class ScrappingController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "Scrappings")]
     [HttpPost("CreateScrapping")]
     public async Task<ActionResult<ApiSuccessResult<CreateScrappingResult>>> CreateScrappingAsync(CreateScrappingRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class ScrappingController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Scrappings")]
     [HttpPost("UpdateScrapping")]
     public async Task<ActionResult<ApiSuccessResult<UpdateScrappingResult>>> UpdateScrappingAsync(UpdateScrappingRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class ScrappingController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Scrappings")]
     [HttpPost("DeleteScrapping")]
     public async Task<ActionResult<ApiSuccessResult<DeleteScrappingResult>>> DeleteScrappingAsync(DeleteScrappingRequest request, CancellationToken cancellationToken)
     {

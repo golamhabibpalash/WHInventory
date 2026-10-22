@@ -15,7 +15,7 @@ public class TransferOutController : BaseApiController
     {
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferOuts")]
     [HttpPost("CreateTransferOut")]
     public async Task<ActionResult<ApiSuccessResult<CreateTransferOutResult>>> CreateTransferOutAsync(CreateTransferOutRequest request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public class TransferOutController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferOuts")]
     [HttpPost("UpdateTransferOut")]
     public async Task<ActionResult<ApiSuccessResult<UpdateTransferOutResult>>> UpdateTransferOutAsync(UpdateTransferOutRequest request, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class TransferOutController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferOuts")]
     [HttpPost("DeleteTransferOut")]
     public async Task<ActionResult<ApiSuccessResult<DeleteTransferOutResult>>> DeleteTransferOutAsync(DeleteTransferOutRequest request, CancellationToken cancellationToken)
     {

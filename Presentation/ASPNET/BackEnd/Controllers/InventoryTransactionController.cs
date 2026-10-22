@@ -79,7 +79,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "DeliveryOrders")]
     [HttpPost("DeliveryOrderCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<DeliveryOrderCreateInvenTransResult>>> DeliveryOrderCreateInvenTransAsync(DeliveryOrderCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -93,7 +93,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "DeliveryOrders")]
     [HttpPost("DeliveryOrderUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<DeliveryOrderUpdateInvenTransResult>>> DeliveryOrderUpdateInvenTransAsync(DeliveryOrderUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -107,7 +107,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "DeliveryOrders")]
     [HttpPost("DeliveryOrderDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<DeliveryOrderDeleteInvenTransResult>>> DeliveryOrderDeleteInvenTransAsync(DeliveryOrderDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -139,7 +139,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesReturns")]
     [HttpPost("SalesReturnCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<SalesReturnCreateInvenTransResult>>> SalesReturnCreateInvenTransAsync(SalesReturnCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -153,7 +153,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesReturns")]
     [HttpPost("SalesReturnUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<SalesReturnUpdateInvenTransResult>>> SalesReturnUpdateInvenTransAsync(SalesReturnUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -167,7 +167,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "SalesReturns")]
     [HttpPost("SalesReturnDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<SalesReturnDeleteInvenTransResult>>> SalesReturnDeleteInvenTransAsync(SalesReturnDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -200,7 +200,7 @@ public class InventoryTransactionController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "GoodsReceives")]
     [HttpPost("GoodsReceiveCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<GoodsReceiveCreateInvenTransResult>>> GoodsReceiveCreateInvenTransAsync(GoodsReceiveCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -214,7 +214,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "GoodsReceives")]
     [HttpPost("GoodsReceiveUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<GoodsReceiveUpdateInvenTransResult>>> GoodsReceiveUpdateInvenTransAsync(GoodsReceiveUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -228,7 +228,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "GoodsReceives")]
     [HttpPost("GoodsReceiveDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<GoodsReceiveDeleteInvenTransResult>>> GoodsReceiveDeleteInvenTransAsync(GoodsReceiveDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -261,7 +261,7 @@ public class InventoryTransactionController : BaseApiController
     }
 
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseReturns")]
     [HttpPost("PurchaseReturnCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<PurchaseReturnCreateInvenTransResult>>> PurchaseReturnCreateInvenTransAsync(PurchaseReturnCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -275,7 +275,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseReturns")]
     [HttpPost("PurchaseReturnUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<PurchaseReturnUpdateInvenTransResult>>> PurchaseReturnUpdateInvenTransAsync(PurchaseReturnUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -289,7 +289,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PurchaseReturns")]
     [HttpPost("PurchaseReturnDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<PurchaseReturnDeleteInvenTransResult>>> PurchaseReturnDeleteInvenTransAsync(PurchaseReturnDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -321,7 +321,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferOuts")]
     [HttpPost("TransferOutCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<TransferOutCreateInvenTransResult>>> TransferOutCreateInvenTransAsync(TransferOutCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -335,7 +335,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferOuts")]
     [HttpPost("TransferOutUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<TransferOutUpdateInvenTransResult>>> TransferOutUpdateInvenTransAsync(TransferOutUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -349,7 +349,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferOuts")]
     [HttpPost("TransferOutDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<TransferOutDeleteInvenTransResult>>> TransferOutDeleteInvenTransAsync(TransferOutDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -381,7 +381,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferIns")]
     [HttpPost("TransferInCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<TransferInCreateInvenTransResult>>> TransferInCreateInvenTransAsync(TransferInCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -395,7 +395,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferIns")]
     [HttpPost("TransferInUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<TransferInUpdateInvenTransResult>>> TransferInUpdateInvenTransAsync(TransferInUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -409,7 +409,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "TransferIns")]
     [HttpPost("TransferInDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<TransferInDeleteInvenTransResult>>> TransferInDeleteInvenTransAsync(TransferInDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -441,7 +441,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PositiveAdjustments")]
     [HttpPost("PositiveAdjustmentCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<PositiveAdjustmentCreateInvenTransResult>>> PositiveAdjustmentCreateInvenTransAsync(PositiveAdjustmentCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -455,7 +455,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PositiveAdjustments")]
     [HttpPost("PositiveAdjustmentUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<PositiveAdjustmentUpdateInvenTransResult>>> PositiveAdjustmentUpdateInvenTransAsync(PositiveAdjustmentUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -469,7 +469,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "PositiveAdjustments")]
     [HttpPost("PositiveAdjustmentDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<PositiveAdjustmentDeleteInvenTransResult>>> PositiveAdjustmentDeleteInvenTransAsync(PositiveAdjustmentDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -501,7 +501,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "NegativeAdjustments")]
     [HttpPost("NegativeAdjustmentCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<NegativeAdjustmentCreateInvenTransResult>>> NegativeAdjustmentCreateInvenTransAsync(NegativeAdjustmentCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -515,7 +515,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "NegativeAdjustments")]
     [HttpPost("NegativeAdjustmentUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<NegativeAdjustmentUpdateInvenTransResult>>> NegativeAdjustmentUpdateInvenTransAsync(NegativeAdjustmentUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -529,7 +529,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "NegativeAdjustments")]
     [HttpPost("NegativeAdjustmentDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<NegativeAdjustmentDeleteInvenTransResult>>> NegativeAdjustmentDeleteInvenTransAsync(NegativeAdjustmentDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -561,7 +561,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Scrappings")]
     [HttpPost("ScrappingCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<ScrappingCreateInvenTransResult>>> ScrappingCreateInvenTransAsync(ScrappingCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -575,7 +575,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Scrappings")]
     [HttpPost("ScrappingUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<ScrappingUpdateInvenTransResult>>> ScrappingUpdateInvenTransAsync(ScrappingUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -589,7 +589,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Scrappings")]
     [HttpPost("ScrappingDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<ScrappingDeleteInvenTransResult>>> ScrappingDeleteInvenTransAsync(ScrappingDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -621,7 +621,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "StockCounts")]
     [HttpPost("StockCountCreateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<StockCountCreateInvenTransResult>>> StockCountCreateInvenTransAsync(StockCountCreateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -635,7 +635,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "StockCounts")]
     [HttpPost("StockCountUpdateInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<StockCountUpdateInvenTransResult>>> StockCountUpdateInvenTransAsync(StockCountUpdateInvenTransRequest request, CancellationToken cancellationToken)
     {
@@ -649,7 +649,7 @@ public class InventoryTransactionController : BaseApiController
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "StockCounts")]
     [HttpPost("StockCountDeleteInvenTrans")]
     public async Task<ActionResult<ApiSuccessResult<StockCountDeleteInvenTransResult>>> StockCountDeleteInvenTransAsync(StockCountDeleteInvenTransRequest request, CancellationToken cancellationToken)
     {
