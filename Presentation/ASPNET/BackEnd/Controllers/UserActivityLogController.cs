@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Application.Features.UserActivityLogManager.Commands;
 using Application.Features.UserActivityLogManager.Queries;
 using ASPNET.BackEnd.Common.Base;
@@ -19,7 +20,20 @@ public class UserActivityLogController : BaseApiController
         CreateUserActivityLogRequest request,
         CancellationToken cancellationToken)
     {
-        var response = await _sender.Send(request, cancellationToken);
+        // Identity and network metadata come from the authenticated request, never the client
+        // body, so a user cannot forge another user's activity or IP address.
+        var sanitizedRequest = new CreateUserActivityLogRequest
+        {
+            UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+            UserEmail = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email"),
+            ActivityType = request.ActivityType,
+            Description = request.Description,
+            PageUrl = request.PageUrl,
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = Request.Headers.UserAgent.ToString()
+        };
+
+        var response = await _sender.Send(sanitizedRequest, cancellationToken);
 
         return Ok(new ApiSuccessResult<CreateUserActivityLogResult>
         {

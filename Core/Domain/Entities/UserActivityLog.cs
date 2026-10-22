@@ -1,8 +1,11 @@
+using Domain.Common;
+
 namespace Domain.Entities;
 
-public class UserActivityLog
+public class UserActivityLog : IHasTenant
 {
     public string Id { get; set; } = null!;
+    public string? TenantId { get; set; }
     public string? UserId { get; set; }
     public string? UserEmail { get; set; }
     public string? ActivityType { get; set; }

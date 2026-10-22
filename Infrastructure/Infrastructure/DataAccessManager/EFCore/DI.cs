@@ -365,6 +365,7 @@ public static class DI
             dataContext.Database.ExecuteSqlRaw(@"
                 CREATE TABLE IF NOT EXISTS core.""UserActivityLog"" (
                     ""Id""           varchar(50)   NOT NULL PRIMARY KEY,
+                    ""TenantId""     varchar(50)   NULL,
                     ""UserId""       varchar(450)  NULL,
                     ""UserEmail""    varchar(255)  NULL,
                     ""ActivityType"" varchar(100)  NULL,
@@ -374,6 +375,7 @@ public static class DI
                     ""UserAgent""    varchar(500)  NULL,
                     ""CreatedAtUtc"" timestamp     NULL
                 );
+                CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_TenantId""     ON core.""UserActivityLog"" (""TenantId"");
                 CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_UserId""       ON core.""UserActivityLog"" (""UserId"");
                 CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_ActivityType""  ON core.""UserActivityLog"" (""ActivityType"");
                 CREATE INDEX IF NOT EXISTS ""IX_UserActivityLog_CreatedAtUtc""  ON core.""UserActivityLog"" (""CreatedAtUtc"");
@@ -728,6 +730,7 @@ public static class DI
                 BEGIN
                     CREATE TABLE [UserActivityLog] (
                         [Id]           nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [TenantId]     nvarchar(50)   NULL,
                         [UserId]       nvarchar(450)  NULL,
                         [UserEmail]    nvarchar(255)  NULL,
                         [ActivityType] nvarchar(100)  NULL,
@@ -737,6 +740,7 @@ public static class DI
                         [UserAgent]    nvarchar(500)  NULL,
                         [CreatedAtUtc] datetime2      NULL
                     );
+                    CREATE INDEX [IX_UserActivityLog_TenantId]     ON [UserActivityLog] ([TenantId]);
                     CREATE INDEX [IX_UserActivityLog_UserId]       ON [UserActivityLog] ([UserId]);
                     CREATE INDEX [IX_UserActivityLog_ActivityType]  ON [UserActivityLog] ([ActivityType]);
                     CREATE INDEX [IX_UserActivityLog_CreatedAtUtc]  ON [UserActivityLog] ([CreatedAtUtc]);
