@@ -74,6 +74,17 @@ public class SecurityService : ISecurityService
         }
     }
 
+    /// <summary>
+    /// Only holders of a platform role (the installation administrator) may grant or revoke one.
+    /// Without this a tenant administrator with the Users role could grant themselves "Tenants"
+    /// and reach the tenant registry, which is deliberately unfiltered.
+    /// </summary>
+    private bool CanManagePlatformRoles()
+    {
+        var user = _httpContextAccessor?.HttpContext?.User;
+        return user != null && RoleHelper.PlatformRoles.Any(user.IsInRole);
+    }
+
     private const string ResetLinkSentMessage =
         "A password reset link has been sent to the registered email address.";
 
@@ -831,6 +842,11 @@ public class SecurityService : ISecurityService
 
         EnsureTenantAccess(user);
 
+        if (RoleHelper.IsPlatformRole(roleName) && !CanManagePlatformRoles())
+        {
+            throw new Exception($"You do not have permission to manage the '{roleName}' role.");
+        }
+
         var currentRoles = await _userManager.GetRolesAsync(user);
         if (accessGranted)
         {
@@ -874,12 +890,15 @@ public class SecurityService : ISecurityService
 
         EnsureTenantAccess(user);
 
+        var canManagePlatformRoles = CanManagePlatformRoles();
         var allRoles = _roleManager.Roles.Select(r => r.Name!).ToList();
         var currentRoles = await _userManager.GetRolesAsync(user);
 
         if (accessGranted)
         {
-            var toAdd = allRoles.Except(currentRoles).ToList();
+            var toAdd = allRoles.Except(currentRoles)
+                .Where(role => canManagePlatformRoles || !RoleHelper.IsPlatformRole(role))
+                .ToList();
             if (toAdd.Any())
             {
                 var result = await _userManager.AddToRolesAsync(user, toAdd);
@@ -889,9 +908,12 @@ public class SecurityService : ISecurityService
         }
         else
         {
-            if (currentRoles.Any())
+            var toRemove = currentRoles
+                .Where(role => canManagePlatformRoles || !RoleHelper.IsPlatformRole(role))
+                .ToList();
+            if (toRemove.Any())
             {
-                var result = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                var result = await _userManager.RemoveFromRolesAsync(user, toRemove);
                 if (!result.Succeeded)
                     throw new Exception($"Failed to remove roles: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
