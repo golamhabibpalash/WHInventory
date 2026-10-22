@@ -9,6 +9,38 @@
  */
 .me-2 { margin-right: .5rem !important; }
 .gap-2 { gap: .5rem !important; }
+.gap-3 { gap: 1rem !important; }
+
+/* Radio options ("Open page" / "Open as Add") render flush against their labels in the
+ * Bootstrap 4 stack. Lay each one out as a small flex row so the control and its text keep a
+ * consistent gap regardless of Bootstrap version. */
+#MainModal .form-check {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding-left: 0;
+}
+
+#MainModal .form-check-input {
+    margin: 0;
+    position: static;
+    flex: 0 0 auto;
+}
+
+/* .form-select is a Bootstrap-5-only class the BS4 stack never styles, so the Target dropdown
+ * renders as an unstyled native control. Match it to the other form inputs on the page. */
+#MainModal .form-select {
+    display: block;
+    width: 100%;
+    height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
 
 .quick-shortcut-icon-preview {
     flex: 0 0 44px;
