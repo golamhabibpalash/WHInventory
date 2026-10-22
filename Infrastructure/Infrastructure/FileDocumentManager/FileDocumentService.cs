@@ -81,9 +81,12 @@ public class FileDocumentService : IFileDocumentService
 
     public async Task<byte[]> GetFileAsync(string fileName, CancellationToken cancellationToken = default)
     {
-        var filePath = Path.Combine(_folderPath, fileName);
+        // Strip any directory components to prevent path traversal (e.g. "../../appsettings.json").
+        var safeFileName = Path.GetFileName(fileName ?? string.Empty);
 
-        if (!File.Exists(filePath))
+        var filePath = Path.Combine(_folderPath, safeFileName);
+
+        if (string.IsNullOrEmpty(safeFileName) || !File.Exists(filePath))
         {
             filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "nodocument.txt");
         }
