@@ -141,30 +141,53 @@ public class DeliveryOrderService
         await _deliveryOrderRepository.CreateAsync(entity, cancellationToken);
         await _unitOfWork.SaveAsync(cancellationToken);
 
-        var warehouseId = await GetDefaultWarehouseIdAsync(cancellationToken);
-        if (warehouseId != null)
+        // The dual command/query context design means the delivery lines (which re-read this
+        // parent through the query context) cannot share one DB transaction with the order, so a
+        // line that fails validation — over-delivery, or a shortage on a Confirmed delivery — would
+        // otherwise leave an order with a partial set of lines. Compensate the same way
+        // DeliverRemainingAsync does: on any failure, undo the lines and the order already written.
+        var createdLineIds = new List<string>();
+        try
         {
-            var items = await _salesOrderItemRepository
-                .GetQuery()
-                .ApplyIsDeletedFilter(false)
-                .Where(x => x.SalesOrderId == entity.SalesOrderId)
-                .Include(x => x.Product)
-                .ToListAsync(cancellationToken);
-
-            foreach (var item in items)
+            var warehouseId = await GetDefaultWarehouseIdAsync(cancellationToken);
+            if (warehouseId != null)
             {
-                if (item?.Product?.Physical ?? false)
+                var items = await _salesOrderItemRepository
+                    .GetQuery()
+                    .ApplyIsDeletedFilter(false)
+                    .Where(x => x.SalesOrderId == entity.SalesOrderId)
+                    .Include(x => x.Product)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var item in items)
                 {
-                    await _inventoryTransactionService.DeliveryOrderCreateInvenTrans(
-                        entity.Id,
-                        warehouseId,
-                        item.ProductId,
-                        item.Quantity,
-                        entity.CreatedById,
-                        cancellationToken
-                        );
+                    if (item?.Product?.Physical ?? false)
+                    {
+                        var child = await _inventoryTransactionService.DeliveryOrderCreateInvenTrans(
+                            entity.Id,
+                            warehouseId,
+                            item.ProductId,
+                            item.Quantity,
+                            entity.CreatedById,
+                            cancellationToken
+                            );
+                        if (child.Id != null)
+                            createdLineIds.Add(child.Id);
+                    }
                 }
             }
+        }
+        catch
+        {
+            foreach (var id in createdLineIds)
+            {
+                await _inventoryTransactionService.DeliveryOrderDeleteInvenTrans(id, createdById, cancellationToken);
+            }
+
+            _deliveryOrderRepository.Delete(entity);
+            await _unitOfWork.SaveAsync(cancellationToken);
+
+            throw;
         }
 
         return entity;
