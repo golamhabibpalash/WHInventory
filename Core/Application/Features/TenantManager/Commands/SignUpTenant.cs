@@ -14,7 +14,7 @@ public class SignUpTenantResult
     public bool EmailConfirmationRequired { get; init; }
 }
 
-public class SignUpTenantRequest : IRequest<SignUpTenantResult>
+public class SignUpTenantRequest : IRequest<SignUpTenantResult>, Application.Common.Services.SubscriptionManager.ISubscriptionExempt
 {
     public string? OrganizationName { get; init; }
     public string? Slug { get; init; }

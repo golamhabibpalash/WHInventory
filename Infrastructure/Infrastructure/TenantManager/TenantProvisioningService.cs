@@ -1,6 +1,8 @@
 using Application.Common.Services.EmailManager;
+using Application.Common.Services.SubscriptionManager;
 using Application.Common.Services.TenantManager;
 using Application.Common.Tenancy;
+using Domain.Enums;
 using Infrastructure.SecurityManager.AspNetIdentity;
 using Infrastructure.SecurityManager.Roles;
 using Infrastructure.SeedManager.Systems;
@@ -29,6 +31,7 @@ public class TenantProvisioningService : ITenantProvisioningService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<TenantProvisioningService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly ITenantSubscriptionAdminService _subscriptionAdminService;
 
     public TenantProvisioningService(
         ITenantContext tenantContext,
@@ -42,7 +45,8 @@ public class TenantProvisioningService : ITenantProvisioningService
         IEmailService emailService,
         IHttpContextAccessor httpContextAccessor,
         ILogger<TenantProvisioningService> logger,
-        IConfiguration configuration
+        IConfiguration configuration,
+        ITenantSubscriptionAdminService subscriptionAdminService
         )
     {
         _tenantContext = tenantContext;
@@ -57,6 +61,7 @@ public class TenantProvisioningService : ITenantProvisioningService
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
         _configuration = configuration;
+        _subscriptionAdminService = subscriptionAdminService;
     }
 
     public TenantSignUpPolicyDto GetSignUpPolicy()
@@ -108,6 +113,8 @@ public class TenantProvisioningService : ITenantProvisioningService
             await _ticketPrioritySeeder.GenerateDataAsync();
 
             await CreateAdministratorAsync(request);
+
+            await AssignSignUpSubscriptionAsync(request.TenantId);
         }
         finally
         {
@@ -119,6 +126,36 @@ public class TenantProvisioningService : ITenantProvisioningService
             {
                 _tenantContext.SetTenant(callerTenantId);
             }
+        }
+    }
+
+    /// <summary>
+    /// Starts the new tenant on the configured sign-up plan (default a Pro trial). A failure here
+    /// must not undo the sign-up — the tenant and its administrator already exist — so it is logged
+    /// and swallowed; a platform admin can assign a plan by hand afterwards. No-op when the sign-up
+    /// plan is not configured or not present in the catalogue.
+    /// </summary>
+    private async Task AssignSignUpSubscriptionAsync(string tenantId)
+    {
+        var planCode = _configuration["Subscription:SignUpPlanCode"];
+        if (string.IsNullOrWhiteSpace(planCode))
+        {
+            return;
+        }
+
+        var status = Enum.TryParse<SubscriptionStatus>(_configuration["Subscription:SignUpStatus"], true, out var parsed)
+            ? parsed
+            : SubscriptionStatus.Trialing;
+
+        try
+        {
+            await _subscriptionAdminService.AssignPlanByCodeAsync(tenantId, planCode, status, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Tenant provisioned but its sign-up subscription could not be assigned. TenantId={TenantId} PlanCode={PlanCode}",
+                tenantId, planCode);
         }
     }
 

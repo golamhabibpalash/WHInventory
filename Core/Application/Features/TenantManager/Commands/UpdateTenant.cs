@@ -13,7 +13,7 @@ public class UpdateTenantResult
     public Tenant? Data { get; init; }
 }
 
-public class UpdateTenantRequest : IRequest<UpdateTenantResult>
+public class UpdateTenantRequest : IRequest<UpdateTenantResult>, Application.Common.Services.SubscriptionManager.ISubscriptionExempt
 {
     public string? Id { get; init; }
     public string? Name { get; init; }

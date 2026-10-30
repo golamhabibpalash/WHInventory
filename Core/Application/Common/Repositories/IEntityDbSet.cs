@@ -63,5 +63,7 @@ public interface IEntityDbSet
     DbSet<TicketTag> TicketTag { get; set; }
     DbSet<TicketTagMap> TicketTagMap { get; set; }
     DbSet<Notification> Notification { get; set; }
+    DbSet<SubscriptionPlan> SubscriptionPlan { get; set; }
+    DbSet<TenantSubscription> TenantSubscription { get; set; }
 }
 

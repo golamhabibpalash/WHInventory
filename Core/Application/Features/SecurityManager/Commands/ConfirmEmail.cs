@@ -10,7 +10,7 @@ public class ConfirmEmailResult
     public string? Email { get; init; }
 }
 
-public class ConfirmEmailRequest : IRequest<ConfirmEmailResult>
+public class ConfirmEmailRequest : IRequest<ConfirmEmailResult>, Application.Common.Services.SubscriptionManager.ISubscriptionExempt
 {
     public required string Email { get; init; }
     public required string Code { get; init; }

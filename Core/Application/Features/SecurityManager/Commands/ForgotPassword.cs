@@ -10,7 +10,7 @@ public class ForgotPasswordResult
     public string? Data { get; init; }
 }
 
-public class ForgotPasswordRequest : IRequest<ForgotPasswordResult>
+public class ForgotPasswordRequest : IRequest<ForgotPasswordResult>, Application.Common.Services.SubscriptionManager.ISubscriptionExempt
 {
     public required string Email { get; init; }
 }

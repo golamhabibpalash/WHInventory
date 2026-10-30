@@ -614,6 +614,69 @@ public static class DI
             dataContext.Database.ExecuteSqlRaw(@"
                 ALTER TABLE core.""PurchaseOrder"" ADD COLUMN IF NOT EXISTS ""ReferenceNumber"" varchar(50) NULL;
             ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""SubscriptionPlan"" (
+                    ""Id""              varchar(50)   NOT NULL PRIMARY KEY,
+                    ""Name""            varchar(255)  NULL,
+                    ""Code""            varchar(50)   NULL,
+                    ""Description""     varchar(4000) NULL,
+                    ""Price""           float8        NOT NULL DEFAULT 0,
+                    ""Currency""        varchar(50)   NULL,
+                    ""BillingInterval"" int           NOT NULL DEFAULT 0,
+                    ""TrialDays""       int           NOT NULL DEFAULT 0,
+                    ""MaxUsers""        int           NULL,
+                    ""MaxWarehouses""   int           NULL,
+                    ""MaxProducts""     int           NULL,
+                    ""IsActive""        boolean       NOT NULL DEFAULT TRUE,
+                    ""IsPublic""        boolean       NOT NULL DEFAULT TRUE,
+                    ""SortOrder""       int           NOT NULL DEFAULT 0,
+                    ""StripeProductId"" varchar(255)  NULL,
+                    ""StripePriceId""   varchar(255)  NULL,
+                    ""TenantId""        varchar(50)   NULL,
+                    ""IsDeleted""       boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""    timestamp     NULL,
+                    ""CreatedById""     varchar(450)  NULL,
+                    ""UpdatedAtUtc""    timestamp     NULL,
+                    ""UpdatedById""     varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_SubscriptionPlan_IsDeleted"" ON core.""SubscriptionPlan"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_SubscriptionPlan_Code""      ON core.""SubscriptionPlan"" (""Code"");
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""TenantSubscription"" (
+                    ""Id""                    varchar(50)   NOT NULL PRIMARY KEY,
+                    ""PlanId""                varchar(50)   NULL,
+                    ""PlanName""              varchar(255)  NULL,
+                    ""PlanCode""              varchar(50)   NULL,
+                    ""Status""                int           NOT NULL DEFAULT 0,
+                    ""BillingInterval""       int           NOT NULL DEFAULT 0,
+                    ""Provider""              int           NOT NULL DEFAULT 0,
+                    ""StartedAtUtc""          timestamp     NULL,
+                    ""CurrentPeriodStartUtc"" timestamp     NULL,
+                    ""CurrentPeriodEndUtc""   timestamp     NULL,
+                    ""TrialEndsAtUtc""        timestamp     NULL,
+                    ""CanceledAtUtc""         timestamp     NULL,
+                    ""MaxUsers""              int           NULL,
+                    ""MaxWarehouses""         int           NULL,
+                    ""MaxProducts""           int           NULL,
+                    ""StripeCustomerId""      varchar(255)  NULL,
+                    ""StripeSubscriptionId""  varchar(255)  NULL,
+                    ""Notes""                 varchar(4000) NULL,
+                    ""TenantId""              varchar(50)   NULL,
+                    ""IsDeleted""             boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""          timestamp     NULL,
+                    ""CreatedById""           varchar(450)  NULL,
+                    ""UpdatedAtUtc""          timestamp     NULL,
+                    ""UpdatedById""           varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_TenantSubscription_IsDeleted""          ON core.""TenantSubscription"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_TenantSubscription_TenantId""           ON core.""TenantSubscription"" (""TenantId"");
+                CREATE INDEX IF NOT EXISTS ""IX_TenantSubscription_PlanId""             ON core.""TenantSubscription"" (""PlanId"");
+                CREATE INDEX IF NOT EXISTS ""IX_TenantSubscription_Status""             ON core.""TenantSubscription"" (""Status"");
+                CREATE INDEX IF NOT EXISTS ""IX_TenantSubscription_CurrentPeriodEndUtc"" ON core.""TenantSubscription"" (""CurrentPeriodEndUtc"");
+            ");
         }
         else
         {
@@ -1004,6 +1067,75 @@ public static class DI
                 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'PurchaseOrder' AND COLUMN_NAME = 'ReferenceNumber')
                 BEGIN
                     ALTER TABLE [PurchaseOrder] ADD [ReferenceNumber] nvarchar(50) NULL;
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SubscriptionPlan')
+                BEGIN
+                    CREATE TABLE [SubscriptionPlan] (
+                        [Id]              nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [Name]            nvarchar(255)  NULL,
+                        [Code]            nvarchar(50)   NULL,
+                        [Description]     nvarchar(4000) NULL,
+                        [Price]           float          NOT NULL DEFAULT 0,
+                        [Currency]        nvarchar(50)   NULL,
+                        [BillingInterval] int            NOT NULL DEFAULT 0,
+                        [TrialDays]       int            NOT NULL DEFAULT 0,
+                        [MaxUsers]        int            NULL,
+                        [MaxWarehouses]   int            NULL,
+                        [MaxProducts]     int            NULL,
+                        [IsActive]        bit            NOT NULL DEFAULT 1,
+                        [IsPublic]        bit            NOT NULL DEFAULT 1,
+                        [SortOrder]       int            NOT NULL DEFAULT 0,
+                        [StripeProductId] nvarchar(255)  NULL,
+                        [StripePriceId]   nvarchar(255)  NULL,
+                        [TenantId]        nvarchar(50)   NULL,
+                        [IsDeleted]       bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]    datetime2      NULL,
+                        [CreatedById]     nvarchar(450)  NULL,
+                        [UpdatedAtUtc]    datetime2      NULL,
+                        [UpdatedById]     nvarchar(450)  NULL
+                    );
+                    CREATE INDEX [IX_SubscriptionPlan_IsDeleted] ON [SubscriptionPlan] ([IsDeleted]);
+                    CREATE INDEX [IX_SubscriptionPlan_Code]      ON [SubscriptionPlan] ([Code]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TenantSubscription')
+                BEGIN
+                    CREATE TABLE [TenantSubscription] (
+                        [Id]                    nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [PlanId]                nvarchar(50)   NULL,
+                        [PlanName]              nvarchar(255)  NULL,
+                        [PlanCode]              nvarchar(50)   NULL,
+                        [Status]                int            NOT NULL DEFAULT 0,
+                        [BillingInterval]       int            NOT NULL DEFAULT 0,
+                        [Provider]              int            NOT NULL DEFAULT 0,
+                        [StartedAtUtc]          datetime2      NULL,
+                        [CurrentPeriodStartUtc] datetime2      NULL,
+                        [CurrentPeriodEndUtc]   datetime2      NULL,
+                        [TrialEndsAtUtc]        datetime2      NULL,
+                        [CanceledAtUtc]         datetime2      NULL,
+                        [MaxUsers]              int            NULL,
+                        [MaxWarehouses]         int            NULL,
+                        [MaxProducts]           int            NULL,
+                        [StripeCustomerId]      nvarchar(255)  NULL,
+                        [StripeSubscriptionId]  nvarchar(255)  NULL,
+                        [Notes]                 nvarchar(4000) NULL,
+                        [TenantId]              nvarchar(50)   NULL,
+                        [IsDeleted]             bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]          datetime2      NULL,
+                        [CreatedById]           nvarchar(450)  NULL,
+                        [UpdatedAtUtc]          datetime2      NULL,
+                        [UpdatedById]           nvarchar(450)  NULL
+                    );
+                    CREATE INDEX [IX_TenantSubscription_IsDeleted]           ON [TenantSubscription] ([IsDeleted]);
+                    CREATE INDEX [IX_TenantSubscription_TenantId]            ON [TenantSubscription] ([TenantId]);
+                    CREATE INDEX [IX_TenantSubscription_PlanId]              ON [TenantSubscription] ([PlanId]);
+                    CREATE INDEX [IX_TenantSubscription_Status]              ON [TenantSubscription] ([Status]);
+                    CREATE INDEX [IX_TenantSubscription_CurrentPeriodEndUtc] ON [TenantSubscription] ([CurrentPeriodEndUtc]);
                 END
             ");
         }

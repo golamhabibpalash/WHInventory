@@ -9,7 +9,7 @@ public class LogoutResult
     public LogoutResultDto? Data { get; set; }
 }
 
-public class LogoutRequest : IRequest<LogoutResult>
+public class LogoutRequest : IRequest<LogoutResult>, Application.Common.Services.SubscriptionManager.ISubscriptionExempt
 {
     public string? UserId { get; init; }
 }

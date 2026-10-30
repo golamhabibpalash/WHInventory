@@ -1,3 +1,4 @@
+using Application.Common.Services.SubscriptionManager;
 using ASPNET.BackEnd.Common.Models;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
@@ -17,6 +18,7 @@ public class CustomExceptionHandler : IExceptionHandler
             {
                 { typeof(ValidationException), HandleValidationException },
                 { typeof(DbUpdateException), HandleDbUpdateException },
+                { typeof(SubscriptionInactiveException), HandleSubscriptionInactiveException },
                 { typeof(Exception), HandleException },
             };
     }
@@ -53,6 +55,20 @@ public class CustomExceptionHandler : IExceptionHandler
         };
 
         httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+        httpContext.Response.ContentType = "application/json";
+        await httpContext.Response.WriteAsJsonAsync(result);
+    }
+
+    private async Task HandleSubscriptionInactiveException(HttpContext httpContext, Exception ex)
+    {
+        var result = new ApiErrorResult
+        {
+            Code = StatusCodes.Status402PaymentRequired,
+            Message = ex.Message,
+            Error = null
+        };
+
+        httpContext.Response.StatusCode = StatusCodes.Status402PaymentRequired;
         httpContext.Response.ContentType = "application/json";
         await httpContext.Response.WriteAsJsonAsync(result);
     }

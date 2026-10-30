@@ -1,4 +1,5 @@
 using Application.Common.Services.SecurityManager;
+using Application.Common.Services.SubscriptionManager;
 using FluentValidation;
 using MediatR;
 
@@ -38,14 +39,18 @@ public class CreateUserValidator : AbstractValidator<CreateUserRequest>
 public class CreateUserHandler : IRequestHandler<CreateUserRequest, CreateUserResult>
 {
     private readonly ISecurityService _securityService;
+    private readonly ISubscriptionQuotaService _quotaService;
 
-    public CreateUserHandler(ISecurityService securityService)
+    public CreateUserHandler(ISecurityService securityService, ISubscriptionQuotaService quotaService)
     {
         _securityService = securityService;
+        _quotaService = quotaService;
     }
 
     public async Task<CreateUserResult> Handle(CreateUserRequest request, CancellationToken cancellationToken)
     {
+        await _quotaService.EnsureCanAddUserAsync(cancellationToken);
+
         var result = await _securityService.CreateUserAsync(
             request.Email ?? "",
             request.Password ?? "",

@@ -17,7 +17,7 @@ public class CreateTenantResult
     public string? AdminEmail { get; init; }
 }
 
-public class CreateTenantRequest : IRequest<CreateTenantResult>
+public class CreateTenantRequest : IRequest<CreateTenantResult>, Application.Common.Services.SubscriptionManager.ISubscriptionExempt
 {
     public string? Name { get; init; }
     public string? Slug { get; init; }

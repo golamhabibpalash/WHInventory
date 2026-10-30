@@ -1,3 +1,4 @@
+using Application.Common.Services.SubscriptionManager;
 using Application.Common.Tenancy;
 using Infrastructure.DataAccessManager.EFCore.Contexts;
 using Infrastructure.SeedManager.Demos;
@@ -23,6 +24,7 @@ public static class DI
         services.AddScoped<QuickShortcutSeeder>();
         services.AddScoped<TicketCategorySeeder>();
         services.AddScoped<TicketPrioritySeeder>();
+        services.AddScoped<SubscriptionPlanSeeder>();
 
         return services;
     }
@@ -41,6 +43,10 @@ public static class DI
 
         var roleSeeder = serviceProvider.GetRequiredService<RoleSeeder>();
         roleSeeder.GenerateDataAsync().Wait();
+
+        // Plans are global (no tenant), so seed them at root. Idempotent per code.
+        var subscriptionPlanSeeder = serviceProvider.GetRequiredService<SubscriptionPlanSeeder>();
+        subscriptionPlanSeeder.GenerateDataAsync().Wait();
 
         var tenantSeeder = serviceProvider.GetRequiredService<TenantSeeder>();
         var defaultTenantId = tenantSeeder.GenerateDataAsync().GetAwaiter().GetResult();
@@ -87,6 +93,17 @@ public static class DI
         {
             var ticketPrioritySeeder = serviceProvider.GetRequiredService<TicketPrioritySeeder>();
             ticketPrioritySeeder.GenerateDataAsync().Wait();
+        }
+
+        // Enrol any tenant that has no subscription yet (e.g. the default tenant on an install that
+        // predates billing) so read-only enforcement does not lock anyone out. The admin service
+        // elevates to root internally and the call is idempotent.
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var defaultPlanCode = configuration["Subscription:DefaultPlanCode"];
+        if (!string.IsNullOrWhiteSpace(defaultPlanCode))
+        {
+            var subscriptionAdmin = serviceProvider.GetRequiredService<ITenantSubscriptionAdminService>();
+            subscriptionAdmin.BackfillMissingAsync(defaultPlanCode).GetAwaiter().GetResult();
         }
 
         return host;

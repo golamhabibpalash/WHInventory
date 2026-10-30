@@ -9,7 +9,7 @@ public class RegisterResult
     public RegisterResultDto? Data { get; set; }
 }
 
-public class RegisterRequest : IRequest<RegisterResult>
+public class RegisterRequest : IRequest<RegisterResult>, Application.Common.Services.SubscriptionManager.ISubscriptionExempt
 {
     public string? Email { get; init; }
     public string? Password { get; init; }

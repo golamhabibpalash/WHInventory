@@ -1,6 +1,7 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
 using Application.Common.Repositories;
+using Application.Common.Services.SubscriptionManager;
 using Application.Features.NumberSequenceManager;
 using Domain.Entities;
 using FluentValidation;
@@ -66,22 +67,27 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Create
     private readonly IUnitOfWork _unitOfWork;
     private readonly NumberSequenceService _numberSequenceService;
     private readonly IQueryContext _queryContext;
+    private readonly ISubscriptionQuotaService _quotaService;
 
     public CreateProductHandler(
         ICommandRepository<Product> repository,
         IUnitOfWork unitOfWork,
         NumberSequenceService numberSequenceService,
-        IQueryContext queryContext
+        IQueryContext queryContext,
+        ISubscriptionQuotaService quotaService
         )
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _numberSequenceService = numberSequenceService;
         _queryContext = queryContext;
+        _quotaService = quotaService;
     }
 
     public async Task<CreateProductResult> Handle(CreateProductRequest request, CancellationToken cancellationToken = default)
     {
+        await _quotaService.EnsureCanAddProductAsync(cancellationToken);
+
         var name = request.Name?.Trim();
 
         var duplicate = await _queryContext.Product

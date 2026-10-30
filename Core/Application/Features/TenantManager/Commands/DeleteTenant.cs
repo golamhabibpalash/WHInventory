@@ -11,7 +11,7 @@ public class DeleteTenantResult
     public Tenant? Data { get; init; }
 }
 
-public class DeleteTenantRequest : IRequest<DeleteTenantResult>
+public class DeleteTenantRequest : IRequest<DeleteTenantResult>, Application.Common.Services.SubscriptionManager.ISubscriptionExempt
 {
     public string? Id { get; init; }
     public string? DeletedById { get; init; }

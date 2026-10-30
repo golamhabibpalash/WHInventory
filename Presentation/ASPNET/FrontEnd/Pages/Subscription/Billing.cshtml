@@ -1,0 +1,115 @@
+@page
+@{
+    ViewData["Title"] = "Billing & Subscription";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <!-- Read-only warning -->
+            <div v-if="state.isReadOnly" class="alert alert-warning d-flex align-items-center" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <div>
+                    Your subscription is not active, so your workspace is <strong>read-only</strong>.
+                    Renew or change your plan below to make changes again.
+                </div>
+            </div>
+
+            <!-- Current subscription -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-receipt me-2 text-primary"></i>Current Subscription</h5>
+                </div>
+                <div class="card-body">
+                    <div v-if="!state.subscription" class="text-muted">
+                        No subscription is assigned to your organisation yet. Please contact your platform administrator.
+                    </div>
+                    <div v-else class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-muted small">Plan</div>
+                            <div class="h5 mb-0">{{ state.subscription.planName || '—' }}</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-muted small">Status</div>
+                            <span class="badge" v-bind:class="handler.statusClass(state.subscription.status)">
+                                {{ handler.statusLabel(state.subscription.status) }}
+                            </span>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-muted small">Renews / Expires</div>
+                            <div class="h6 mb-0">{{ handler.formatDate(state.subscription.currentPeriodEndUtc) }}</div>
+                        </div>
+                        <div class="col-md-4 mb-3" v-if="state.subscription.trialEndsAtUtc">
+                            <div class="text-muted small">Trial ends</div>
+                            <div class="h6 mb-0">{{ handler.formatDate(state.subscription.trialEndsAtUtc) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage vs limits -->
+            <div class="card" v-if="state.usage">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar me-2 text-primary"></i>Usage</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3" v-for="row in state.usageRows" :key="row.label">
+                        <div class="d-flex justify-content-between">
+                            <span>{{ row.label }}</span>
+                            <span class="text-muted">{{ row.used }} / {{ row.limitLabel }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar"
+                                 v-bind:class="row.danger ? 'bg-danger' : 'bg-primary'"
+                                 role="progressbar"
+                                 v-bind:style="{ width: row.percent + '%' }"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available plans -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-layer-group me-2 text-primary"></i>Available Plans</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3" v-for="plan in state.plans" :key="plan.id">
+                            <div class="card h-100"
+                                 v-bind:class="{ 'border-primary': plan.id === state.subscription?.planId }">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="mb-1">{{ plan.name }}</h5>
+                                    <div class="h4 mb-2">
+                                        {{ handler.formatMoney(plan.price, plan.currency) }}
+                                        <small class="text-muted">/ {{ plan.billingInterval === 1 ? 'yr' : 'mo' }}</small>
+                                    </div>
+                                    <p class="text-muted small flex-grow-1">{{ plan.description }}</p>
+                                    <ul class="list-unstyled small mb-3">
+                                        <li><i class="fas fa-user me-2 text-muted"></i>{{ handler.limitLabel(plan.maxUsers) }} users</li>
+                                        <li><i class="fas fa-building me-2 text-muted"></i>{{ handler.limitLabel(plan.maxWarehouses) }} warehouses</li>
+                                        <li><i class="fas fa-cube me-2 text-muted"></i>{{ handler.limitLabel(plan.maxProducts) }} products</li>
+                                    </ul>
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            v-if="plan.id !== state.subscription?.planId"
+                                            v-on:click="handler.choosePlan(plan)"
+                                            v-bind:disabled="state.isSubmitting">
+                                        <i class="fas fa-arrow-up me-2"></i>Choose {{ plan.name }}
+                                    </button>
+                                    <span v-else class="badge bg-success align-self-start">
+                                        <i class="fas fa-check me-1"></i>Current plan
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Subscription/Billing.cshtml.js"></script>
+}

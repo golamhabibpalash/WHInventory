@@ -377,6 +377,12 @@ public static class NavigationTreeStructure
                     "IsModule": false
                 },
                 {
+                    "URL": "/Subscription/Billing",
+                    "Name": "Billing & Subscription",
+                    "Icon": "fas fa-credit-card",
+                    "IsModule": false
+                },
+                {
                     "URL": "/Taxs/TaxList",
                     "Name": "Tax",
                     "Icon": "fas fa-percent",

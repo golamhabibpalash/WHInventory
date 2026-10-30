@@ -23,6 +23,7 @@ public static class DependencyInjection
             x.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
             x.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehaviour<,>));
             x.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+            x.AddBehavior(typeof(IPipelineBehavior<,>), typeof(SubscriptionEnforcementBehaviour<,>));
         });
 
         //>>> Amount In Words Service

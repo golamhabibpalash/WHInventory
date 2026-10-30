@@ -88,6 +88,8 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<TicketTag> TicketTag { get; set; }
     public DbSet<TicketTagMap> TicketTagMap { get; set; }
     public DbSet<Notification> Notification { get; set; }
+    public DbSet<SubscriptionPlan> SubscriptionPlan { get; set; }
+    public DbSet<TenantSubscription> TenantSubscription { get; set; }
 
     /// <summary>
     /// Stamps the ambient tenant onto new rows. Lives on the base context so that every writer
@@ -198,6 +200,8 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new TicketTagConfiguration());
         modelBuilder.ApplyConfiguration(new TicketTagMapConfiguration());
         modelBuilder.ApplyConfiguration(new NotificationConfiguration());
+        modelBuilder.ApplyConfiguration(new SubscriptionPlanConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantSubscriptionConfiguration());
 
         ApplyTenantFilters(modelBuilder);
     }
@@ -212,6 +216,9 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         {
             typeof(TicketCategory),
             typeof(TicketPriority),
+            // Platform-wide subscription catalogue: every tenant reads it to see what plans exist,
+            // only platform (root) scope writes it.
+            typeof(SubscriptionPlan),
         };
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
