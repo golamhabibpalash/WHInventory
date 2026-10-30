@@ -11,8 +11,22 @@
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 <div>
                     Your subscription is not active, so your workspace is <strong>read-only</strong>.
-                    Renew or change your plan below to make changes again.
+                    Request a plan below to be reinstated once an administrator approves it.
                 </div>
+            </div>
+
+            <!-- Pending plan request -->
+            <div v-if="state.pendingRequest" class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                <div>
+                    <i class="fas fa-hourglass-half me-2"></i>
+                    Your request to switch to <strong>{{ state.pendingRequest.requestedPlanName }}</strong>
+                    is awaiting administrator approval.
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                        v-on:click="handler.cancelRequest(state.pendingRequest)"
+                        v-bind:disabled="state.isSubmitting">
+                    <i class="fas fa-times me-1"></i>Cancel request
+                </button>
             </div>
 
             <!-- Current subscription -->
@@ -93,9 +107,9 @@
                                     <button type="button"
                                             class="btn btn-primary"
                                             v-if="plan.id !== state.subscription?.planId"
-                                            v-on:click="handler.choosePlan(plan)"
-                                            v-bind:disabled="state.isSubmitting">
-                                        <i class="fas fa-arrow-up me-2"></i>Choose {{ plan.name }}
+                                            v-on:click="handler.requestPlan(plan)"
+                                            v-bind:disabled="state.isSubmitting || !!state.pendingRequest">
+                                        <i class="fas fa-paper-plane me-2"></i>Request {{ plan.name }}
                                     </button>
                                     <span v-else class="badge bg-success align-self-start">
                                         <i class="fas fa-check me-1"></i>Current plan

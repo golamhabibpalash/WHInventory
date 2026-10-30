@@ -12,6 +12,7 @@ public static class DI
         services.AddScoped<ISubscriptionGuard, SubscriptionGuard>();
         services.AddScoped<ISubscriptionQuotaService, SubscriptionQuotaService>();
         services.AddScoped<ITenantSubscriptionAdminService, TenantSubscriptionAdminService>();
+        services.AddScoped<ISubscriptionRequestService, SubscriptionRequestService>();
 
         // Stripe adapter only when enabled and keyed; otherwise billing is manual-only.
         var stripeEnabled = configuration.GetValue<bool>("Stripe:Enabled")

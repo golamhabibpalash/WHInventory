@@ -677,6 +677,30 @@ public static class DI
                 CREATE INDEX IF NOT EXISTS ""IX_TenantSubscription_Status""             ON core.""TenantSubscription"" (""Status"");
                 CREATE INDEX IF NOT EXISTS ""IX_TenantSubscription_CurrentPeriodEndUtc"" ON core.""TenantSubscription"" (""CurrentPeriodEndUtc"");
             ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS core.""SubscriptionChangeRequest"" (
+                    ""Id""                varchar(50)   NOT NULL PRIMARY KEY,
+                    ""RequestedPlanId""   varchar(50)   NULL,
+                    ""RequestedPlanName"" varchar(255)  NULL,
+                    ""RequestedPlanCode"" varchar(50)   NULL,
+                    ""CurrentPlanCode""   varchar(50)   NULL,
+                    ""Status""            int           NOT NULL DEFAULT 0,
+                    ""RequestNote""       varchar(4000) NULL,
+                    ""DecisionById""      varchar(450)  NULL,
+                    ""DecisionAtUtc""     timestamp     NULL,
+                    ""DecisionNote""      varchar(4000) NULL,
+                    ""TenantId""          varchar(50)   NULL,
+                    ""IsDeleted""         boolean       NOT NULL DEFAULT FALSE,
+                    ""CreatedAtUtc""      timestamp     NULL,
+                    ""CreatedById""       varchar(450)  NULL,
+                    ""UpdatedAtUtc""      timestamp     NULL,
+                    ""UpdatedById""       varchar(450)  NULL
+                );
+                CREATE INDEX IF NOT EXISTS ""IX_SubscriptionChangeRequest_IsDeleted"" ON core.""SubscriptionChangeRequest"" (""IsDeleted"");
+                CREATE INDEX IF NOT EXISTS ""IX_SubscriptionChangeRequest_TenantId""  ON core.""SubscriptionChangeRequest"" (""TenantId"");
+                CREATE INDEX IF NOT EXISTS ""IX_SubscriptionChangeRequest_Status""    ON core.""SubscriptionChangeRequest"" (""Status"");
+            ");
         }
         else
         {
@@ -1136,6 +1160,33 @@ public static class DI
                     CREATE INDEX [IX_TenantSubscription_PlanId]              ON [TenantSubscription] ([PlanId]);
                     CREATE INDEX [IX_TenantSubscription_Status]              ON [TenantSubscription] ([Status]);
                     CREATE INDEX [IX_TenantSubscription_CurrentPeriodEndUtc] ON [TenantSubscription] ([CurrentPeriodEndUtc]);
+                END
+            ");
+
+            dataContext.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'SubscriptionChangeRequest')
+                BEGIN
+                    CREATE TABLE [SubscriptionChangeRequest] (
+                        [Id]                nvarchar(50)   NOT NULL PRIMARY KEY,
+                        [RequestedPlanId]   nvarchar(50)   NULL,
+                        [RequestedPlanName] nvarchar(255)  NULL,
+                        [RequestedPlanCode] nvarchar(50)   NULL,
+                        [CurrentPlanCode]   nvarchar(50)   NULL,
+                        [Status]            int            NOT NULL DEFAULT 0,
+                        [RequestNote]       nvarchar(4000) NULL,
+                        [DecisionById]      nvarchar(450)  NULL,
+                        [DecisionAtUtc]     datetime2      NULL,
+                        [DecisionNote]      nvarchar(4000) NULL,
+                        [TenantId]          nvarchar(50)   NULL,
+                        [IsDeleted]         bit            NOT NULL DEFAULT 0,
+                        [CreatedAtUtc]      datetime2      NULL,
+                        [CreatedById]       nvarchar(450)  NULL,
+                        [UpdatedAtUtc]      datetime2      NULL,
+                        [UpdatedById]       nvarchar(450)  NULL
+                    );
+                    CREATE INDEX [IX_SubscriptionChangeRequest_IsDeleted] ON [SubscriptionChangeRequest] ([IsDeleted]);
+                    CREATE INDEX [IX_SubscriptionChangeRequest_TenantId]  ON [SubscriptionChangeRequest] ([TenantId]);
+                    CREATE INDEX [IX_SubscriptionChangeRequest_Status]    ON [SubscriptionChangeRequest] ([Status]);
                 END
             ");
         }

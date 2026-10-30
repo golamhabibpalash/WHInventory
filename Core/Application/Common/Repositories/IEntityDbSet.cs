@@ -65,5 +65,6 @@ public interface IEntityDbSet
     DbSet<Notification> Notification { get; set; }
     DbSet<SubscriptionPlan> SubscriptionPlan { get; set; }
     DbSet<TenantSubscription> TenantSubscription { get; set; }
+    DbSet<SubscriptionChangeRequest> SubscriptionChangeRequest { get; set; }
 }
 

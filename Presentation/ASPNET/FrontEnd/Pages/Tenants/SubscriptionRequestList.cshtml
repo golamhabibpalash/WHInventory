@@ -1,0 +1,75 @@
+@page
+@{
+    ViewData["Title"] = "Subscription Requests";
+}
+
+<div id="app" v-cloak>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-inbox me-2 text-primary"></i>Subscription Requests</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="PendingOnly"
+                               v-model="state.pendingOnly" v-on:change="handler.reload">
+                        <label class="form-check-label" for="PendingOnly">Pending only</label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div v-if="state.rows.length === 0" class="text-muted text-center py-4">
+                        <i class="fas fa-check-circle me-2"></i>No requests to show.
+                    </div>
+                    <div v-else class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tenant</th>
+                                    <th>Current</th>
+                                    <th>Requested</th>
+                                    <th>Note</th>
+                                    <th>Status</th>
+                                    <th>Requested On</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="row in state.rows" :key="row.id">
+                                    <td>
+                                        <div class="fw-semibold">{{ row.tenantName || '—' }}</div>
+                                        <div class="text-muted small" v-if="row.tenantSlug">{{ row.tenantSlug }}</div>
+                                    </td>
+                                    <td>{{ row.currentPlanCode || '—' }}</td>
+                                    <td><span class="badge bg-primary">{{ row.requestedPlanName }}</span></td>
+                                    <td class="text-muted small">{{ row.requestNote || '—' }}</td>
+                                    <td>
+                                        <span class="badge" v-bind:class="handler.statusClass(row.status)">
+                                            {{ handler.statusLabel(row.status) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ handler.formatDate(row.createdAtUtc) }}</td>
+                                    <td class="text-end">
+                                        <template v-if="row.status === 0">
+                                            <button type="button" class="btn btn-sm btn-success me-1"
+                                                    v-on:click="handler.approve(row)" v-bind:disabled="state.isSubmitting">
+                                                <i class="fas fa-check me-1"></i>Approve
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    v-on:click="handler.reject(row)" v-bind:disabled="state.isSubmitting">
+                                                <i class="fas fa-times me-1"></i>Reject
+                                            </button>
+                                        </template>
+                                        <span v-else class="text-muted small">{{ row.decisionNote || '—' }}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/FrontEnd/Pages/Tenants/SubscriptionRequestList.cshtml.js"></script>
+}

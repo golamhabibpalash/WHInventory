@@ -90,6 +90,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
     public DbSet<Notification> Notification { get; set; }
     public DbSet<SubscriptionPlan> SubscriptionPlan { get; set; }
     public DbSet<TenantSubscription> TenantSubscription { get; set; }
+    public DbSet<SubscriptionChangeRequest> SubscriptionChangeRequest { get; set; }
 
     /// <summary>
     /// Stamps the ambient tenant onto new rows. Lives on the base context so that every writer
@@ -202,6 +203,7 @@ public class DataContext : IdentityDbContext<ApplicationUser>, IEntityDbSet
         modelBuilder.ApplyConfiguration(new NotificationConfiguration());
         modelBuilder.ApplyConfiguration(new SubscriptionPlanConfiguration());
         modelBuilder.ApplyConfiguration(new TenantSubscriptionConfiguration());
+        modelBuilder.ApplyConfiguration(new SubscriptionChangeRequestConfiguration());
 
         ApplyTenantFilters(modelBuilder);
     }

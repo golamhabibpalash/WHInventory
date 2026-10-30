@@ -433,6 +433,12 @@ public static class NavigationTreeStructure
                     "IsModule": false
                 },
                 {
+                    "URL": "/Tenants/SubscriptionRequestList",
+                    "Name": "Subscription Requests",
+                    "Icon": "fas fa-inbox",
+                    "IsModule": false
+                },
+                {
                     "URL": "/Tenants/AllTicketList",
                     "Name": "All Tickets (All Tenants)",
                     "Icon": "fas fa-globe",

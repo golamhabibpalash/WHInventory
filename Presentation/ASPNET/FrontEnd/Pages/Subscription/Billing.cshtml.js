@@ -5,6 +5,7 @@ const App = {
             usage: null,
             usageRows: [],
             plans: [],
+            pendingRequest: null,
             isReadOnly: false,
             isSubmitting: false
         });
@@ -22,7 +23,9 @@ const App = {
         const services = {
             getMySubscription: async () => await AxiosManager.get('/Subscription/GetMySubscription', {}),
             getPlans: async () => await AxiosManager.get('/SubscriptionPlan/GetSubscriptionPlanList?activeOnly=true&publicOnly=true', {}),
-            createCheckout: async (planId) => await AxiosManager.post('/Billing/CreateCheckoutSession', { planId })
+            getMyRequests: async () => await AxiosManager.get('/SubscriptionRequest/GetMySubscriptionRequestList', {}),
+            createRequest: async (requestedPlanId, createdById) => await AxiosManager.post('/SubscriptionRequest/CreateSubscriptionRequest', { requestedPlanId, createdById }),
+            cancelRequest: async (id, updatedById) => await AxiosManager.post('/SubscriptionRequest/CancelSubscriptionRequest', { id, updatedById })
         };
 
         const methods = {
@@ -35,6 +38,11 @@ const App = {
 
                 const plans = await services.getPlans();
                 state.plans = plans?.data?.content?.data ?? [];
+
+                const requests = await services.getMyRequests();
+                const list = requests?.data?.content?.data ?? [];
+                // Status 0 = Pending (see Domain/Enums/SubscriptionRequestStatus.cs).
+                state.pendingRequest = list.find(r => r.status === 0) ?? null;
 
                 methods.buildUsageRows();
             },
@@ -79,28 +87,54 @@ const App = {
                 const value = Number(amount || 0).toFixed(2);
                 return `${currency || 'USD'} ${value}`;
             },
-            choosePlan: async (plan) => {
+            requestPlan: async (plan) => {
+                const confirm = await Swal.fire({
+                    icon: 'question',
+                    title: `Request the ${plan.name} plan?`,
+                    text: 'Your platform administrator will review and approve the change.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Send request',
+                    cancelButtonText: 'Cancel'
+                });
+                if (!confirm.isConfirmed) return;
+
                 try {
                     state.isSubmitting = true;
-                    const response = await services.createCheckout(plan.id);
-                    const url = response?.data?.content?.url;
-                    if (url) {
-                        window.location.href = url;
-                        return;
+                    const response = await services.createRequest(plan.id, StorageManager.getUserId());
+                    if (response.data.code === 200) {
+                        await methods.load();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Request submitted',
+                            text: 'An administrator will review your request shortly.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
                     }
+                } catch (error) {
                     Swal.fire({
-                        icon: 'info',
-                        title: 'Contact your administrator',
-                        text: `Online checkout is not available. Please ask your platform administrator to switch you to the "${plan.name}" plan.`,
+                        icon: 'error',
+                        title: 'Could not submit request',
+                        text: error.response?.data?.message ?? 'Please try again.',
                         confirmButtonText: 'OK'
                     });
+                } finally {
+                    state.isSubmitting = false;
+                }
+            },
+            cancelRequest: async (request) => {
+                try {
+                    state.isSubmitting = true;
+                    const response = await services.cancelRequest(request.id, StorageManager.getUserId());
+                    if (response.data.code === 200) {
+                        await methods.load();
+                        Swal.fire({ icon: 'success', title: 'Request cancelled', timer: 1200, showConfirmButton: false });
+                    }
                 } catch (error) {
-                    // 400 when the gateway is disabled or the plan has no provider price.
                     Swal.fire({
-                        icon: 'info',
-                        title: 'Contact your administrator',
-                        text: error.response?.data?.message
-                            ?? `Please ask your platform administrator to switch you to the "${plan.name}" plan.`,
+                        icon: 'error',
+                        title: 'Could not cancel request',
+                        text: error.response?.data?.message ?? 'Please try again.',
                         confirmButtonText: 'OK'
                     });
                 } finally {
