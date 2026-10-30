@@ -177,6 +177,36 @@
         user-select: none;
     }
 
+    /* Resizable modals (modal-resize-manager.js): a grip in the bottom-right corner scales the
+       dialog; the content becomes the sizing box and the body scrolls when it overflows. */
+    .modal-resizable .modal-content {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .modal-resizable .modal-body {
+        overflow-y: auto;
+    }
+
+    .modal-content-resizing {
+        user-select: none;
+    }
+
+    .modal-resize-handle {
+        position: absolute;
+        right: 2px;
+        bottom: 2px;
+        width: 16px;
+        height: 16px;
+        cursor: nwse-resize;
+        touch-action: none;
+        z-index: 10;
+        /* Two short diagonal ticks drawn with gradients — a classic corner grip, no icon needed. */
+        background:
+            linear-gradient(135deg, transparent 0 50%, #adb5bd 50% 60%, transparent 60%),
+            linear-gradient(135deg, transparent 0 72%, #adb5bd 72% 82%, transparent 82%);
+    }
+
     /* Navbar language switcher (__navbar.cshtml): a checkmark next to the currently active
        language, hidden for the rest — toggled by the .language-option-active class the
        switcher's own script applies. */
