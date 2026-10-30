@@ -1,5 +1,6 @@
 using Application.Common.CQS.Queries;
 using Application.Common.Extensions;
+using Application.Common.Services.SubscriptionManager;
 using Application.Common.Services.TenantManager;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,11 @@ public record GetTenantListDto
     public bool IsActive { get; init; }
     public int UserCount { get; init; }
     public DateTime? CreatedAtUtc { get; init; }
+
+    // Subscription summary — null plan means the tenant has no subscription row yet.
+    public string? PlanName { get; init; }
+    public string? SubscriptionStatusText { get; init; }
+    public bool IsEntitled { get; init; }
 }
 
 public class GetTenantListResult
@@ -30,11 +36,16 @@ public class GetTenantListHandler : IRequestHandler<GetTenantListRequest, GetTen
 {
     private readonly IQueryContext _context;
     private readonly ITenantProvisioningService _tenantService;
+    private readonly ITenantSubscriptionAdminService _subscriptionAdminService;
 
-    public GetTenantListHandler(IQueryContext context, ITenantProvisioningService tenantService)
+    public GetTenantListHandler(
+        IQueryContext context,
+        ITenantProvisioningService tenantService,
+        ITenantSubscriptionAdminService subscriptionAdminService)
     {
         _context = context;
         _tenantService = tenantService;
+        _subscriptionAdminService = subscriptionAdminService;
     }
 
     public async Task<GetTenantListResult> Handle(GetTenantListRequest request, CancellationToken cancellationToken)
@@ -59,15 +70,30 @@ public class GetTenantListHandler : IRequestHandler<GetTenantListRequest, GetTen
 
         var userCounts = await _tenantService.GetUserCountsAsync(ids, cancellationToken);
 
+        // Cross-tenant read; the admin service elevates to root internally. One current row per
+        // tenant (newest first), so the first seen per tenant id wins.
+        var subscriptions = await _subscriptionAdminService.GetAllAsync(cancellationToken);
+        var subscriptionByTenant = subscriptions
+            .Where(x => x.TenantId != null)
+            .GroupBy(x => x.TenantId!)
+            .ToDictionary(g => g.Key, g => g.First());
+
         var data = tenants
-            .Select(x => new GetTenantListDto
+            .Select(x =>
             {
-                Id = x.Id,
-                Name = x.Name,
-                Slug = x.Slug,
-                IsActive = x.IsActive,
-                UserCount = userCounts.GetValueOrDefault(x.Id, 0),
-                CreatedAtUtc = x.CreatedAtUtc
+                subscriptionByTenant.TryGetValue(x.Id, out var sub);
+                return new GetTenantListDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Slug = x.Slug,
+                    IsActive = x.IsActive,
+                    UserCount = userCounts.GetValueOrDefault(x.Id, 0),
+                    CreatedAtUtc = x.CreatedAtUtc,
+                    PlanName = sub?.PlanName,
+                    SubscriptionStatusText = sub?.Status.ToString(),
+                    IsEntitled = sub?.IsEntitled ?? false
+                };
             })
             .ToList();
 

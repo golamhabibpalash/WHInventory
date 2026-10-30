@@ -13,11 +13,14 @@ const App = {
             adminFirstName: '',
             adminLastName: '',
             errors: { name: '', slug: '', adminEmail: '', adminPassword: '' },
-            isSubmitting: false
+            isSubmitting: false,
+            tenantUsers: [],
+            selectedTenantName: ''
         });
 
         const mainGridRef = Vue.ref(null);
         const mainModalRef = Vue.ref(null);
+        const usersModalRef = Vue.ref(null);
 
         const resetFormState = () => {
             state.id = '';
@@ -75,6 +78,7 @@ const App = {
             createMainData: async (payload) => await AxiosManager.post('/Tenant/CreateTenant', payload),
             updateMainData: async (payload) => await AxiosManager.post('/Tenant/UpdateTenant', payload),
             deleteMainData: async (id, deletedById) => await AxiosManager.post('/Tenant/DeleteTenant', { id, deletedById }),
+            getTenantUsers: async (tenantId) => await AxiosManager.get(`/Tenant/GetTenantUserList?tenantId=${tenantId}`, {}),
         };
 
         const methods = {
@@ -88,6 +92,29 @@ const App = {
         };
 
         const handler = {
+            formatDate: (value) => {
+                if (!value) return '—';
+                const d = new Date(value);
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                return `${dd}/${mm}/${d.getFullYear()}`;
+            },
+            viewUsers: async function (tenant) {
+                try {
+                    state.selectedTenantName = tenant.name ?? '';
+                    state.tenantUsers = [];
+                    const response = await services.getTenantUsers(tenant.id);
+                    state.tenantUsers = response?.data?.content?.data ?? [];
+                    usersModal.obj.show();
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Could not load users',
+                        text: error.response?.data?.message ?? 'Please try again.',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            },
             handleSubmit: async function () {
                 try {
                     state.isSubmitting = true;
@@ -159,6 +186,7 @@ const App = {
                 await methods.populateMainData();
                 mainGrid.create(state.mainData);
                 mainModal.create();
+                usersModal.create();
                 mainModalRef.value?.addEventListener('hidden.bs.modal', resetFormState);
             } catch (e) {
                 // Surfaced rather than swallowed: a failure here leaves an empty page with no clue.
@@ -197,6 +225,11 @@ const App = {
                         { field: 'name', headerText: 'Organisation', width: 220, minWidth: 200 },
                         { field: 'slug', headerText: 'Address', width: 160, minWidth: 140 },
                         { field: 'userCount', headerText: 'Users', width: 100, textAlign: 'Right' },
+                        { field: 'planName', headerText: 'Plan', width: 140, minWidth: 110 },
+                        {
+                            field: 'subscriptionStatusText', headerText: 'Subscription', width: 140, textAlign: 'Center',
+                            template: '${if(planName)}${if(isEntitled)}<span class="badge bg-success">${subscriptionStatusText}</span>${else}<span class="badge bg-danger">${subscriptionStatusText}</span>${/if}${else}<span class="text-muted">None</span>${/if}'
+                        },
                         {
                             field: 'isActive', headerText: 'Status', width: 120, textAlign: 'Center',
                             // String template, not a function: EJ2 runs column templates through its
@@ -211,17 +244,19 @@ const App = {
                         { text: 'Add', tooltipText: 'Add', prefixIcon: 'e-add', id: 'AddCustom' },
                         { text: 'Edit', tooltipText: 'Edit', prefixIcon: 'e-edit', id: 'EditCustom' },
                         { text: 'Delete', tooltipText: 'Delete', prefixIcon: 'e-delete', id: 'DeleteCustom' },
+                        { type: 'Separator' },
+                        { text: 'Users', tooltipText: 'View users of this tenant', prefixIcon: 'e-people', id: 'UsersCustom' },
                     ],
                     dataBound: function () {
-                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'], false);
-                        mainGrid.obj.autoFitColumns(['name', 'slug', 'userCount', 'isActive', 'createdAtUtc']);
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'UsersCustom'], false);
+                        mainGrid.obj.autoFitColumns(['name', 'slug', 'userCount', 'planName', 'subscriptionStatusText', 'isActive', 'createdAtUtc']);
                     },
                     rowSelected: () => {
-                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'],
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'UsersCustom'],
                             mainGrid.obj.getSelectedRecords().length === 1);
                     },
                     rowDeselected: () => {
-                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom'],
+                        mainGrid.obj.toolbarModule.enableItems(['EditCustom', 'DeleteCustom', 'UsersCustom'],
                             mainGrid.obj.getSelectedRecords().length === 1);
                     },
                     rowSelecting: () => {
@@ -262,6 +297,10 @@ const App = {
                             state.isActive = selected.isActive ?? true;
                             mainModal.obj.show();
                         }
+
+                        if (args.item.id === 'UsersCustom' && selected) {
+                            handler.viewUsers(selected);
+                        }
                     }
                 });
 
@@ -284,7 +323,17 @@ const App = {
             }
         };
 
-        return { mainGridRef, mainModalRef, state, handler };
+        const usersModal = {
+            obj: null,
+            create: () => {
+                usersModal.obj = new bootstrap.Modal(usersModalRef.value, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+        };
+
+        return { mainGridRef, mainModalRef, usersModalRef, state, handler };
     }
 };
 

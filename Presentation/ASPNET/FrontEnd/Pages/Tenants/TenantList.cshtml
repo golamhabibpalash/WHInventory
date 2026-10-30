@@ -108,6 +108,54 @@
             </div>
         </div>
     </div>
+
+    <!-- Users of a tenant -->
+    <div class="modal fade" ref="usersModalRef" id="UsersModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-users me-2"></i>Users — {{ state.selectedTenantName }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="state.tenantUsers.length === 0" class="text-muted text-center py-4">
+                        <i class="fas fa-user-slash me-2"></i>This tenant has no users.
+                    </div>
+                    <div v-else class="table-responsive">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th class="text-center">Confirmed</th>
+                                    <th class="text-center">Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="u in state.tenantUsers" :key="u.id">
+                                    <td>{{ (u.firstName || '') + ' ' + (u.lastName || '') }}</td>
+                                    <td>{{ u.email }}</td>
+                                    <td class="text-center">
+                                        <i v-bind:class="u.emailConfirmed ? 'fas fa-check text-success' : 'fas fa-times text-muted'"></i>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge" v-bind:class="u.isBlocked ? 'bg-danger' : 'bg-success'">
+                                            {{ u.isBlocked ? 'Blocked' : 'Active' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ handler.formatDate(u.createdAt) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section scripts {

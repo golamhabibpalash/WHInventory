@@ -75,6 +75,15 @@ public interface ISecurityService
         CancellationToken cancellationToken
         );
 
+    /// <summary>
+    /// Platform use: users belonging to a specific tenant, regardless of the caller's own tenant
+    /// scope. Gated to platform administrators by the calling controller.
+    /// </summary>
+    Task<List<GetUserListResultDto>> GetTenantUserListAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default
+        );
+
     Task<CreateUserResultDto> CreateUserAsync(
         string email,
         string password,

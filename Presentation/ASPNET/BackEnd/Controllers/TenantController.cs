@@ -55,6 +55,23 @@ public class TenantController : BaseApiController
         });
     }
 
+    [HttpGet("GetTenantUserList")]
+    public async Task<ActionResult<ApiSuccessResult<GetTenantUserListResult>>> GetTenantUserListAsync(
+        CancellationToken cancellationToken,
+        [FromQuery] string tenantId
+        )
+    {
+        var request = new GetTenantUserListRequest { TenantId = tenantId };
+        var response = await _sender.Send(request, cancellationToken);
+
+        return Ok(new ApiSuccessResult<GetTenantUserListResult>
+        {
+            Code = StatusCodes.Status200OK,
+            Message = $"Success executing {nameof(GetTenantUserListAsync)}",
+            Content = response
+        });
+    }
+
     [HttpPost("CreateTenant")]
     public async Task<ActionResult<ApiSuccessResult<CreateTenantResult>>> CreateTenantAsync(CreateTenantRequest request, CancellationToken cancellationToken)
     {

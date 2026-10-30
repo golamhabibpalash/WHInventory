@@ -622,6 +622,32 @@ public class SecurityService : ISecurityService
         return users;
     }
 
+    public async Task<List<GetUserListResultDto>> GetTenantUserListAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default
+        )
+    {
+        // ApplicationUser is not tenant-filtered, so this reads any tenant's users by explicit id.
+        // Authorization is enforced by the (Tenants-role) controller that calls it.
+        var users = await _userManager.Users
+            .Where(x => x.TenantId == tenantId)
+            .Select(x => new GetUserListResultDto
+            {
+                Id = x.Id,
+                FirstName = x.FirstName,
+                LastName = x.LastName,
+                Email = x.Email,
+                IsBlocked = x.IsBlocked,
+                IsDeleted = x.IsDeleted,
+                EmailConfirmed = x.EmailConfirmed,
+                CreatedAt = x.CreatedAt,
+                SessionTimeoutMinutes = x.SessionTimeoutMinutes
+            })
+            .ToListAsync(cancellationToken);
+
+        return users;
+    }
+
     public async Task<CreateUserResultDto> CreateUserAsync(
         string email,
         string password,
