@@ -1,0 +1,487 @@
+[
+  {
+    "pageId": "dashboards",
+    "title": "Dashboard",
+    "description": "Your at-a-glance view of the business.",
+    "overview": "The dashboard summarises key figures — sales, purchases, stock and low-stock alerts — so you can see how the business is doing without opening each module.",
+    "instructions": [
+      "Review the summary cards at the top for headline figures.",
+      "Use the charts to spot trends over time.",
+      "Check the low-stock panel for products that need reordering.",
+      "Use the sidebar on the left to open any module for detailed work."
+    ],
+    "tips": [
+      "Figures respect your organisation's time zone and currency settings.",
+      "If numbers look empty, confirm you have created products and transactions first."
+    ],
+    "status": "active",
+    "order": 1,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "products",
+    "title": "Products",
+    "description": "Maintain the catalogue of items you buy, stock and sell.",
+    "overview": "Products are the core of your inventory. Each product carries its code, prices, unit of measure, group and brand, and drives stock tracking across every warehouse.",
+    "instructions": [
+      "Use Search in the toolbar to find a product by name or code.",
+      "Click Add to create a product; fill in name, unit price, unit of measure and product group.",
+      "Select a row and click Edit (or double-click it) to change a product.",
+      "Select a row and click Delete to remove a product (it is soft-deleted, not erased).",
+      "Use Excel Export to download the current list."
+    ],
+    "tips": [
+      "The product code/number is generated automatically — you don't type it.",
+      "Set a sensible low-stock threshold so the dashboard can warn you in time.",
+      "Only physical products are tracked for stock movements."
+    ],
+    "faqs": [
+      {
+        "q": "Why can't I delete a product?",
+        "a": "Products referenced by existing transactions are kept for history. Deactivate the product instead of deleting it."
+      }
+    ],
+    "related": [
+      { "label": "Product Groups", "url": "/ProductGroups/ProductGroupList" },
+      { "label": "Brands", "url": "/Brands/BrandList" },
+      { "label": "Product Prices", "url": "/ProductPrices/ProductPriceList" }
+    ],
+    "status": "active",
+    "order": 10,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "warehouses",
+    "title": "Warehouses",
+    "description": "Manage the locations where stock is held.",
+    "overview": "Warehouses are the physical locations your stock lives in. Stock on hand is tracked per warehouse and product. System warehouses (used internally for transfers, adjustments and counterparties) are protected and cannot be edited.",
+    "instructions": [
+      "Click Add to create a new warehouse with a name and description.",
+      "Select a row and click Edit to rename a warehouse.",
+      "Use Search to filter the list quickly.",
+      "Select and Delete a warehouse you no longer use."
+    ],
+    "tips": [
+      "You will only see real warehouses here; the six system warehouses are managed by the application.",
+      "Your subscription plan may limit how many warehouses you can create."
+    ],
+    "status": "active",
+    "order": 20,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "customers",
+    "title": "Customers",
+    "description": "Maintain the customers you sell to.",
+    "overview": "Customer records hold the organisations and people you raise sales orders for, along with their group and category for pricing and reporting.",
+    "instructions": [
+      "Use Search to find a customer by name or code.",
+      "Click Add to register a new customer.",
+      "Select a row and Edit (or double-click) to update details.",
+      "Assign a customer group/category to control pricing and grouping."
+    ],
+    "tips": [
+      "Check for an existing record before adding a customer to avoid duplicates.",
+      "Customer group can drive the price policy applied on sales orders."
+    ],
+    "related": [
+      { "label": "Customer Groups", "url": "/CustomerGroups/CustomerGroupList" },
+      { "label": "Customer Due", "url": "/Dues/DueList" }
+    ],
+    "status": "active",
+    "order": 30,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "vendors",
+    "title": "Vendors",
+    "description": "Maintain the suppliers you buy from.",
+    "overview": "Vendor records hold the suppliers you raise purchase orders against, with their group and category.",
+    "instructions": [
+      "Use Search to find a vendor.",
+      "Click Add to register a new vendor.",
+      "Select and Edit a row to update a vendor's details.",
+      "Group vendors to keep purchasing organised."
+    ],
+    "tips": [
+      "Review existing vendors before adding a new one to avoid duplicates."
+    ],
+    "related": [
+      { "label": "Vendor Groups", "url": "/VendorGroups/VendorGroupList" },
+      { "label": "Purchase Orders", "url": "/PurchaseOrders/PurchaseOrderList" }
+    ],
+    "status": "active",
+    "order": 40,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "salesorders",
+    "title": "Sales Orders",
+    "description": "Create and manage orders for your customers.",
+    "overview": "A sales order records what a customer is buying. You set the customer and header details, add product line items with quantities and prices, and the order total is calculated for you. Delivery of stock is handled from the related Delivery Order.",
+    "instructions": [
+      "Click Add and select the customer, order date and status.",
+      "Save the header, then add product line items with quantity and price.",
+      "Review the calculated subtotal, tax/discount and total.",
+      "Edit an existing order from its row; use Print PDF to produce a document.",
+      "Deliver the goods from the Delivery Order page when ready."
+    ],
+    "tips": [
+      "Prices may be suggested from the customer's price policy — review before saving.",
+      "Stock is only reduced when you deliver via a Delivery Order, not when the sales order is created.",
+      "Selling prices must stay within any configured price band unless your company allows otherwise."
+    ],
+    "related": [
+      { "label": "Delivery Orders", "url": "/DeliveryOrders/DeliveryOrderList" },
+      { "label": "Sales Returns", "url": "/SalesReturns/SalesReturnList" }
+    ],
+    "status": "active",
+    "order": 50,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "purchaseorders",
+    "title": "Purchase Orders",
+    "description": "Create and manage orders to your vendors.",
+    "overview": "A purchase order records what you are buying from a vendor. Add product line items with quantities and costs; goods are brought into stock later through a Goods Receive against this order.",
+    "instructions": [
+      "Click Add and select the vendor, order date and status.",
+      "Save the header, then add product line items with quantity and cost.",
+      "Optionally record a vendor reference number.",
+      "Receive the goods from the Goods Receive page when they arrive."
+    ],
+    "tips": [
+      "Stock increases only when you receive goods, not when the purchase order is created.",
+      "A purchase order can be received in several deliveries (partial receiving is supported)."
+    ],
+    "related": [
+      { "label": "Goods Receive", "url": "/GoodsReceives/GoodsReceiveList" },
+      { "label": "Purchase Returns", "url": "/PurchaseReturns/PurchaseReturnList" }
+    ],
+    "status": "active",
+    "order": 60,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "goodsreceives",
+    "title": "Goods Receive",
+    "description": "Receive stock against a purchase order.",
+    "overview": "A goods receive brings purchased stock into a warehouse. You pick the purchase order it relates to, then add receive items specifying the warehouse, product and the quantity actually received (the Movement). The order quantity is shown for reference, and the purchase order's receiving status becomes Partial or Complete as you receive.",
+    "instructions": [
+      "Click Add, choose the Purchase Order, set the receive date and status, then Save.",
+      "In the Receive Item section, click Add to create a line.",
+      "Pick the warehouse and product; the Order Qty column shows how much was ordered (read-only).",
+      "Enter the Movement — the quantity received now. It cannot exceed the remaining quantity.",
+      "Repeat for each product, then review the Total Movement summary.",
+      "Use Print PDF to produce a receiving document."
+    ],
+    "tips": [
+      "Only products on the selected purchase order can be received here.",
+      "Movement must be positive and within the remaining quantity for that product.",
+      "Receiving less than ordered marks the order Partial; you can receive the rest later."
+    ],
+    "faqs": [
+      {
+        "q": "What does Order Qty show?",
+        "a": "It is the quantity ordered for that product on the linked purchase order, shown read-only so you can compare it against what you are receiving."
+      }
+    ],
+    "related": [
+      { "label": "Purchase Orders", "url": "/PurchaseOrders/PurchaseOrderList" }
+    ],
+    "status": "active",
+    "order": 61,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "deliveryorders",
+    "title": "Delivery Orders",
+    "description": "Deliver stock to customers against a sales order.",
+    "overview": "A delivery order ships stock out of a warehouse to fulfil a sales order. You select the sales order, then add delivery items specifying the warehouse, product and quantity delivered.",
+    "instructions": [
+      "Click Add, choose the Sales Order, set the delivery date and status, then Save.",
+      "Add delivery items: pick the warehouse and product and enter the quantity delivered.",
+      "The quantity delivered cannot exceed what remains on the sales order.",
+      "Use Print PDF to produce a delivery document."
+    ],
+    "tips": [
+      "Delivering reduces stock in the chosen warehouse.",
+      "A sales order can be delivered in several shipments (partial delivery is supported).",
+      "Stock availability is enforced — you cannot deliver more than is on hand."
+    ],
+    "related": [
+      { "label": "Sales Orders", "url": "/SalesOrders/SalesOrderList" }
+    ],
+    "status": "active",
+    "order": 62,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "salesreturns",
+    "title": "Sales Returns",
+    "description": "Record stock returned by customers.",
+    "overview": "A sales return brings previously delivered stock back into a warehouse when a customer returns goods.",
+    "instructions": [
+      "Click Add and set the return date, status and related details, then Save.",
+      "Add return items: warehouse, product and quantity returned.",
+      "Review the totals and save."
+    ],
+    "tips": [
+      "Returning stock increases on-hand quantity in the chosen warehouse.",
+      "Record returns promptly so stock figures stay accurate."
+    ],
+    "status": "active",
+    "order": 63,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "purchasereturns",
+    "title": "Purchase Returns",
+    "description": "Record stock returned to vendors.",
+    "overview": "A purchase return sends previously received stock back out to a vendor.",
+    "instructions": [
+      "Click Add and set the return date, status and related details, then Save.",
+      "Add return items: warehouse, product and quantity returned.",
+      "Review the totals and save."
+    ],
+    "tips": [
+      "Returning stock to a vendor decreases on-hand quantity.",
+      "You cannot return more than is on hand."
+    ],
+    "status": "active",
+    "order": 64,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "transferouts",
+    "title": "Stock Transfers",
+    "description": "Move stock between your warehouses.",
+    "overview": "Transfers move stock from one warehouse to another. A Transfer Out ships stock from the source; a Transfer In receives it at the destination.",
+    "instructions": [
+      "Click Add and set the transfer date and details, then Save.",
+      "Add items: product and quantity to move.",
+      "Complete the matching Transfer In to receive the stock at the destination."
+    ],
+    "tips": [
+      "Transfers do not change your total stock, only where it is held.",
+      "You cannot transfer out more than is on hand at the source warehouse."
+    ],
+    "related": [
+      { "label": "Transfer In", "url": "/TransferIns/TransferInList" }
+    ],
+    "status": "active",
+    "order": 65,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "positiveadjustments",
+    "title": "Stock Adjustments",
+    "description": "Correct stock levels up or down.",
+    "overview": "Adjustments reconcile recorded stock with reality. A Positive Adjustment increases on-hand quantity; a Negative Adjustment decreases it. Use these after a stock count or when correcting errors.",
+    "instructions": [
+      "Click Add and set the adjustment date and reason, then Save.",
+      "Add items: warehouse, product and the quantity to add or remove.",
+      "Review and save; stock updates immediately."
+    ],
+    "tips": [
+      "Verify the real quantity before adjusting — adjustments change your stock on hand directly.",
+      "Prefer a Stock Count for a full reconciliation of many products."
+    ],
+    "related": [
+      { "label": "Negative Adjustment", "url": "/NegativeAdjustments/NegativeAdjustmentList" },
+      { "label": "Stock Count", "url": "/StockCounts/StockCountList" }
+    ],
+    "status": "active",
+    "order": 66,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "stockcounts",
+    "title": "Stock Count",
+    "description": "Reconcile counted stock against the system.",
+    "overview": "A stock count lets you record the physically counted quantity for products in a warehouse, and reconciles any difference against the recorded figure.",
+    "instructions": [
+      "Click Add and choose the warehouse and count date, then Save.",
+      "Add items: product and the counted quantity.",
+      "Review the differences and confirm to apply the reconciliation."
+    ],
+    "tips": [
+      "Count carefully — confirming a count adjusts your recorded stock to match.",
+      "Do the count when movements are paused to avoid discrepancies."
+    ],
+    "status": "active",
+    "order": 67,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "scrappings",
+    "title": "Scrapping",
+    "description": "Write off damaged or lost stock.",
+    "overview": "Scrapping removes stock that is damaged, expired or lost from a warehouse so your figures reflect sellable stock only.",
+    "instructions": [
+      "Click Add and set the date and reason, then Save.",
+      "Add items: warehouse, product and quantity to scrap.",
+      "Review and save; the stock is removed."
+    ],
+    "tips": [
+      "Scrapping permanently reduces on-hand quantity — double-check before confirming."
+    ],
+    "status": "active",
+    "order": 68,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "pricepolicies",
+    "title": "Pricing",
+    "description": "Control how selling prices are calculated.",
+    "overview": "Price policies, product prices and promotions let you set how prices are derived for customers — fixed prices, markups, margins, quantity breaks and time-limited promotions.",
+    "instructions": [
+      "Create a Price Policy and set its priority and effective dates.",
+      "Add Product Prices under a policy, choosing the calculation method.",
+      "Define quantity breaks for volume pricing where needed.",
+      "Create Promotions for time-limited special prices.",
+      "Assign a policy to a customer group so it applies automatically."
+    ],
+    "tips": [
+      "Higher-priority policies win when more than one could apply.",
+      "Check effective dates so a price or promotion is live when you expect."
+    ],
+    "related": [
+      { "label": "Product Prices", "url": "/ProductPrices/ProductPriceList" },
+      { "label": "Promotions", "url": "/Promotions/PromotionList" }
+    ],
+    "status": "active",
+    "order": 70,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "users",
+    "title": "Users",
+    "description": "Manage the people who can sign in to your organisation.",
+    "overview": "Users are the accounts within your organisation. From here you create accounts, block or unblock them, and grant each user access to the modules (roles) they need.",
+    "instructions": [
+      "Click Add to create a user with their name, email and password.",
+      "Select a user and manage their roles to control which pages they can open.",
+      "Block a user to stop them signing in without deleting the account.",
+      "Edit a user to update their details or session timeout."
+    ],
+    "tips": [
+      "A user only sees a menu item if they hold the matching role — grant roles here.",
+      "Your subscription plan may limit how many users you can create.",
+      "New users may need to confirm their email before signing in, depending on settings."
+    ],
+    "related": [
+      { "label": "Roles", "url": "/Roles/RoleList" }
+    ],
+    "status": "active",
+    "order": 80,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "roles",
+    "title": "Roles",
+    "description": "The access roles available in the application.",
+    "overview": "Roles correspond to the application's modules. This page lists the available roles; you assign them to individual users on the Users page.",
+    "instructions": [
+      "Review the list of roles — each maps to a module/menu area.",
+      "To give a user access to a module, open the Users page and grant them that role."
+    ],
+    "tips": [
+      "This page lists roles; assignment to users happens on the Users page.",
+      "Platform-only roles are reserved for the application operator."
+    ],
+    "related": [
+      { "label": "Users", "url": "/Users/UserList" }
+    ],
+    "status": "active",
+    "order": 81,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "tickets",
+    "title": "Support Tickets",
+    "description": "Raise and track support requests.",
+    "overview": "Tickets let you report issues or requests and follow their progress. Create a ticket, pick its category and priority, and add comments as it is worked on.",
+    "instructions": [
+      "Click Add to create a ticket; give it a clear title and description.",
+      "Choose a category and priority so it is routed correctly.",
+      "Open a ticket to read updates and add comments.",
+      "Track the status as the ticket moves toward resolution."
+    ],
+    "tips": [
+      "Include steps to reproduce and screenshots where possible.",
+      "Set the priority honestly so urgent issues are seen first."
+    ],
+    "status": "active",
+    "order": 90,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "companies",
+    "title": "My Company",
+    "description": "Your organisation's profile and settings.",
+    "overview": "The company record holds your organisation's name, logo, currency and other defaults used across documents and the interface.",
+    "instructions": [
+      "Update your company name, website and contact details.",
+      "Upload a logo to brand documents and the sidebar.",
+      "Set the currency and other defaults, then Save."
+    ],
+    "tips": [
+      "The currency shown in the top bar and on documents comes from here.",
+      "A clear logo improves your printed PDFs."
+    ],
+    "status": "active",
+    "order": 100,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "subscription",
+    "title": "Billing & Subscription",
+    "description": "View your plan and request a change.",
+    "overview": "This page shows your current subscription plan, its status, and how much of your plan's limits (users, warehouses, products) you are using. You can request a different plan; a platform administrator reviews and approves the change.",
+    "instructions": [
+      "Review your current plan, status and renewal/expiry date at the top.",
+      "Check the usage bars to see how close you are to your plan's limits.",
+      "To change plan, click Request on the plan you want.",
+      "A pending request shows a banner; you can cancel it before it is decided.",
+      "Once an administrator approves, reload to see your new plan."
+    ],
+    "tips": [
+      "You can have only one pending request at a time.",
+      "If your subscription lapses, the workspace becomes read-only until it is reinstated — requesting a plan is always allowed so you can recover.",
+      "Hitting a limit (e.g. maximum products) means you need a higher plan."
+    ],
+    "faqs": [
+      {
+        "q": "Why can't I create records?",
+        "a": "If your subscription is not active the workspace is read-only. Request or renew a plan from this page and ask an administrator to approve it."
+      }
+    ],
+    "status": "active",
+    "order": 110,
+    "updated": "2026-10-31"
+  },
+  {
+    "pageId": "tenants",
+    "title": "Tenants (Platform Admin)",
+    "description": "Manage every organisation on the platform.",
+    "overview": "Platform administration: the tenant registry lists every organisation, its subscription plan and status, and its user count. From here you create organisations, inspect their users, and handle subscription requests.",
+    "instructions": [
+      "Review the list — the Plan and Subscription columns show each tenant's current plan and status.",
+      "Click Add to create a new organisation and its first administrator.",
+      "Select a tenant and click Users to see the people in that organisation.",
+      "Use Subscription Requests (in the Logs menu) to approve or reject plan requests.",
+      "Deactivate a tenant to stop its users signing in without deleting its data."
+    ],
+    "tips": [
+      "This area is for the platform operator only; tenant administrators cannot see it.",
+      "Approving a subscription request applies the plan to that tenant immediately."
+    ],
+    "related": [
+      { "label": "Subscription Requests", "url": "/Tenants/SubscriptionRequestList" }
+    ],
+    "status": "active",
+    "order": 120,
+    "updated": "2026-10-31"
+  }
+]
