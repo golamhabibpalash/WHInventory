@@ -955,6 +955,20 @@ const App = {
                             }
                         },
                         {
+                            // Read-only: the quantity ordered for this product on the linked purchase
+                            // order, looked up from the remaining-qty data (keyed by productId). Not a
+                            // stored field, so it is never persisted or edited.
+                            field: 'orderQty',
+                            headerText: 'Order Qty',
+                            width: 130,
+                            textAlign: 'Right',
+                            allowEditing: false,
+                            valueAccessor: (field, data, column) => {
+                                const match = state.poRemainingQtyData.find(x => x.productId === data.productId);
+                                return match ? Number(match.orderedQty).toFixed(2) : '';
+                            }
+                        },
+                        {
                             field: 'movement',
                             headerText: 'Movement',
                             width: 200,
